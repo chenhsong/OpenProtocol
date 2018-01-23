@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard1.6</TargetFramework>
+    <AssemblyName>iChen.OpenProtocol</AssemblyName>
+    <RootNamespace>iChen.OpenProtocol</RootNamespace>
+    <Version>4.1.0.0</Version>
+    <Authors />
+    <Company>Chen Hsong</Company>
+    <Product>OpenProtocol</Product>
+    <Description>Open JSON-based protocol for iChen 4.1.</Description>
+    <Copyright>Copyright © 2016 by Chen Hsong Holdings Ltd.  All rights reserved.</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.DotNet.Analyzers.Compatibility" Version="0.1.2-alpha" />
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+  </ItemGroup>
+</Project>
