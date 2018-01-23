@@ -12,6 +12,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CS", "CS", "{489158CE-BA24-
 		cs\api_reference.md = cs\api_reference.md
 		cs\messages_reference.md = cs\messages_reference.md
 		cs\quick_reference.md = cs\quick_reference.md
+		cs\README.md = cs\README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{760DED75-90AB-43A8-9242-064941F68A52}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
 	EndProjectSection
 EndProject
 Global
