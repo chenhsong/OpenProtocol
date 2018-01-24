@@ -1,0 +1,14 @@
+{
+	"compilerOptions": {
+		"target": "es3",
+		"strict": true,
+		"alwaysStrict": true,
+		"strictNullChecks": true,
+		"noImplicitAny": true,
+		"noImplicitReturns": true,
+		"noImplicitThis": true,
+		"sourceMap": true,
+		"outDir": "../lib"
+	},
+	"compileOnSave": true
+}

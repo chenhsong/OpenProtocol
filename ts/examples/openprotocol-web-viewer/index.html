@@ -1,0 +1,70 @@
+﻿<!DOCTYPE html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<title>iChen 4.1 Open Protocol Web Viewer</title>
+	<style>
+		.info
+		{
+			color: black;
+		}
+
+		.command
+		{
+			white-space: pre;
+			color: magenta;
+			font-weight: bold;
+		}
+
+		.reply
+		{
+			white-space: pre;
+			color: limegreen;
+			font-weight: bold;
+		}
+
+		.message
+		{
+			white-space: pre;
+			color: darkblue;
+			font-weight: bold;
+		}
+
+		.error
+		{
+			color: red;
+		}
+
+		.warning
+		{
+			background-color: yellow;
+		}
+	</style>
+
+	<!-- Load the interface module from the correct path, comment out the incorrect ones -->
+	<script src="iChen.OpenProtocol.js"></script>
+	<script src="iChen.OpenProtocol.min.js"></script>
+	<script src="../../lib/iChen.OpenProtocol.js"></script>
+	<script src="../../lib/iChen.OpenProtocol.min.js"></script>
+
+	<script src="app.js"></script>
+</head>
+<body>
+	<div>
+		<label for="txtUrl">URL: </label><input id="txtUrl" type="text" style="width:15em;" />
+		<label for="txtPwd">Password: </label><input id="txtPwd" type="password" />
+		<button id="btnConnect">Connect to Server</button>
+	</div>
+	<div>
+		<label for="txtId">Machine No: </label><input id="txtId" type="text" size="8" disabled />
+		<button id="btnGetMoldData" disabled>Get Mold Data</button>
+		<label for="txtId">Field: </label><input id="txtField" type="text" disabled />
+		<button id="btnReadMoldData" disabled>Read Mold Value</button>
+	</div>
+
+	<hr />
+
+	<div id="messages"></div>
+</body>
+</html>

@@ -20,6 +20,31 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "openprotocol-web-viewer", "ts\examples\openprotocol-web-viewer\openprotocol-web-viewer.njsproj", "{54EB1BE0-7AB9-4D02-9AA1-AA12606E9C15}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TS", "TS", "{28734BB6-E0DE-45BB-8A37-2721DF3E06C1}"
+EndProject
+Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "openprotocol-typescript", "ts\src\openprotocol-typescript.njsproj", "{D00C84D2-6A9E-48B5-83F5-8606DABD88C3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "lib", "lib", "{1F4390A6-F3F1-48DE-AFB0-F65967B0BC6F}"
+	ProjectSection(SolutionItems) = preProject
+		ts\lib\iChen.OpenProtocol.d.ts = ts\lib\iChen.OpenProtocol.d.ts
+		ts\lib\iChen.OpenProtocol.js = ts\lib\iChen.OpenProtocol.js
+		ts\lib\iChen.OpenProtocol.js.map = ts\lib\iChen.OpenProtocol.js.map
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "JS", "JS", "{1390BBC3-CF80-49D3-B704-F577637BED6F}"
+EndProject
+Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "openprotocol-web-viewer", "js\examples\openprotocol-web-viewer\openprotocol-web-viewer.njsproj", "{03AA84B0-3284-41C7-AA8C-C5C236C90F4F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{F67114DC-715E-4B8E-9729-2A50141A6A7F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{AB85C87A-C351-41D1-81DF-62840758A465}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{CA718389-F7C2-4AE1-BAFB-9835E8EE7952}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{C3D777D9-FD95-44A6-B55A-499F1A7CBDF8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -34,13 +59,33 @@ Global
 		{485B1DD2-5C91-4993-BEDD-98BF26630293}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{485B1DD2-5C91-4993-BEDD-98BF26630293}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{485B1DD2-5C91-4993-BEDD-98BF26630293}.Release|Any CPU.Build.0 = Release|Any CPU
+		{54EB1BE0-7AB9-4D02-9AA1-AA12606E9C15}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{54EB1BE0-7AB9-4D02-9AA1-AA12606E9C15}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{54EB1BE0-7AB9-4D02-9AA1-AA12606E9C15}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{54EB1BE0-7AB9-4D02-9AA1-AA12606E9C15}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D00C84D2-6A9E-48B5-83F5-8606DABD88C3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D00C84D2-6A9E-48B5-83F5-8606DABD88C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D00C84D2-6A9E-48B5-83F5-8606DABD88C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D00C84D2-6A9E-48B5-83F5-8606DABD88C3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{03AA84B0-3284-41C7-AA8C-C5C236C90F4F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{03AA84B0-3284-41C7-AA8C-C5C236C90F4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{03AA84B0-3284-41C7-AA8C-C5C236C90F4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{03AA84B0-3284-41C7-AA8C-C5C236C90F4F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{E22B3199-3391-4246-8951-E301947FD3A6} = {489158CE-BA24-44E4-B37A-13BDC6D3A39B}
-		{485B1DD2-5C91-4993-BEDD-98BF26630293} = {489158CE-BA24-44E4-B37A-13BDC6D3A39B}
+		{485B1DD2-5C91-4993-BEDD-98BF26630293} = {AB85C87A-C351-41D1-81DF-62840758A465}
+		{54EB1BE0-7AB9-4D02-9AA1-AA12606E9C15} = {CA718389-F7C2-4AE1-BAFB-9835E8EE7952}
+		{D00C84D2-6A9E-48B5-83F5-8606DABD88C3} = {F67114DC-715E-4B8E-9729-2A50141A6A7F}
+		{1F4390A6-F3F1-48DE-AFB0-F65967B0BC6F} = {28734BB6-E0DE-45BB-8A37-2721DF3E06C1}
+		{03AA84B0-3284-41C7-AA8C-C5C236C90F4F} = {C3D777D9-FD95-44A6-B55A-499F1A7CBDF8}
+		{F67114DC-715E-4B8E-9729-2A50141A6A7F} = {28734BB6-E0DE-45BB-8A37-2721DF3E06C1}
+		{AB85C87A-C351-41D1-81DF-62840758A465} = {489158CE-BA24-44E4-B37A-13BDC6D3A39B}
+		{CA718389-F7C2-4AE1-BAFB-9835E8EE7952} = {28734BB6-E0DE-45BB-8A37-2721DF3E06C1}
+		{C3D777D9-FD95-44A6-B55A-499F1A7CBDF8} = {1390BBC3-CF80-49D3-B704-F577637BED6F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {580993A6-3410-42FB-96F4-982B654AA74D}

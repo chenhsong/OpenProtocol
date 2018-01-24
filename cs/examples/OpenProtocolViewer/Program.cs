@@ -10,7 +10,7 @@ namespace iChen.OpenProtocol.Example
 	{
 		private static void Main ()
 		{
-			Console.WriteLine("iChen 4.0 Open Protocol Viewer");
+			Console.WriteLine("iChen 4.1 Open Protocol Viewer");
 			Console.WriteLine();
 
 			// Read parameters
