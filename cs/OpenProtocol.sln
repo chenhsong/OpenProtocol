@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2024
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenProtocol", "OpenProtocol\OpenProtocol.csproj", "{E22B3199-3391-4246-8951-E301947FD3A6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenProtocolViewer", "examples\OpenProtocolViewer\OpenProtocolViewer.csproj", "{485B1DD2-5C91-4993-BEDD-98BF26630293}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{AB85C87A-C351-41D1-81DF-62840758A465}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E22B3199-3391-4246-8951-E301947FD3A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E22B3199-3391-4246-8951-E301947FD3A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E22B3199-3391-4246-8951-E301947FD3A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E22B3199-3391-4246-8951-E301947FD3A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{485B1DD2-5C91-4993-BEDD-98BF26630293}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{485B1DD2-5C91-4993-BEDD-98BF26630293}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{485B1DD2-5C91-4993-BEDD-98BF26630293}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{485B1DD2-5C91-4993-BEDD-98BF26630293}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{485B1DD2-5C91-4993-BEDD-98BF26630293} = {AB85C87A-C351-41D1-81DF-62840758A465}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {580993A6-3410-42FB-96F4-982B654AA74D}
+	EndGlobalSection
+EndGlobal
