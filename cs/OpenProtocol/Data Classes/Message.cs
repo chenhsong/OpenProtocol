@@ -1,7 +1,7 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Newtonsoft.Json;
 
 namespace iChen.OpenProtocol
 {
@@ -16,13 +16,18 @@ namespace iChen.OpenProtocol
 
 		public static Func<long> GetSequence = () => ++m_Seq;
 
+		private string _typeName = null;
+
 		[JsonProperty("$type", Order = -999)]
 		public string TypeName
 		{
 			get {
-				var name = GetType().Name;
-				if (name.EndsWith(MessageTypePostfix)) name = name.Substring(0, name.Length - MessageTypePostfix.Length);
-				return name;
+				if (_typeName == null) {
+					_typeName = GetType().Name;
+					if (_typeName.EndsWith(MessageTypePostfix)) _typeName = _typeName.Substring(0, _typeName.Length - MessageTypePostfix.Length);
+				}
+
+				return _typeName;
 			}
 		}
 

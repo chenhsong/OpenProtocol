@@ -19,6 +19,9 @@ namespace iChen.OpenProtocol
 		public string Model { get; }
 		public string IP { get; }
 
+		public double? GeoLatitude { get; }
+		public double? GeoLongitude { get; }
+
 		[DefaultValue(OpModes.Unknown)]
 		public OpModes OpMode { get; } = OpModes.Unknown;
 
@@ -33,9 +36,10 @@ namespace iChen.OpenProtocol
 		public string MoldId { get; }
 
 		private static readonly Regex IPRegex = new Regex(@"^(?<ip>\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})(\:(?<port>\d{1,5}))?$", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase | RegexOptions.Singleline);
+		private static readonly Regex TtyRegex = new Regex(@"tty\w+", RegexOptions.Singleline | RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase);
 		private static readonly Regex SerialPortRegex = new Regex(@"COM(?<port>\d+)", RegexOptions.Singleline | RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase);
 
-		public Controller (uint ControllerId, ControllerTypes ControllerType, string Version, string Model, string IP, OpModes OpMode, JobModes JobMode, string JobCardId, string DisplayName, IReadOnlyDictionary<string, double> LastCycleData = null, DateTime LastConnectionTime = default(DateTime), uint OperatorId = 0, string MoldId = null)
+		public Controller (uint ControllerId, ControllerTypes ControllerType, string Version, string Model, string IP, OpModes OpMode, JobModes JobMode, string JobCardId, string DisplayName, double? GeoLatitude = null, double? GeoLongitude = null, IReadOnlyDictionary<string, double> LastCycleData = null, DateTime LastConnectionTime = default(DateTime), uint OperatorId = 0, string MoldId = null)
 		{
 			if (ControllerId <= 0) throw new ArgumentOutOfRangeException(nameof(ControllerId));
 			if (ControllerType < 0) throw new ArgumentOutOfRangeException(nameof(ControllerType));
@@ -48,18 +52,19 @@ namespace iChen.OpenProtocol
 			if (JobCardId != null && string.IsNullOrWhiteSpace(JobCardId)) throw new ArgumentNullException(nameof(JobCardId));
 			if (MoldId != null && string.IsNullOrWhiteSpace(MoldId)) throw new ArgumentNullException(nameof(MoldId));
 
-			string strIP = null;
-			var match = IPRegex.Match(IP.Trim());
+			string strIP = IP.Trim();
+			var match = IPRegex.Match(strIP);
 			if (match.Success) {
 				IPAddress addr;
 				if (!IPAddress.TryParse(match.Groups["ip"].Value, out addr)) throw new ArgumentOutOfRangeException(nameof(IP));
 				strIP = addr.ToString() + (match.Groups["port"].Success ? ":" + match.Groups["port"].Value : null);
 			} else {
-				match = SerialPortRegex.Match(IP.Trim());
+				match = SerialPortRegex.Match(strIP);
 				if (match.Success) {
 					strIP = "COM" + match.Groups["port"].Value;
 				} else {
-					throw new ArgumentOutOfRangeException(nameof(IP));
+					match = TtyRegex.Match(strIP);
+					if (!match.Success) throw new ArgumentOutOfRangeException(nameof(IP));
 				}
 			}
 
@@ -76,6 +81,9 @@ namespace iChen.OpenProtocol
 			this.LastConnectionTime = LastConnectionTime;
 			this.OperatorId = OperatorId;
 			this.MoldId = MoldId?.Trim();
+
+			this.GeoLatitude = GeoLatitude;
+			this.GeoLongitude = GeoLongitude;
 		}
 	}
 }
