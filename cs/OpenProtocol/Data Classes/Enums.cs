@@ -46,7 +46,8 @@ namespace iChen.OpenProtocol
 		SPS3300 = 0,
 		NewAge = 5,
 		CBmold300 = 10,
-		CBmold800 = 11
+		CBmold800 = 11,
+		MPC7 = 12
 	}
 
 	public enum OpModes

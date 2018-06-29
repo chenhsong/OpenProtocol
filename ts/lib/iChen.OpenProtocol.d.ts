@@ -32,6 +32,7 @@
 		lastConnectionTime?: string;
 		moldId?: string;
 		operatorId: number;
+		operatorName?: string;
 	}
 
 	// WebSocket message base
@@ -140,7 +141,9 @@
 		jobCardId?: string | null;
 		alarm?: KeyValue<string, boolean>;
 		audit?: KeyValue<string, number>;
+		variable?: KeyValue<string, number>;
 		operatorId?: number;
+		operatorName?: string;
 		moldId?: string | null;
 		controller?: IControllerStatus;
 	}

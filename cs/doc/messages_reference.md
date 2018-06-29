@@ -7,8 +7,9 @@ iChen^&reg;^ 4.1 Open Protocol&trade; .NET Library Messages Reference
 
 Copyright &copy; Chen Hsong Holdings Ltd.  All rights reserved.  
 .NET Framework Required: .NET Standard 1.6  
-Document Version: 4.1  
-Last Edited: 2018-01-23
+For `iChen.OpenProtocol.dll` version: 4.1.1 and up  
+Document Version: 4.1.1  
+Last Edited: 2018-06-30
 
 
 Table of Contents
@@ -72,8 +73,10 @@ An *immutable* class containing information on a controller (i.e. machine).
 |`JobMode`      |[`JobModes`](code/enums.html#JobModes) enum|`jobMode`       |`string` |Current job mode of the controller   |
 |`JobCardId`         |`String`  |`jobCardId`     |`string` |Unique ID of the current job card loaded (if any)|
 |`LastCycleData`     |`IReadOnlyDictionary` `<String,Double>`|`lastCycleData`|`object`|A data dictionary (if any) containing the last set of cycle data on the controller|
+|`Variables`         |`IReadOnlyDictionary` `<String,Double>`|`variables`|`object`|A data dictionary (if any) containing the latest values of all pollable variables on the controller|
 |`LastConnectionTime`|`DateTime`|`lastConnectionTime`|`string`|Last time of connection for the controller (in ISO-8601 format)|
 |`OperatorId`        |`UInt32`  |`operatorId`    |`number` |Unique ID of the current logged-on operator, or zero if no operator is logged on|
+|`OperatorName`      |`String`  |`operatorName`  |`string` |Name of the current logged-on operator, or `null` if no operator is logged on or if the name is not available|
 |`MoldId`            |`String`  |`moldId`        |`string` |Unique ID of the current mold data set loaded (if any)|
 
 ### JSON Format Example
@@ -93,8 +96,13 @@ An *immutable* class containing information on a controller (i.e. machine).
     "INJEND":401.28,
     "CYCTIME":21.54
   },
+  "variables": {
+    "RT_TempZ1":231.5,
+    "RT_Pump":1.0
+  },
   "lastConnectionTime":"2016-01-01T12:23:34+08:00",
   "operatorId":99,
+  "operatorName":"Johnny",
   "moldId":"ABC123"
 }
 ~~~~~~~~~~~~
@@ -237,7 +245,7 @@ containing the type(s) of messages interested in receiving:
 |Filter      |Message Type                       |Message Class(es) Affected|
 |:----------:|:----------------------------------|:-----------------------:|
 |`None`      |Nothing                            |*N/A*                    |
-|`Status`    |Controller status                  |[`ControllerStatusMessage`](#controllerstatusmessage)|
+|`Status`    |Controller status and variables    |[`ControllerStatusMessage`](#controllerstatusmessage)|
 |`Cycle`     |Cycle data                         |[`CycleDataMessage`](#cycledatamessage)|
 |`Mold`      |Mold settings                      |[`MoldDataMessage`](#molddatamessage)|
 |`Actions`   |Current action                     |[`ControllerActionMessage`](#controlleractionmessage)|
@@ -519,8 +527,13 @@ message.
                "INJEND":401.28,
                "CYCTIME":21.54
              },
+             "variables": {
+               "RT_TempZ1":231.5,
+               "RT_Pump":1.0
+             },
              "lastConnectionTime":"2016-01-01T12:23:34+08:00",
              "operatorId":99,
+			 "operatorName":"Johnny",
              "moldId":"ABC123"
            },
     "234": {
@@ -536,8 +549,12 @@ message.
                "INJEND":129.8,
                "CYCTIME":7.33
              },
+             "variables": {
+               "RT_TempOil":45.2,
+               "RT_CPT0":100.0
+             },
              "lastConnectionTime":"2016-01-01T00:11:12+08:00",
-             "operatorId":0,
+             "operatorId":0
            }
   }
 }
@@ -926,19 +943,21 @@ are not relevant.
 |:-------------------|:-------:|:--------------:|:-------:|:---------------------------------------|
 |`Sequence`          |`Int64`  |`sequence`      |`number` |*Inherited from [`Message`](#message)*              |
 |`Priority`          |`Int32`  |`priority`      |`number` |*Inherited from [`Message`](#message)*              |
-|`TimeStamp`        |`DateTime`|`timestamp`     |`string` |Date/time (in ISO-8601 format)    |
+|`TimeStamp`         |`DateTime`|`timestamp`     |`string` |Date/time (in ISO-8601 format)    |
 |`ControllerId`      |`UInt32` |`controllerId`  |`number` |Unique ID of the controller             |
 |`DisplayName`       |`String` |`displayName`   |`string` |Human-friendly name for display (or `null` if not relevant)|
-|`OpMode`       |[`OpModes`](code/enums.html#OpModes) enum|`opMode`        |`string` |Current operation mode of the controller (or `Unknown`/`null` if not relevant)|
-|`JobMode`     |[`JobModes`](code/enums.html#JobModes) enum|`jobMode`       |`string` |Current job mode of the controller (or `Unkonwn`/`null` if not relevant)|
+|`OpMode`            |[`OpModes`](code/enums.html#OpModes) enum|`opMode`        |`string` |Current operation mode of the controller (or `Unknown`/`null` if not relevant)|
+|`JobMode`           |[`JobModes`](code/enums.html#JobModes) enum|`jobMode`       |`string` |Current job mode of the controller (or `Unkonwn`/`null` if not relevant)|
 |`JobCardId`         |`String` |`jobCardId`     |`string` |Unique ID of the current job card loaded, empty string if no mold data set is currently loaded (or `null` if not relevant)|
 |`IsDisconnected`    |`Boolean`|`isDisconnected`|`boolean`|If true, the controller has disconnected from the iChen^&reg;^ Server|
-|`Alarm`        |`KeyValuePair` `<String,Boolean>` |`alarm`  |`object` |State of an alarm (if any) on the controller (or `null` if not relevant). See [here](code/alarms.html) for valid alarm codes.|
-|`Audit`      |`KeyValuePair` `<String,Double>` |`audit`  |`object` |Change of setting (if any) on the controller for audit trail purpose (or `null` if not relevant)|
-|`OperatorId`   |`Nullable<UInt32>`|`operatorId`|`number` |Unique ID of the current logged-on user, zero if no user is logged on (or `null` if not relevant)|
+|`Alarm`             |`KeyValuePair` `<String,Boolean>` |`alarm`  |`object` |State of an alarm (if any) on the controller (or `null` if not relevant). See [here](code/alarms.html) for valid alarm codes.|
+|`Audit`             |`KeyValuePair` `<String,Double>` |`audit`  |`object` |Change of a setting (if any) on the controller for audit trail purpose (or `null` if not relevant)|
+|`Variable`          |`KeyValuePair` `<String,Double>` |`variable`|`object` |Change of a variable (if any) on the controller (or `null` if not relevant)|
+|`OperatorId`        |`Nullable<UInt32>`|`operatorId`|`number` |Unique ID of the current logged-on user, zero if no user is logged on (or `null` if not relevant)|
+|`OperatorName`      |`String` |`operatorName`  |`string` |Name of the current logged-on user (or `null` if not available)|
 |`MoldId`            |`String` |`moldId`        |`string` |Unique ID of the current mold data set loaded, empty string if no mold data set is currently loaded (or `null` if not relevant)|
 |`DisplayName`       |`String` |`displayName`   |`string` |Human-friendly name for display (or `null` if not relevant)|
-|`Controller`     |`Controller`|`controller`    |`object` |A `Controller` object containing complete info of the controller. This field is only sent once by the server as soon as a new controller has connected into the network. All subsequent messages have this field set to `null`.  If this field is not `null`, then all other info fields will be `null`|
+|`Controller`        |`Controller`|`controller`    |`object` |A `Controller` object containing complete info of the controller. This field is only sent once by the server as soon as a new controller has connected into the network. All subsequent messages have this field set to `null`.  If this field is not `null`, then all other info fields will be `null`|
 
 ### JSON Format Example (without the `Controller` field)
 
@@ -954,7 +973,9 @@ are not relevant.
   "isDisconnected":false,
   "alarm":{ "key":"DOOROPEN", "value":true },
   "audit":{ "key":"PRES", "value":50.0 },
+  "variable": { "RT_TempZ1", "value": 231.4 },
   "operatorId":987,
+  "operatorName":"Johnny",
   "moldId":"ABC123",
   "sequence":123,
   "priority":10
