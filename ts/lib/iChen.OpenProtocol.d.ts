@@ -143,7 +143,7 @@
 		audit?: KeyValue<string, number>;
 		variable?: KeyValue<string, number>;
 		operatorId?: number;
-		operatorName?: string;
+		operatorName?: string | null;
 		moldId?: string | null;
 		controller?: IControllerStatus;
 	}

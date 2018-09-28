@@ -1,9 +1,9 @@
 "use strict";
 /// <reference path="../lib/iChen.OpenProtocol.d.ts" />
 var iChen;
-(function (iChen) {
+(function(iChen) {
     var OpenProtocol;
-    (function (OpenProtocol) {
+    (function(OpenProtocol) {
         var seq = 0;
         function throwParamError(msg) { throw "Invalid parameters for " + msg; }
         function getNextSequenceNumber() { return ++seq; }
@@ -43,9 +43,9 @@ var iChen;
                 case "ReadMoldData": {
                     if (!params || typeof params !== "object")
                         throw throwParamError(type);
-                    var rmsg = msg;
-                    rmsg.controllerId = params.controllerId;
-                    rmsg.field = params.field;
+                    var rdmsg = msg;
+                    rdmsg.controllerId = params.controllerId;
+                    rdmsg.field = params.field;
                     break;
                 }
                 case "JobCardsList": {

@@ -55,9 +55,9 @@ namespace iChen.OpenProtocol
 			case "ReadMoldData": {
 				if (!params || typeof params !== "object") throw throwParamError(type);
 
-				const rmsg = msg as IReadMoldDataMessage;
-				rmsg.controllerId = params.controllerId;
-				rmsg.field = params.field;
+				const rdmsg = msg as IReadMoldDataMessage;
+				rdmsg.controllerId = params.controllerId;
+				rdmsg.field = params.field;
 				break;
 			}
 
