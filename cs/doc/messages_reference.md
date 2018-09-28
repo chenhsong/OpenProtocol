@@ -32,11 +32,11 @@ Enum Types
 
 | Type Name |Description                   |Flag? |
 |:----------|:-----------------------------|:----:|
-|[`Languages`](code/enums.html#Languages)|Language encoding codes       |No    |
-|[`ControllerTypes`](code/enums.html#ControllerTypes)|Type(s) of controllers  |No    |
-|[`OpModes`](code/enums.html#OpModes)|Operation modes               |No    |
-|[`JobModes`](code/enums.html#JobModes)|Job modes                     |No    |
-|[`Filters`](code/enums.html#Filters)|Type(s) of messages to receive|Yes   |
+|[`Languages`](../doc/enums.md#Languages)|Language encoding codes       |No    |
+|[`ControllerTypes`](../doc/enums.md#ControllerTypes)|Type(s) of controllers  |No    |
+|[`OpModes`](../doc/enums.md#OpModes)|Operation modes               |No    |
+|[`JobModes`](../doc/enums.md#JobModes)|Job modes                     |No    |
+|[`Filters`](../doc/enums.md#Filters)|Type(s) of messages to receive|Yes   |
 
 
 Controller
@@ -55,12 +55,12 @@ An *immutable* class containing information on a controller (i.e. machine).
 |:-------------------|:--------:|:--------------:|:-------:|:------------------------------------|
 |`ControllerId`      |`UInt32`  |`controllerId`  |`number` |Unique numeric ID for this controller|
 |`DisplayName`       |`String`  |`displayName`   |`string` |Human-friendly name for display      |
-|`ControllerType`|[`ControllerTypes`](code/enums.html#ControllerTypes) enum|`controllerType`|`string`|Type of controller            |
+|`ControllerType`|[`ControllerTypes`](../doc/enums.md#ControllerTypes) enum|`controllerType`|`string`|Type of controller            |
 |`Version`           |`String`  |`version`       |`string` |The version of the controller        |
 |`Model`             |`String`  |`model`         |`string` |The machine model                    |
 |`IP`                |`String`  |`IP`            |`string` |IP address of the controller, in the format "`x.x.x.x`"|
-|`OpMode`        |[`OpModes`](code/enums.html#OpModes) enum|`opMode`        |`string` |Current operation mode of the controller|
-|`JobMode`      |[`JobModes`](code/enums.html#JobModes) enum|`jobMode`       |`string` |Current job mode of the controller   |
+|`OpMode`        |[`OpModes`](../doc/enums.md#OpModes) enum|`opMode`        |`string` |Current operation mode of the controller|
+|`JobMode`      |[`JobModes`](../doc/enums.md#JobModes) enum|`jobMode`       |`string` |Current job mode of the controller   |
 |`JobCardId`         |`String`  |`jobCardId`     |`string` |Unique ID of the current job card loaded (if any)|
 |`LastCycleData`     |`IReadOnlyDictionary` `<String,Double>`|`lastCycleData`|`object`|A data dictionary (if any) containing the last set of cycle data on the controller|
 |`Variables`         |`IReadOnlyDictionary` `<String,Double>`|`variables`|`object`|A data dictionary (if any) containing the latest values of all pollable variables on the controller|
@@ -221,11 +221,11 @@ message.
 |:-------------------|:-------:|:-----------:|:-------:|:------------------------------|
 |`Sequence`          |`Int64`  |`sequence`   |`number` |*Inherited from [`Message`](#message)*     |
 |`Priority`          |`Int32`  |`priority`   |`number` |*Inherited from [`Message`](#message)*     |
-|`Language`   |[`Languages`](code/enums.html#Languages) enum|`language`   |`string` |Language encoding              |
+|`Language`   |[`Languages`](../doc/enums.md#Languages) enum|`language`   |`string` |Language encoding              |
 |`Version`           |`String` |`version`    |`string` |The maximum protocol version supported, in the format "`4.1.2.3`"|
 |`OrgId`             |`String` |`orgId`      |`string` |Organization ID (if any)       |
 |`Password`          |`String` |`password`   |`string` |Password to join the server    |
-|`Filter`      |[`Filters`](code/enums.html#Filters) enum |`filter`     |`string` |A filter (if any) containing what type(s) of messages to receive|
+|`Filter`      |[`Filters`](../doc/enums.md#Filters) enum |`filter`     |`string` |A filter (if any) containing what type(s) of messages to receive|
 
 ### Filter
 
@@ -936,11 +936,11 @@ are not relevant.
 |`TimeStamp`         |`DateTime`|`timestamp`     |`string` |Date/time (in ISO-8601 format)    |
 |`ControllerId`      |`UInt32` |`controllerId`  |`number` |Unique ID of the controller             |
 |`DisplayName`       |`String` |`displayName`   |`string` |Human-friendly name for display (or `null` if not relevant)|
-|`OpMode`            |[`OpModes`](code/enums.html#OpModes) enum|`opMode`        |`string` |Current operation mode of the controller (or `Unknown`/`null` if not relevant)|
-|`JobMode`           |[`JobModes`](code/enums.html#JobModes) enum|`jobMode`       |`string` |Current job mode of the controller (or `Unkonwn`/`null` if not relevant)|
+|`OpMode`            |[`OpModes`](../doc/enums.md#OpModes) enum|`opMode`        |`string` |Current operation mode of the controller (or `Unknown`/`null` if not relevant)|
+|`JobMode`           |[`JobModes`](../doc/enums.md#JobModes) enum|`jobMode`       |`string` |Current job mode of the controller (or `Unkonwn`/`null` if not relevant)|
 |`JobCardId`         |`String` |`jobCardId`     |`string` |Unique ID of the current job card loaded, empty string if no mold data set is currently loaded (or `null` if not relevant)|
 |`IsDisconnected`    |`Boolean`|`isDisconnected`|`boolean`|If true, the controller has disconnected from the iChen&reg; Server|
-|`Alarm`             |`KeyValuePair` `<String,Boolean>` |`alarm`  |`object` |State of an alarm (if any) on the controller (or `null` if not relevant). See [here](code/alarms.html) for valid alarm codes.|
+|`Alarm`             |`KeyValuePair` `<String,Boolean>` |`alarm`  |`object` |State of an alarm (if any) on the controller (or `null` if not relevant). See [here](../doc/alarms.md) for valid alarm codes.|
 |`Audit`             |`KeyValuePair` `<String,Double>` |`audit`  |`object` |Change of a setting (if any) on the controller for audit trail purpose (or `null` if not relevant)|
 |`Variable`          |`KeyValuePair` `<String,Double>` |`variable`|`object` |Change of a variable (if any) on the controller (or `null` if not relevant)|
 |`OperatorId`        |`Nullable<UInt32>`|`operatorId`|`number` |Unique ID of the current logged-on user, zero if no user is logged on (or `null` if not relevant)|
@@ -994,7 +994,7 @@ connected controller changes.
 |`Priority`          |`Int32`  |`priority`    |`number` |*Inherited from [`Message`](#message)*     |
 |`TimeStamp`        |`DateTime`|`timestamp`   |`string` |Date/time (in ISO-8601 format) |
 |`ControllerId`      |`UInt32` |`controllerId`|`number` |Unique ID of the controller    |
-|`actionId`          |`UInt32` |`actionId`    |`number` |Unique ID of the action ([details...](code/actions.html))|
+|`actionId`          |`UInt32` |`actionId`    |`number` |Unique ID of the action ([details...](../doc/actions.md))|
 
 ### JSON Format Example
 
