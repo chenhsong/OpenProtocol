@@ -183,8 +183,7 @@ Helper Method to Send Messages
 ------------------------------
 
 ~~~~~~~~~~~~csharp
-static async Task SendMessageAsync (ClientWebSocket websock, Message msg,
-                                    CancellationToken ct = null)
+static async Task SendMessageAsync (ClientWebSocket websock, Message msg, CancellationToken ct = null)
 {
     // Check parameters
     if (websock == null) throw new ArgumentNullException(nameof(websock));
@@ -197,7 +196,6 @@ static async Task SendMessageAsync (ClientWebSocket websock, Message msg,
     var message_data = System.Encoding.UTF8.GetBytes(json_text);
 
     // Send the UTF-8 byte stream to the WebSocket connection
-    await websock.SendAsync(new ArraySegment<byte>(message_data),
-                            WebSocketMessageType.Text, true, ct);
+    await websock.SendAsync(new ArraySegment<byte>(message_data), WebSocketMessageType.Text, true, ct);
 }
 ~~~~~~~~~~~~
