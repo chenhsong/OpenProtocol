@@ -1,8 +1,4 @@
-% iChen 4.1 Open Protocol .NET Library Messages Reference
-% Chen Hsong
-% 2016
-
-iChen^&reg;^ 4.1 Open Protocol&trade; .NET Library Messages Reference
+iChen&reg; 4.1 Open Protocol&trade; .NET Library Messages Reference
 =======================================================================
 
 Copyright &copy; Chen Hsong Holdings Ltd.  All rights reserved.  
@@ -12,18 +8,12 @@ Document Version: 4.1.1
 Last Edited: 2018-06-30
 
 
-Table of Contents
------------------
-
-<div id="toc-placeholder"></div>
-
-
-Introduction {.prose}
+Introduction
 ------------
 
-The iChen^&reg;^ System 4.1 publishes an open communications protocol for 
+The iChen&reg; System 4.1 publishes an open communications protocol for 
 third-party connectivity. An external system communicates with the 
-iChen^&reg;^ System via industry-standard WebSocket (IETF&nbsp;RFC&nbsp;6455) 
+iChen&reg; System via industry-standard WebSocket (IETF&nbsp;RFC&nbsp;6455) 
 connections with text-based payloads. All messages passed in the protocol are 
 serialized to plain-text in **JSON** format. 
 
@@ -55,7 +45,7 @@ Controller
 > Assembly: `iChen.OpenProtocol.dll`  
 > Namespace: `iChen.OpenProtocol`  
 
-### Description {.prose}
+### Description
 
 An *immutable* class containing information on a controller (i.e. machine). 
 
@@ -171,9 +161,9 @@ Message (abstract base class)
 > Assembly: `iChen.OpenProtocol.dll`  
 > Namespace: `iChen.OpenProtocol`  
 
-### Description {.prose}
+### Description
 
-This class is the abstract base class for all iChen^&reg;^ 4.1 Open 
+This class is the abstract base class for all iChen&reg; 4.1 Open 
 Protocol&trade; message type classes. 
 
 All message classes are *immutable*. 
@@ -213,10 +203,10 @@ JoinMessage
 > Namespace: `iChen.OpenProtocol`  
 > Base class: `iChen.OpenProtocol.Message`
 
-### Description {.prose}
+### Description
 
 This class implements the `JOIN` request message, which must be sent to the 
-iChen^&reg;^ 4.1 Server immediately after establishing a connection. 
+iChen&reg; 4.1 Server immediately after establishing a connection. 
 
 If this message is not sent, or if the server fails to authenticate the 
 connection, then the server may or may not terminate the connection and/or 
@@ -260,7 +250,7 @@ If `Filter` is `null`, then *all* messages will be sent, except MIS
 integration messages such as `JobCards`, `Operators` and `OPCUA` -- i.e. 
 similar to `All`. 
 
-### Authentication and Authorization {.prose}
+### Authentication and Authorization
 
 If the `Password` provided is not authenticated or not authorized to access 
 the server, then a [`JoinResponseMessage`](#joinresponsemessage) will be sent 
@@ -294,10 +284,10 @@ JoinResponseMessage
 > Namespace: `iChen.OpenProtocol`  
 > Base class: `iChen.OpenProtocol.Message`
 
-### Description {.prose}
+### Description
 
 This class implements the `RESP_JOIN` message, which is sent from the 
-iChen^&reg;^ 4.1 Server to a client in response to a [`JoinMessage`](#joinmessage) 
+iChen&reg; 4.1 Server to a client in response to a [`JoinMessage`](#joinmessage) 
 message. 
 
 ### Properties
@@ -332,10 +322,10 @@ AliveMessage
 > Namespace: `iChen.OpenProtocol`  
 > Base class: `iChen.OpenProtocol.Message`
 
-### Description {.prose}
+### Description
 
 This class implements the `ALIVE` message, which must be sent to the 
-iChen^&reg;^ 4.1 Server at regular intervals. 
+iChen&reg; 4.1 Server at regular intervals. 
 
 If the server does not receive this message after a time-out period 
 (configurable, initially set to 10 seconds), the client is assumed to be dead 
@@ -356,10 +346,10 @@ LoginOperatorMessage
 > Namespace: `iChen.OpenProtocol`  
 > Base class: `iChen.OpenProtocol.Message`
 
-### Description {.prose}
+### Description
 
 This class implements the `REQ_PWD_LEVEL` request message, which is sent by 
-the iChen^&reg;^ 4.1 Server when a connected controller attempts to 
+the iChen&reg; 4.1 Server when a connected controller attempts to 
 authenticate and authorize a user password. 
 
 The client should respond with a [`OperatorInfoMessage`](#operatorinfomessage) 
@@ -394,10 +384,10 @@ OperatorInfoMessage
 > Namespace: `iChen.OpenProtocol`  
 > Base class: `iChen.OpenProtocol.Message`
 
-### Description {.prose}
+### Description
 
 This class implements the `RESP_PWD_LEVEL` message, which is to the 
-iChen^&reg;^ 4.1 Server in response to a `LoginOperator` message. 
+iChen&reg; 4.1 Server in response to a `LoginOperator` message. 
 
 ### Properties
 
@@ -411,7 +401,7 @@ iChen^&reg;^ 4.1 Server in response to a `LoginOperator` message.
 |`Name`              |`String` |`name`       |`string` |Name of the user                        |
 |`Level`             |`Byte`   |`level`      |`number` |The allowed access level for this user (typically 0-10)|
 
-### Authentication and Authorization {.prose}
+### Authentication and Authorization
 
 The client should authenticate the user based on the provided `ControllerId` 
 and the `Password` in the [`LoginOperatorMessage`](#loginoperatormessage) 
@@ -419,12 +409,12 @@ request message.
 
 If the `Password` provided is not authenticated or not authorized to access 
 the controller, then this [`OperatorInfoMessage`](#operatorinfomessage) should 
-be sent to the iChen^&reg;^ 4.1 Server with the lowest access level (default 
+be sent to the iChen&reg; 4.1 Server with the lowest access level (default 
 to zero). 
 
 If the `Password` provided is authenticated and authorized to access the 
 controller, then this [`OperatorInfoMessage`](#operatorinfomessage) should be 
-sent to the iChen^&reg;^ 4.1 Server with the appropriate access level 
+sent to the iChen&reg; 4.1 Server with the appropriate access level 
 (typically 0-10). 
 
 ### JSON Format Example
@@ -450,10 +440,10 @@ RequestControllersListMessage
 > Namespace: `iChen.OpenProtocol`  
 > Base class: `iChen.OpenProtocol.Message`
 
-### Description {.prose}
+### Description
 
 This class implements the `REQ_CNTRLER_LIST` message, which is sent to the 
-iChen^&reg;^ 4.1 Server to request a list of controllers (i.e. machines) 
+iChen&reg; 4.1 Server to request a list of controllers (i.e. machines) 
 currently connected to the server. 
 
 The server responds with a [`ControllersListMessage`](#controllerslistmessage) 
@@ -473,10 +463,10 @@ ControllersListMessage
 > Namespace: `iChen.OpenProtocol`  
 > Base class: `iChen.OpenProtocol.DataDictionaryMessage<UInt32, Controller>` : `iChen.OpenProtocol.Message`
 
-### Description {.prose}
+### Description
 
 This class implements the `RESP_CNTRLER_LIST` message, which is sent from the 
-iChen^&reg;^ 4.1 Server to the client in response to the [`RequestControllersListMessage`](#requestcontrollerslistmessage) 
+iChen&reg; 4.1 Server to the client in response to the [`RequestControllersListMessage`](#requestcontrollerslistmessage) 
 message. 
 
 ### Properties
@@ -568,10 +558,10 @@ RequestJobCardsListMessage
 > Namespace: `iChen.OpenProtocol`  
 > Base class: `iChen.OpenProtocol.Message`
 
-### Description {.prose}
+### Description
 
 This class implements the `REQ_JOBCARDS_LIST` message, which is sent by the 
-iChen^&reg;^ 4.1 Server when a connected controller requests a list of job 
+iChen&reg; 4.1 Server when a connected controller requests a list of job 
 cards. 
 
 The client should respond with a [`JobCardsListMessage`](#jobcardslistmessage) 
@@ -599,10 +589,10 @@ JobCardsListMessage
 > Namespace: `iChen.OpenProtocol`  
 > Base class: `iChen.OpenProtocol.DataDictionaryMessage<String, JobCard>` : `iChen.OpenProtocol.Message`
 
-### Description {.prose}
+### Description
 
 This class implements the `RESP_JOBSLIST` message, which should be sent to the 
-iChen^&reg;^ 4.1 Server in response to a [`RequestJobCardsListMessage`](#requestjobcardslistmessage) 
+iChen&reg; 4.1 Server in response to a [`RequestJobCardsListMessage`](#requestjobcardslistmessage) 
 message. 
 
 ### Properties
@@ -632,7 +622,7 @@ message.
 |:-------------------|:-------:|:------------------------------|
 |`this[String key]`  |`JobCard`|Same as `Data[key]`            |
 
-### Job Card {#JobCard .prose}
+### Job Card
 
 A **Job Card** is a unit of work to be performed by the machine, typically a 
 production order for a particular product using a particular mold for a 
@@ -687,10 +677,10 @@ CycleDataMessage
 > Namespace: `iChen.OpenProtocol`  
 > Base class: `iChen.OpenProtocol.ControllerDictionaryMessage` : `iChen.OpenProtocol.DataDictionaryMessage<String, Double>` : `iChen.OpenProtocol.Message`
 
-### Description {.prose}
+### Description
 
 This class implements the `CYCLE_DATA` message, which is sent from the 
-iChen^&reg;^ 4.1 Server to the client at the end of each machine cycle for all 
+iChen&reg; 4.1 Server to the client at the end of each machine cycle for all 
 connected controllers. 
 
 ### Properties
@@ -751,10 +741,10 @@ RequestMoldDataMessage
 > Namespace: `iChen.OpenProtocol`  
 > Base class: `iChen.OpenProtocol.Message`
 
-### Description {.prose}
+### Description
 
 This class implements the `REQ_MOLD` message, which is sent to the 
-iChen^&reg;^ 4.1 Server to request the set of mold settings data of a 
+iChen&reg; 4.1 Server to request the set of mold settings data of a 
 controller currently connected to the server. 
 
 The server responds with a [`MoldDataMessage`](#molddatamessage) message. 
@@ -781,10 +771,10 @@ MoldDataMessage
 > Namespace: `iChen.OpenProtocol`  
 > Base class: `iChen.OpenProtocol.CycleDataMessage` : `iChen.OpenProtocol.ControllerDictionaryMessage` : `iChen.OpenProtocol.DataDictionaryMessage<String, Double>` : `iChen.OpenProtocol.Message`
 
-### Description {.prose}
+### Description
 
 This class implements the `RESP_MOLD` message, which is sent from the 
-iChen^&reg;^ 4.1 Server to the client in response to a [`RequestMoldDataMessage`](#requestmolddatamessage) 
+iChen&reg; 4.1 Server to the client in response to a [`RequestMoldDataMessage`](#requestmolddatamessage) 
 message. 
 
 Mold settings can be numerous (i.e. more than 1,000), but not all 
@@ -849,11 +839,11 @@ ReadMoldDataMessage
 > Namespace: `iChen.OpenProtocol`  
 > Base class: `iChen.OpenProtocol.Message`
 
-### Description {.prose}
+### Description
 
-The iChen^&reg;^ 4.1 Server keeps a cache of the states of all mold settings 
+The iChen&reg; 4.1 Server keeps a cache of the states of all mold settings 
 for each controller. This class implements the READ_MOLD_DATA message which is 
-sent to the iChen^&reg;^ 4.1 Server to read the current value of a particular 
+sent to the iChen&reg; 4.1 Server to read the current value of a particular 
 mold setting. 
 
 The server responds with a [`MoldDataValueMessage`](#molddatavaluemessage) 
@@ -888,13 +878,13 @@ MoldDataValueMessage
 > Namespace: `iChen.OpenProtocol`  
 > Base class: `iChen.OpenProtocol.ReadMoldDataMessage` : `iChen.OpenProtocol.Message`
 
-### Description {.prose}
+### Description
 
 This class implements the `RESP_MOLD_DATA_VALUE` message, which is sent from 
-the iChen^&reg;^ 4.1 Server to the client in response to a [`ReadMoldDataMessage`](#readmolddatamessage) 
+the iChen&reg; 4.1 Server to the client in response to a [`ReadMoldDataMessage`](#readmolddatamessage) 
 message. 
 
-The iChen^&reg;^ 4.1 Server keeps a cache of the states of all mold settings 
+The iChen&reg; 4.1 Server keeps a cache of the states of all mold settings 
 for each controller. The current cached value for the particular mold setting 
 requested is sent. 
 
@@ -929,10 +919,10 @@ ControllerStatusMessage
 > Namespace: `iChen.OpenProtocol`  
 > Base class: `iChen.OpenProtocol.MoldDataMessage<UInt32, Controller>` : `iChen.OpenProtocol.DataDictionaryMessage<UInt32, Controller>` : `iChen.OpenProtocol.Message`
 
-### Description {.prose}
+### Description
 
 This class implements the `UPD_CNTRLER` message, which is sent from the 
-iChen^&reg;^ 4.1 Server to the client whenever status of a connected 
+iChen&reg; 4.1 Server to the client whenever status of a connected 
 controller changes. Only the changed fields will be set, with other 
 fields/properties being set to `null` or an appropriate default value as they 
 are not relevant. 
@@ -949,7 +939,7 @@ are not relevant.
 |`OpMode`            |[`OpModes`](code/enums.html#OpModes) enum|`opMode`        |`string` |Current operation mode of the controller (or `Unknown`/`null` if not relevant)|
 |`JobMode`           |[`JobModes`](code/enums.html#JobModes) enum|`jobMode`       |`string` |Current job mode of the controller (or `Unkonwn`/`null` if not relevant)|
 |`JobCardId`         |`String` |`jobCardId`     |`string` |Unique ID of the current job card loaded, empty string if no mold data set is currently loaded (or `null` if not relevant)|
-|`IsDisconnected`    |`Boolean`|`isDisconnected`|`boolean`|If true, the controller has disconnected from the iChen^&reg;^ Server|
+|`IsDisconnected`    |`Boolean`|`isDisconnected`|`boolean`|If true, the controller has disconnected from the iChen&reg; Server|
 |`Alarm`             |`KeyValuePair` `<String,Boolean>` |`alarm`  |`object` |State of an alarm (if any) on the controller (or `null` if not relevant). See [here](code/alarms.html) for valid alarm codes.|
 |`Audit`             |`KeyValuePair` `<String,Double>` |`audit`  |`object` |Change of a setting (if any) on the controller for audit trail purpose (or `null` if not relevant)|
 |`Variable`          |`KeyValuePair` `<String,Double>` |`variable`|`object` |Change of a variable (if any) on the controller (or `null` if not relevant)|
@@ -990,10 +980,10 @@ ControllerActionMessage
 > Namespace: `iChen.OpenProtocol`  
 > Base class: `iChen.OpenProtocol.Message`
 
-### Description {.prose}
+### Description
 
 This class implements the `CNTRLER_ACTION` message, which is sent from the 
-iChen^&reg;^ 4.1 Server to the client whenever the current *action* of a 
+iChen&reg; 4.1 Server to the client whenever the current *action* of a 
 connected controller changes. 
 
 ### Properties

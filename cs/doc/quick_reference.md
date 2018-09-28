@@ -1,8 +1,4 @@
-﻿% iChen 4.1 Open Protocol .NET Library Quick Reference
-% Chen Hsong
-% 2016
-
-iChen^&reg;^ 4.1 Open Protocol&trade; .NET Library Quick Reference
+﻿iChen&reg; 4.1 Open Protocol&trade; .NET Library Quick Reference
 ====================================================================
 
 Copyright &copy; Chen Hsong Holdings Ltd.  All rights reserved.  
@@ -14,7 +10,7 @@ Last Edited: 2018-01-23
 Open Protocol&trade; Messages
 -------------------------------
 
-The iChen System^&reg;^ (version 4.1 or above) communicates with third-party 
+The iChen System&reg; (version 4.1 or above) communicates with third-party 
 outside systems via a standardized **WebSocket** interface 
 (IETF&nbsp;RFC&nbsp;6455) with messages transmitted in plain text encoded in 
 **JSON** format. 
