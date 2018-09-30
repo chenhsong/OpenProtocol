@@ -1,4 +1,4 @@
-# OpenProtocol&trade; Access Library (TypeScript)
+# Open Protocol&trade; Access Library (TypeScript)
 
 Language Version: 2.5 or above
 
@@ -34,7 +34,7 @@ or (if minified version)
 
 ### API Usage
 
-An global object called `iChen.OpenProtocol` will be available for you to create various OpenProtocol&trade; messages.
+An global object called `iChen.OpenProtocol` will be available for you to create various Open Protocol&trade; messages.
 In particular, the `iChen.OpenProtocol.createMessage` function can create different messages based on parameters provided.
 
 To converse with an iChen&reg; System server, simply:

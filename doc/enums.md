@@ -2,7 +2,7 @@
 
 Copyright &copy; 2016 Chen Hsong Holdings Ltd.  All rights reserved.
 
-## Enum: Languages
+## Languages
 
 `Languages` represent the language for textual information sent between the
 iChen&reg; 4.1 server and clients.
@@ -20,7 +20,7 @@ iChen&reg; 4.1 server and clients.
 |`PT`|8|Portuguese|
 |`JA`|9|Japanese|
 
-## Enum: Filters
+## Filters
 
 `Filters` controls what type(s) of messages the iChen&reg; 4.1 server will send to each client.
 
@@ -34,9 +34,9 @@ iChen&reg; 4.1 server and clients.
 |`Actions`|Current action|
 |`Alarms`|Controller alarms|
 |`Audit`|Audit trail of setting changes|
-|`All`|All messages above (implies administrator)|
+|`All`|All messages above (implies **administrator** rights)|
 
-### MIS integration messages
+### MIS/MES integration messages
 
 |Code|Description|
 |----|-----------|
@@ -49,7 +49,7 @@ iChen&reg; 4.1 server and clients.
 |----|-----------|
 |`OPCUA`|OPC UA communications|
 
-## Enum: ControllerTypes
+## ControllerTypes
 
 |Code|Numeric Value|Description|
 |----|:-----------:|-----------|
@@ -69,7 +69,7 @@ iChen&reg; 4.1 server and clients.
 |`CBmold800`|11|Beckhoff CBmold<sup>800</sup>|
 |`MPC7`|12|MPC-7|
 
-## Enum: OpModes
+## OpModes
 
 `OpModes` represent the operating modes of a machine.
 
@@ -82,7 +82,7 @@ iChen&reg; 4.1 server and clients.
 |`Others`|4|Others|
 |`Offline`|99|Controller is off-line|
 
-## Enum: JobModes
+## JobModes
 
 `JobModes` are used-defined codes for internal categorization purposes.
 The modes #1 to #15 can be freely defined by the user.
