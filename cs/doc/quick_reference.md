@@ -1,26 +1,26 @@
-﻿iChen&reg; 4.1 Open Protocol&trade; .NET Library Quick Reference
+﻿iChen® 4.1 Open Protocol™ .NET Library Quick Reference
 ====================================================================
 
-Copyright &copy; Chen Hsong Holdings Ltd.  All rights reserved.  
+Copyright © Chen Hsong Holdings Ltd.  All rights reserved.  
 .NET Framework Required: .NET Standard 1.6  
 Document Version: 4.1  
-Last Edited: 2018-01-23 
+Last Edited: 2018-01-23
 
 
-Open Protocol&trade; Messages
+Open Protocol™ Messages
 -------------------------------
 
-The iChen System&reg; (version 4.1 or above) communicates with third-party 
-outside systems via a standardized **WebSocket** interface 
-(IETF&nbsp;RFC&nbsp;6455) with messages transmitted in plain text encoded in 
-**JSON** format. 
+The iChen System® (version 4.1 or above) communicates with third-party
+outside systems via a standardized **WebSocket** interface
+(IETF RFC 6455) with messages transmitted in plain text encoded in
+**JSON** format.
 
-The property `$type` in each JSON-formatted message contains the type of that 
-message. 
+The property `$type` in each JSON-formatted message contains the type of that
+message.
 
-All message classes in this library inherit from `iChen.OpenProtocol.Message` 
-(abstract base class). All message classes are *immutable*, meaning that once 
-created, they cannot be altered. 
+All message classes in this library inherit from `iChen.OpenProtocol.Message`
+(abstract base class). All message classes are *immutable*, meaning that once
+created, they cannot be altered.
 
 
 Creating Messages
@@ -46,7 +46,7 @@ string json = msg.ToJSON();
 Parsing JSON into Messages
 --------------------------
 
-To deserialize a piece of JSON into a message, call `Message.ParseJSON`: 
+To deserialize a piece of JSON into a message, call `Message.ParseJSON`:
 
 ~~~~~~~~~~~~csharp
 string text = ...  /* Get JSON text for message */
@@ -64,9 +64,9 @@ JoinMessage join = Message.ParseJSON(text) as JoinMessage;
 Messages that Contain Data Dictionaries
 ---------------------------------------
 
-Some message types that contain a data dictionary (e.g. `MoldDataMessage`, 
-`CycleDataMessage` etc.) in their `Data` property can be used just like a 
-`Dictionary`, e.g.: 
+Some message types that contain a data dictionary (e.g. `MoldDataMessage`,
+`CycleDataMessage` etc.) in their `Data` property can be used just like a
+`Dictionary`, e.g.:
 
 ~~~~~~~~~~~~csharp
 MoldDataMessage msg = new MoldDataMessage(...);   // Dictionary is in msg.Data
@@ -79,10 +79,10 @@ bool x = msg.ContainsKey("Param");                // Same as msg.Data.ContainsKe
 Creating Data-Dictionary Messages
 ---------------------------------
 
-Some message types' constructors (e.g. `MoldDataMessage`, `CycleDataMessage` 
-etc.) require an `IReadOnlyDictionary` which can be obtained automatically 
-from a normal `Dictionary` object. Simply passing in the `Dictionary` will 
-work because `Dictionary` implements `IReadOnlyDictionary`: 
+Some message types' constructors (e.g. `MoldDataMessage`, `CycleDataMessage`
+etc.) require an `IReadOnlyDictionary` which can be obtained automatically
+from a normal `Dictionary` object. Simply passing in the `Dictionary` will
+work because `Dictionary` implements `IReadOnlyDictionary`:
 
 ~~~~~~~~~~~~csharp
 Dictionary<string, object> dict = new Dictionary<string, object>();

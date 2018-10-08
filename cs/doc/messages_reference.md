@@ -1,7 +1,7 @@
-iChen&reg; 4.1 Open Protocol&trade; .NET Library Messages Reference
-=======================================================================
+iChen® 4.1 Open Protocol™ .NET Library Messages Reference
+=======================================================
 
-Copyright &copy; Chen Hsong Holdings Ltd.  All rights reserved.  
+Copyright © Chen Hsong Holdings Ltd.  All rights reserved.  
 .NET Framework Required: .NET Standard 1.6  
 For `iChen.OpenProtocol.dll` version: 4.1.1 and up  
 Document Version: 4.1.1  
@@ -11,17 +11,17 @@ Last Edited: 2018-06-30
 Introduction
 ------------
 
-The iChen&reg; System 4.1 publishes an open communications protocol for 
-third-party connectivity. An external system communicates with the 
-iChen&reg; System via industry-standard WebSocket (IETF&nbsp;RFC&nbsp;6455) 
-connections with text-based payloads. All messages passed in the protocol are 
-serialized to plain-text in **JSON** format. 
+The iChen® System 4.1 publishes an open communications protocol for
+third-party connectivity. An external system communicates with the
+iChen® System via industry-standard WebSocket (IETF RFC 6455)
+connections with text-based payloads. All messages passed in the protocol are
+serialized to plain-text in **JSON** format.
 
-To assist in connectivity, an access library is provided for the Microsoft 
-.NET Framework. The library contains types, interfaces and classes useful for 
-constructing, serializing and parsing **JSON**-formatted messages. 
+To assist in connectivity, an access library is provided for the Microsoft
+.NET Framework. The library contains types, interfaces and classes useful for
+constructing, serializing and parsing **JSON**-formatted messages.
 
-![](comms_chart.png)
+![MIS/MES Communications Chart](comms_chart.png)
 
 
 Enum Types
@@ -47,7 +47,7 @@ Controller
 
 ### Description
 
-An *immutable* class containing information on a controller (i.e. machine). 
+An *immutable* class containing information on a controller (i.e. machine).
 
 ### Properties
 
@@ -101,23 +101,23 @@ An *immutable* class containing information on a controller (i.e. machine).
 JSON Conversion Behavior
 ------------------------
 
-* Data dictionaries (i.e. `Dictionary<string, object>`) are serialized as 
-  normal JSON object hashes with property names being the keys of entries in 
-  the data dictionaries. 
+* Data dictionaries (i.e. `Dictionary<string, object>`) are serialized as
+  normal JSON object hashes with property names being the keys of entries in
+  the data dictionaries.
 
-* Supported primitive data types are 32-bit integers (`int`), 64-bit double 
-  precision floating point numbers (`double`), boolean values (`bool`), 
-  UTF8-encoded straight text (`string`), date/time values (`DateTime`), as 
-  well as binary objects in form of byte arrays (`byte[]`). 
+* Supported primitive data types are 32-bit integers (`int`), 64-bit double
+  precision floating point numbers (`double`), boolean values (`bool`),
+  UTF8-encoded straight text (`string`), date/time values (`DateTime`), as
+  well as binary objects in form of byte arrays (`byte[]`).
 
-* All whole numbers in JSON object hashes that maps to corresponding 
-  `Dictionary<string, object>` properties are parsed into 32-bit integers. 
-  Fractional numbers are parsed into `double`'s. 
+* All whole numbers in JSON object hashes that maps to corresponding
+  `Dictionary<string, object>` properties are parsed into 32-bit integers.
+  Fractional numbers are parsed into `double`'s.
 
 * Date/time values are serialized in ISO-8601 standard format.
 
-* Byte arrays in data dictionaries are serialized into Base64-encoded strings 
-  prefixed with "`base64:`". 
+* Byte arrays in data dictionaries are serialized into Base64-encoded strings
+  prefixed with "`base64:`".
 
 ### Example
 
@@ -163,10 +163,10 @@ Message (abstract base class)
 
 ### Description
 
-This class is the abstract base class for all iChen&reg; 4.1 Open 
-Protocol&trade; message type classes. 
+This class is the abstract base class for all iChen® 4.1 Open
+Protocol™ message type classes.
 
-All message classes are *immutable*. 
+All message classes are *immutable*.
 
 ### Properties
 
@@ -205,15 +205,15 @@ JoinMessage
 
 ### Description
 
-This class implements the `JOIN` request message, which must be sent to the 
-iChen&reg; 4.1 Server immediately after establishing a connection. 
+This class implements the `JOIN` request message, which must be sent to the
+iChen® 4.1 Server immediately after establishing a connection.
 
-If this message is not sent, or if the server fails to authenticate the 
-connection, then the server may or may not terminate the connection and/or 
-refuse to send further messages. 
+If this message is not sent, or if the server fails to authenticate the
+connection, then the server may or may not terminate the connection and/or
+refuse to send further messages.
 
-If this request is successful, the server responds with a [`JoinResponseMessage`](#joinresponsemessage) 
-message. 
+If this request is successful, the server responds with a [`JoinResponseMessage`](#joinresponsemessage)
+message.
 
 ### Properties
 
@@ -229,8 +229,8 @@ message.
 
 ### Filter
 
-The `Filter` property is serialized to JSON as a *comma-separated* string 
-containing the type(s) of messages interested in receiving: 
+The `Filter` property is serialized to JSON as a *comma-separated* string
+containing the type(s) of messages interested in receiving:
 
 |Filter      |Message Type                       |Message Class(es) Affected|
 |:----------:|:----------------------------------|:-----------------------:|
@@ -246,21 +246,21 @@ containing the type(s) of messages interested in receiving:
 |`Operators` |Operator-related messages          |[`LoginOperatorMessage`](#loginoperatormessage), [`OperatorInfoMessage`](#operatorinfomessage)|
 |`OPCUA`     |OPC UA communications              |*N/A*                    |
 
-If `Filter` is `null`, then *all* messages will be sent, except MIS 
-integration messages such as `JobCards`, `Operators` and `OPCUA` -- i.e. 
-similar to `All`. 
+If `Filter` is `null`, then *all* messages will be sent, except MIS
+integration messages such as `JobCards`, `Operators` and `OPCUA` -- i.e.
+similar to `All`.
 
 ### Authentication and Authorization
 
-If the `Password` provided is not authenticated or not authorized to access 
-the server, then a [`JoinResponseMessage`](#joinresponsemessage) will be sent 
-by the server with an error result code. No further messages will be sent by 
-the server, and the server may terminate the connection. 
+If the `Password` provided is not authenticated or not authorized to access
+the server, then a [`JoinResponseMessage`](#joinresponsemessage) will be sent
+by the server with an error result code. No further messages will be sent by
+the server, and the server may terminate the connection.
 
-If the `Password` provided is authenticated on the server but not all of the 
-message types specified in `Filter` is authorized for that password, then only 
-the authorized messages will be sent by the server, effectively limiting the 
-`Filter` to only the authorized subset. 
+If the `Password` provided is authenticated on the server but not all of the
+message types specified in `Filter` is authorized for that password, then only
+the authorized messages will be sent by the server, effectively limiting the
+`Filter` to only the authorized subset.
 
 ### JSON Format Example
 
@@ -286,9 +286,9 @@ JoinResponseMessage
 
 ### Description
 
-This class implements the `RESP_JOIN` message, which is sent from the 
-iChen&reg; 4.1 Server to a client in response to a [`JoinMessage`](#joinmessage) 
-message. 
+This class implements the `RESP_JOIN` message, which is sent from the
+iChen® 4.1 Server to a client in response to a [`JoinMessage`](#joinmessage)
+message.
 
 ### Properties
 
@@ -324,13 +324,13 @@ AliveMessage
 
 ### Description
 
-This class implements the `ALIVE` message, which must be sent to the 
-iChen&reg; 4.1 Server at regular intervals. 
+This class implements the `ALIVE` message, which must be sent to the
+iChen® 4.1 Server at regular intervals.
 
-If the server does not receive this message after a time-out period 
-(configurable, initially set to 10 seconds), the client is assumed to be dead 
-and the server may stop sending updates to the client. The server then may or 
-may not terminate the connection. 
+If the server does not receive this message after a time-out period
+(configurable, initially set to 10 seconds), the client is assumed to be dead
+and the server may stop sending updates to the client. The server then may or
+may not terminate the connection.
 
 ### JSON Format Example
 
@@ -348,12 +348,12 @@ LoginOperatorMessage
 
 ### Description
 
-This class implements the `REQ_PWD_LEVEL` request message, which is sent by 
-the iChen&reg; 4.1 Server when a connected controller attempts to 
-authenticate and authorize a user password. 
+This class implements the `REQ_PWD_LEVEL` request message, which is sent by
+the iChen® 4.1 Server when a connected controller attempts to
+authenticate and authorize a user password.
 
-The client should respond with a [`OperatorInfoMessage`](#operatorinfomessage) 
-message. 
+The client should respond with a [`OperatorInfoMessage`](#operatorinfomessage)
+message.
 
 ### Properties
 
@@ -386,8 +386,8 @@ OperatorInfoMessage
 
 ### Description
 
-This class implements the `RESP_PWD_LEVEL` message, which is to the 
-iChen&reg; 4.1 Server in response to a `LoginOperator` message. 
+This class implements the `RESP_PWD_LEVEL` message, which is to the
+iChen® 4.1 Server in response to a `LoginOperator` message.
 
 ### Properties
 
@@ -403,19 +403,19 @@ iChen&reg; 4.1 Server in response to a `LoginOperator` message.
 
 ### Authentication and Authorization
 
-The client should authenticate the user based on the provided `ControllerId` 
-and the `Password` in the [`LoginOperatorMessage`](#loginoperatormessage) 
-request message. 
+The client should authenticate the user based on the provided `ControllerId`
+and the `Password` in the [`LoginOperatorMessage`](#loginoperatormessage)
+request message.
 
-If the `Password` provided is not authenticated or not authorized to access 
-the controller, then this [`OperatorInfoMessage`](#operatorinfomessage) should 
-be sent to the iChen&reg; 4.1 Server with the lowest access level (default 
-to zero). 
+If the `Password` provided is not authenticated or not authorized to access
+the controller, then this [`OperatorInfoMessage`](#operatorinfomessage) should
+be sent to the iChen® 4.1 Server with the lowest access level (default
+to zero).
 
-If the `Password` provided is authenticated and authorized to access the 
-controller, then this [`OperatorInfoMessage`](#operatorinfomessage) should be 
-sent to the iChen&reg; 4.1 Server with the appropriate access level 
-(typically 0-10). 
+If the `Password` provided is authenticated and authorized to access the
+controller, then this [`OperatorInfoMessage`](#operatorinfomessage) should be
+sent to the iChen® 4.1 Server with the appropriate access level
+(typically 0-10).
 
 ### JSON Format Example
 
@@ -442,12 +442,12 @@ RequestControllersListMessage
 
 ### Description
 
-This class implements the `REQ_CNTRLER_LIST` message, which is sent to the 
-iChen&reg; 4.1 Server to request a list of controllers (i.e. machines) 
-currently connected to the server. 
+This class implements the `REQ_CNTRLER_LIST` message, which is sent to the
+iChen® 4.1 Server to request a list of controllers (i.e. machines)
+currently connected to the server.
 
-The server responds with a [`ControllersListMessage`](#controllerslistmessage) 
-message. 
+The server responds with a [`ControllersListMessage`](#controllerslistmessage)
+message.
 
 ### JSON Format Example
 
@@ -465,9 +465,9 @@ ControllersListMessage
 
 ### Description
 
-This class implements the `RESP_CNTRLER_LIST` message, which is sent from the 
-iChen&reg; 4.1 Server to the client in response to the [`RequestControllersListMessage`](#requestcontrollerslistmessage) 
-message. 
+This class implements the `RESP_CNTRLER_LIST` message, which is sent from the
+iChen® 4.1 Server to the client in response to the [`RequestControllersListMessage`](#requestcontrollerslistmessage)
+message.
 
 ### Properties
 
@@ -523,7 +523,7 @@ message.
              },
              "lastConnectionTime":"2016-01-01T12:23:34+08:00",
              "operatorId":99,
-			 "operatorName":"Johnny",
+       "operatorName":"Johnny",
              "moldId":"ABC123"
            },
     "234": {
@@ -560,12 +560,12 @@ RequestJobCardsListMessage
 
 ### Description
 
-This class implements the `REQ_JOBCARDS_LIST` message, which is sent by the 
-iChen&reg; 4.1 Server when a connected controller requests a list of job 
-cards. 
+This class implements the `REQ_JOBCARDS_LIST` message, which is sent by the
+iChen® 4.1 Server when a connected controller requests a list of job
+cards.
 
-The client should respond with a [`JobCardsListMessage`](#jobcardslistmessage) 
-message. 
+The client should respond with a [`JobCardsListMessage`](#jobcardslistmessage)
+message.
 
 ### Properties
 
@@ -591,9 +591,9 @@ JobCardsListMessage
 
 ### Description
 
-This class implements the `RESP_JOBSLIST` message, which should be sent to the 
-iChen&reg; 4.1 Server in response to a [`RequestJobCardsListMessage`](#requestjobcardslistmessage) 
-message. 
+This class implements the `RESP_JOBSLIST` message, which should be sent to the
+iChen® 4.1 Server in response to a [`RequestJobCardsListMessage`](#requestjobcardslistmessage)
+message.
 
 ### Properties
 
@@ -624,23 +624,23 @@ message.
 
 ### Job Card
 
-A **Job Card** is a unit of work to be performed by the machine, typically a 
-production order for a particular product using a particular mold for a 
-specified number of pieces or runs. 
+A **Job Card** is a unit of work to be performed by the machine, typically a
+production order for a particular product using a particular mold for a
+specified number of pieces or runs.
 
-Job cards information are typically provided by an MIS (manufacturing 
-information system). The MIS assigns a particular production order or project 
-run to a particular machine, together with a mold for the job. The controller 
-on the machine loads the mold settings data automatically. 
+Job cards information are typically provided by an MIS (manufacturing
+information system). The MIS assigns a particular production order or project
+run to a particular machine, together with a mold for the job. The controller
+on the machine loads the mold settings data automatically.
 
-A machine can only select from a list of job cards assigned to it by the MIS. 
-Typically the machine is not allowed to start any other production or load 
-other mold data sets. 
+A machine can only select from a list of job cards assigned to it by the MIS.
+Typically the machine is not allowed to start any other production or load
+other mold data sets.
 
-The MIS keeps track of the amount of production already completed (based on 
-the received *cycle data*). The controller on the machine also keeps track of 
-the production progress, and should stop the machine automatically when the 
-total order quantity is reached, typically also raising an alarm. 
+The MIS keeps track of the amount of production already completed (based on
+the received *cycle data*). The controller on the machine also keeps track of
+the production progress, and should stop the machine automatically when the
+total order quantity is reached, typically also raising an alarm.
 
 #### Properties
 
@@ -668,8 +668,6 @@ total order quantity is reached, typically also raising an alarm.
 ~~~~~~~~~~~~
 
 
-
-
 CycleDataMessage
 ----------------
 
@@ -679,9 +677,9 @@ CycleDataMessage
 
 ### Description
 
-This class implements the `CYCLE_DATA` message, which is sent from the 
-iChen&reg; 4.1 Server to the client at the end of each machine cycle for all 
-connected controllers. 
+This class implements the `CYCLE_DATA` message, which is sent from the
+iChen® 4.1 Server to the client at the end of each machine cycle for all
+connected controllers.
 
 ### Properties
 
@@ -743,11 +741,11 @@ RequestMoldDataMessage
 
 ### Description
 
-This class implements the `REQ_MOLD` message, which is sent to the 
-iChen&reg; 4.1 Server to request the set of mold settings data of a 
-controller currently connected to the server. 
+This class implements the `REQ_MOLD` message, which is sent to the
+iChen® 4.1 Server to request the set of mold settings data of a
+controller currently connected to the server.
 
-The server responds with a [`MoldDataMessage`](#molddatamessage) message. 
+The server responds with a [`MoldDataMessage`](#molddatamessage) message.
 
 ### Properties
 
@@ -773,13 +771,13 @@ MoldDataMessage
 
 ### Description
 
-This class implements the `RESP_MOLD` message, which is sent from the 
-iChen&reg; 4.1 Server to the client in response to a [`RequestMoldDataMessage`](#requestmolddatamessage) 
-message. 
+This class implements the `RESP_MOLD` message, which is sent from the
+iChen® 4.1 Server to the client in response to a [`RequestMoldDataMessage`](#requestmolddatamessage)
+message.
 
-Mold settings can be numerous (i.e. more than 1,000), but not all 
-variables/fields are used. In order to reduce payload size, variables/fields 
-with zero values are not included in the resultant data dictionary. 
+Mold settings can be numerous (i.e. more than 1,000), but not all
+variables/fields are used. In order to reduce payload size, variables/fields
+with zero values are not included in the resultant data dictionary.
 
 ### Properties
 
@@ -841,13 +839,13 @@ ReadMoldDataMessage
 
 ### Description
 
-The iChen&reg; 4.1 Server keeps a cache of the states of all mold settings 
-for each controller. This class implements the READ_MOLD_DATA message which is 
-sent to the iChen&reg; 4.1 Server to read the current value of a particular 
-mold setting. 
+The iChen® 4.1 Server keeps a cache of the states of all mold settings
+for each controller. This class implements the READ_MOLD_DATA message which is
+sent to the iChen® 4.1 Server to read the current value of a particular
+mold setting.
 
-The server responds with a [`MoldDataValueMessage`](#molddatavaluemessage) 
-message. 
+The server responds with a [`MoldDataValueMessage`](#molddatavaluemessage)
+message.
 
 ### Properties
 
@@ -880,13 +878,13 @@ MoldDataValueMessage
 
 ### Description
 
-This class implements the `RESP_MOLD_DATA_VALUE` message, which is sent from 
-the iChen&reg; 4.1 Server to the client in response to a [`ReadMoldDataMessage`](#readmolddatamessage) 
-message. 
+This class implements the `RESP_MOLD_DATA_VALUE` message, which is sent from
+the iChen® 4.1 Server to the client in response to a [`ReadMoldDataMessage`](#readmolddatamessage)
+message.
 
-The iChen&reg; 4.1 Server keeps a cache of the states of all mold settings 
-for each controller. The current cached value for the particular mold setting 
-requested is sent. 
+The iChen® 4.1 Server keeps a cache of the states of all mold settings
+for each controller. The current cached value for the particular mold setting
+requested is sent.
 
 ### Properties
 
@@ -921,11 +919,11 @@ ControllerStatusMessage
 
 ### Description
 
-This class implements the `UPD_CNTRLER` message, which is sent from the 
-iChen&reg; 4.1 Server to the client whenever status of a connected 
-controller changes. Only the changed fields will be set, with other 
-fields/properties being set to `null` or an appropriate default value as they 
-are not relevant. 
+This class implements the `UPD_CNTRLER` message, which is sent from the
+iChen® 4.1 Server to the client whenever status of a connected
+controller changes. Only the changed fields will be set, with other
+fields/properties being set to `null` or an appropriate default value as they
+are not relevant.
 
 ### Properties
 
@@ -939,7 +937,7 @@ are not relevant.
 |`OpMode`            |[`OpModes`](../../doc/enums.md#opmodes) enum|`opMode`        |`string` |Current operation mode of the controller (or `Unknown`/`null` if not relevant)|
 |`JobMode`           |[`JobModes`](../../doc/enums.md#jobmodes) enum|`jobMode`       |`string` |Current job mode of the controller (or `Unkonwn`/`null` if not relevant)|
 |`JobCardId`         |`String` |`jobCardId`     |`string` |Unique ID of the current job card loaded, empty string if no mold data set is currently loaded (or `null` if not relevant)|
-|`IsDisconnected`    |`Boolean`|`isDisconnected`|`boolean`|If true, the controller has disconnected from the iChen&reg; Server|
+|`IsDisconnected`    |`Boolean`|`isDisconnected`|`boolean`|If true, the controller has disconnected from the iChen® Server|
 |`Alarm`             |`KeyValuePair` `<String,Boolean>` |`alarm`  |`object` |State of an alarm (if any) on the controller (or `null` if not relevant). See [here](../../doc/alarms.md) for valid alarm codes.|
 |`Audit`             |`KeyValuePair` `<String,Double>` |`audit`  |`object` |Change of a setting (if any) on the controller for audit trail purpose (or `null` if not relevant)|
 |`Variable`          |`KeyValuePair` `<String,Double>` |`variable`|`object` |Change of a variable (if any) on the controller (or `null` if not relevant)|
@@ -982,9 +980,9 @@ ControllerActionMessage
 
 ### Description
 
-This class implements the `CNTRLER_ACTION` message, which is sent from the 
-iChen&reg; 4.1 Server to the client whenever the current *action* of a 
-connected controller changes. 
+This class implements the `CNTRLER_ACTION` message, which is sent from the
+iChen® 4.1 Server to the client whenever the current *action* of a
+connected controller changes.
 
 ### Properties
 

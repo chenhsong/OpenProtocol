@@ -1,7 +1,7 @@
-iChen&reg; 4.1 Open Protocol&trade; .NET Library API Reference
+iChen® 4.1 Open Protocol™ .NET Library API Reference
 ==================================================================
 
-Copyright &copy; Chen Hsong Holdings Ltd.  All rights reserved.  
+Copyright © Chen Hsong Holdings Ltd.  All rights reserved.  
 Document Version: 4.1  
 Last Edited: 2018-01-23
 
@@ -19,18 +19,18 @@ The .NET Framework required for this assembly is .NET Standard 1.6 or above.
 WebSocket Communications
 ------------------------
 
-All communications with the iChen&reg; 4.1 Server is performed through an 
-industry-standard WebSocket interface (IETF&nbsp;RFC&nbsp;6455). 
+All communications with the iChen® 4.1 Server is performed through an
+industry-standard WebSocket interface (IETF RFC 6455).
 
-The default port (configurable) of the WebSocket interface is 5788. 
+The default port (configurable) of the WebSocket interface is 5788.
 
-Secured WebSocket connections with TLS/SSL encryption (via protocol `wss://`) 
-are also supported. 
+Secured WebSocket connections with TLS/SSL encryption (via protocol `wss://`)
+are also supported.
 
-Use your favorite WebSocket client library to connect to the server via 
-WebSocket. For example (assuming the iChen&reg; 4.1 server resides at the 
-URL `ichen.example.com`), a C# client may connect to the server like the 
-following: 
+Use your favorite WebSocket client library to connect to the server via
+WebSocket. For example (assuming the iChen® 4.1 server resides at the
+URL `ichen.example.com`), a C# client may connect to the server like the
+following:
 
 ~~~~~~~~~~~~csharp
 using System.Net.WebSockets;    // Note: This namespace only works for Windows 8 and up
@@ -59,23 +59,23 @@ using (ClientWebSocket websock = new ClientWebSocket())
 }
 ~~~~~~~~~~~~
 
-Beware that `System.Net.WebSockets` is available only for the .NET Framework 
-starting from version 4.5 and for Windows 8 and up only. For Windows 7 or 
-below, use a third-party WebSocket client library such as `SuperWebSocket`. 
+Beware that `System.Net.WebSockets` is available only for the .NET Framework
+starting from version 4.5 and for Windows 8 and up only. For Windows 7 or
+below, use a third-party WebSocket client library such as `SuperWebSocket`.
 
 
-How the iChen&reg; 4.1 Server Processes Messages 
---------------------------------------------------
+How the iChen® 4.1 Server Processes Messages
+-------------------------------------------
 
-The iChen&reg; 4.1 server is a *massively parallel* execution engine, which 
-means that messages are not guaranteed to be processed *in order*. In 
-addition, messages of higher priority are always processed before messages of 
-lower priority, as much as possible. 
+The iChen® 4.1 server is a *massively parallel* execution engine, which
+means that messages are not guaranteed to be processed *in order*. In
+addition, messages of higher priority are always processed before messages of
+lower priority, as much as possible.
 
-Therefore, **no assumption** should be made regarding to the order of message 
-processing. If message sequence order is significant, the client should send 
-messages one by one and only after receiving confirmations/replies on 
-previoius messages. 
+Therefore, **no assumption** should be made regarding to the order of message
+processing. If message sequence order is significant, the client should send
+messages one by one and only after receiving confirmations/replies on
+previoius messages.
 
 
 iChen.OpenProtocol.Message
@@ -85,9 +85,9 @@ iChen.OpenProtocol.Message
 
 #### Usage
 
-Call this static method to parse a JSON-encoded message into a particular 
-message class object. The message class is automatically inferred by the 
-information in the JSON message. 
+Call this static method to parse a JSON-encoded message into a particular
+message class object. The message class is automatically inferred by the
+information in the JSON message.
 
 #### Parameters
 
@@ -97,7 +97,7 @@ information in the JSON message.
 
 #### Return Value
 
-A `Message`-based class representing the iChen&reg; 4.1 message.
+A `Message`-based class representing the iChen® 4.1 message.
 
 #### Example (C#)
 
@@ -120,8 +120,8 @@ CycleDataMessage cycle = (CycleDataMessage) message;    // Will throw if message
 
 #### Usage
 
-Call this static method to parse a JSON-encoded message into a particular 
-message class object. The type parameter `T` should be the message type class. 
+Call this static method to parse a JSON-encoded message into a particular
+message class object. The type parameter `T` should be the message type class.
 
 #### Parameters
 
@@ -132,7 +132,7 @@ message class object. The type parameter `T` should be the message type class.
 
 #### Return Value
 
-A `Message`-based class of type `T` representing the iChen&reg; 4.1 message. 
+A `Message`-based class of type `T` representing the iChen® 4.1 message.
 
 #### Example (C#)
 
@@ -154,7 +154,7 @@ CycleDataMessage cycle = Message.ParseJSON<CycleDataMessage>(json);
 
 #### Usage
 
-Call this method on a message class to encode it into JSON. 
+Call this method on a message class to encode it into JSON.
 
 #### Parameters
 
