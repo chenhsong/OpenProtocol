@@ -1,8 +1,11 @@
-# iChen&reg; 4.1 Open Protocol&trade; Library Reference - Enum Types
+iChen® 4.1 Open Protocol™ Library Reference - Enum Types
+======================================================
 
-Copyright &copy; 2016 Chen Hsong Holdings Ltd.  All rights reserved.
+Copyright © 2016 Chen Hsong Holdings Ltd.  All rights reserved.
 
-## Languages
+
+Languages
+---------
 
 `Languages` represent the language for textual information sent between the
 iChen&reg; 4.1 server and clients.
@@ -20,7 +23,9 @@ iChen&reg; 4.1 server and clients.
 |`PT`|8|Portuguese|
 |`JA`|9|Japanese|
 
-## Filters
+
+Filters
+-------
 
 `Filters` controls what type(s) of messages the iChen&reg; 4.1 server will send to each client.
 
@@ -49,27 +54,31 @@ iChen&reg; 4.1 server and clients.
 |----|-----------|
 |`OPCUA`|OPC UA communications|
 
-## ControllerTypes
+
+ControllerTypes
+---------------
 
 |Code|Numeric Value|Description|
 |----|:-----------:|-----------|
 |`Unknown`|99|Unknown|
-|`Ai01`|1|Ai-01 <i>(deprecated)</i>|
+|`Ai01`|1|Ai-01 _(deprecated)_|
 |`Ai02`|6|Ai-02|
-|`Ai11`|2|Ai-11 <i>(deprecated)</i>|
+|`Ai11`|2|Ai-11 _(deprecated)_|
 |`Ai12`|7|Ai-12|
 |`CPC6`|8|CPC-6.0|
 |`MPC6`|9|MPC-6.0|
-|`CDC2000`|98|CDC2000 <i>(deprecated)</i>|
+|`CDC2000`|98|CDC2000 _(deprecated)_|
 |`CDC2000WIN`|3|CDC2000WIN|
-|`CDC3000`|4|CDC3000 <i>(deprecated)</i>|
-|`SPS3300`|0|R3000/SPS3300 <i>(deprecated)</i>|
-|`NewAge`|5|Beckhoff New-Age <i>(deprecated)</i>|
+|`CDC3000`|4|CDC3000 _(deprecated)_|
+|`SPS3300`|0|R3000/SPS3300 _(deprecated)_|
+|`NewAge`|5|Beckhoff New-Age _(deprecated)_|
 |`CBmold300`|10|Beckhoff CBmold<sup>300</sup>|
 |`CBmold800`|11|Beckhoff CBmold<sup>800</sup>|
 |`MPC7`|12|MPC-7|
 
-## OpModes
+
+OpModes
+-------
 
 `OpModes` represent the operating modes of a machine.
 
@@ -82,7 +91,9 @@ iChen&reg; 4.1 server and clients.
 |`Others`|4|Others|
 |`Offline`|99|Controller is off-line|
 
-## JobModes
+
+JobModes
+--------
 
 `JobModes` are used-defined codes for internal categorization purposes.
 The modes #1 to #15 can be freely defined by the user.

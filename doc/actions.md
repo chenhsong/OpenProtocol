@@ -1,8 +1,10 @@
-# iChen&reg; 4.1 Open Protocol&trade; Library Reference - Action Codes
+iChen®; 4.1 Open Protocol™ Library Reference - Action Codes
+=========================================================
 
-Copyright &copy; 2016 Chen Hsong Holdings Ltd.  All rights reserved.
+Copyright © 2016 Chen Hsong Holdings Ltd.  All rights reserved.
 
-## Ai-01 & Ai-02
+Ai-01 & Ai-02
+-------------
 
 |Action Code|Action Name|Description|
 |-----------|:---------:|-----------|
@@ -83,7 +85,8 @@ Copyright &copy; 2016 Chen Hsong Holdings Ltd.  All rights reserved.
 |1084|`SAux9`|Special Aux 9|
 |1085|`SAux10`|Special Aux 10|
 
-## Ai-11, Ai-12, CPC-6.0, MPC-6.0 & MPC-7.0
+Ai-11, Ai-12, CPC-6.0, MPC-6.0 & MPC-7.0
+---------------------------------------
 
 |Action Code|Action Name|Description|
 |-----------|:---------:|-----------|

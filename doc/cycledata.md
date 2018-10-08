@@ -1,8 +1,10 @@
-# iChen&reg; 4.1 Open Protocol&trade; Library Reference - Cycle Data
+iChen® 4.1 Open Protocol™ Library Reference - Cycle Data
+======================================================
 
-Copyright &copy; 2016 Chen Hsong Holdings Ltd.  All rights reserved.
+Copyright © 2016 Chen Hsong Holdings Ltd.  All rights reserved.
 
-## Ai-series Controllers
+Ai-series Controllers
+--------------------
 
 |Variable Name|Description|
 |-------------|-----------|
