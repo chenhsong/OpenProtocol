@@ -1,15 +1,15 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Newtonsoft.Json;
 
 namespace iChen.OpenProtocol
 {
-	public abstract class DataDictionaryMessage<K, T> : Message/*, IReadOnlyDictionary<K, T>*/
+	public abstract class DataDictionaryMessage<K, T> : Message
 	{
 		protected IReadOnlyDictionary<K, T> m_DataStore = null;
 
-		public virtual IReadOnlyDictionary<K, T> Data { get { return m_DataStore; } }
+		public virtual IReadOnlyDictionary<K, T> Data => m_DataStore;
 
 		public DataDictionaryMessage (IReadOnlyDictionary<K, T> Data, int Priority = 0, IEqualityComparer<K> comparer = null) : base(Priority)
 		{
@@ -19,7 +19,7 @@ namespace iChen.OpenProtocol
 
 		/// <remarks>This constructor is internal and only used for deserialization.</remarks>
 		[JsonConstructor]
-		internal DataDictionaryMessage (long Sequence, IReadOnlyDictionary<K, T> Data, int Priority, IEqualityComparer<K> comparer = null) : base(Sequence, Priority)
+		internal DataDictionaryMessage (string ID, long Sequence, IReadOnlyDictionary<K, T> Data, int Priority, IEqualityComparer<K> comparer = null) : base(ID, Sequence, Priority)
 		{
 			if (Data == null) throw new ArgumentNullException(nameof(Data));
 			this.m_DataStore = Data.ToDictionary(kv => kv.Key, kv => kv.Value, comparer);
@@ -33,36 +33,24 @@ namespace iChen.OpenProtocol
 
 		#region IReadOnlyDictionary
 
-		public bool ContainsKey (K key)
-		{
-			return Data.ContainsKey(key);
-		}
+		public bool ContainsKey (K key) => Data.ContainsKey(key);
 
-		public bool TryGetValue (K key, out T value)
-		{
-			return Data.TryGetValue(key, out value);
-		}
+		public bool TryGetValue (K key, out T value) => Data.TryGetValue(key, out value);
 
-		public IEnumerator<KeyValuePair<K, T>> GetEnumerator ()
-		{
-			return Data.GetEnumerator();
-		}
+		public IEnumerator<KeyValuePair<K, T>> GetEnumerator () => Data.GetEnumerator();
 
-		//IEnumerator IEnumerable.GetEnumerator ()
-		//{
-		//	return Data.GetEnumerator();
-		//}
+		//IEnumerator IEnumerable.GetEnumerator () => return Data.GetEnumerator();
 
 		[JsonIgnore]
-		public int Count { get { return Data.Count; } }
+		public int Count => Data.Count;
 
 		[JsonIgnore]
-		public IEnumerable<K> Keys { get { return Data.Keys; } }
+		public IEnumerable<K> Keys => Data.Keys;
 
 		[JsonIgnore]
-		public IEnumerable<T> Values { get { return Data.Values; } }
+		public IEnumerable<T> Values => Data.Values;
 
-		public T this[K key] { get { return Data[key]; } }
+		public T this[K key] => Data[key];
 
 		#endregion IReadOnlyDictionary
 	}
@@ -70,7 +58,7 @@ namespace iChen.OpenProtocol
 	public abstract class ObjectDictionaryMessage : DataDictionaryMessage<string, object>
 	{
 		[JsonConverter(typeof(ObjectDictionaryJsonConverter))]
-		public override IReadOnlyDictionary<string, object> Data { get { return m_DataStore; } }
+		public override IReadOnlyDictionary<string, object> Data => m_DataStore;
 
 		public ObjectDictionaryMessage (IReadOnlyDictionary<string, object> Data, int Priority = 0, IEqualityComparer<string> comparer = null) : base(Data, Priority, comparer)
 		{
@@ -78,7 +66,7 @@ namespace iChen.OpenProtocol
 
 		/// <remarks>This constructor is internal and only used for deserialization.</remarks>
 		[JsonConstructor]
-		internal ObjectDictionaryMessage (long Sequence, IReadOnlyDictionary<string, object> Data, int Priority, IEqualityComparer<string> comparer = null) : base(Sequence, Data, Priority, comparer)
+		internal ObjectDictionaryMessage (string ID, long Sequence, IReadOnlyDictionary<string, object> Data, int Priority, IEqualityComparer<string> comparer = null) : base(ID, Sequence, Data, Priority, comparer)
 		{
 		}
 	}
@@ -89,16 +77,14 @@ namespace iChen.OpenProtocol
 
 		public ControllerDictionaryMessage (uint ControllerId, IReadOnlyDictionary<string, double> Data, int Priority = 0, IEqualityComparer<string> comparer = null) : base(Data, Priority, comparer)
 		{
-			if (ControllerId <= 0) throw new ArgumentOutOfRangeException(nameof(ControllerId));
-			this.ControllerId = ControllerId;
+			this.ControllerId = (ControllerId > 0) ? ControllerId : throw new ArgumentOutOfRangeException(nameof(ControllerId));
 		}
 
 		/// <remarks>This constructor is internal and only used for deserialization.</remarks>
 		[JsonConstructor]
-		internal ControllerDictionaryMessage (long Sequence, uint ControllerId, IReadOnlyDictionary<string, double> Data, int Priority, IEqualityComparer<string> comparer = null) : base(Sequence, Data, Priority, comparer)
+		internal ControllerDictionaryMessage (string ID, long Sequence, uint ControllerId, IReadOnlyDictionary<string, double> Data, int Priority, IEqualityComparer<string> comparer = null) : base(ID, Sequence, Data, Priority, comparer)
 		{
-			if (ControllerId <= 0) throw new ArgumentOutOfRangeException(nameof(ControllerId));
-			this.ControllerId = ControllerId;
+			this.ControllerId = (ControllerId > 0) ? ControllerId : throw new ArgumentOutOfRangeException(nameof(ControllerId));
 		}
 
 		public override IEnumerable<KeyValuePair<string, object>> GetFields ()

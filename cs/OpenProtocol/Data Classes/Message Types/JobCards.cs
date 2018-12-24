@@ -1,6 +1,6 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace iChen.OpenProtocol
 {
@@ -17,11 +17,8 @@ namespace iChen.OpenProtocol
 
 		public JobCard (string JobCardId, string MoldId, uint Progress, uint Total)
 		{
-			if (string.IsNullOrWhiteSpace(JobCardId)) throw new ArgumentNullException(nameof(JobCardId));
-			if (string.IsNullOrWhiteSpace(MoldId)) throw new ArgumentNullException(nameof(MoldId));
-
-			this.JobCardId = JobCardId;
-			this.MoldId = MoldId;
+			this.JobCardId = !string.IsNullOrWhiteSpace(JobCardId) ? JobCardId : throw new ArgumentNullException(nameof(JobCardId));
+			this.MoldId = !string.IsNullOrWhiteSpace(MoldId) ? MoldId : throw new ArgumentNullException(nameof(MoldId));
 			this.Progress = Progress;
 			this.Total = Total;
 		}
@@ -33,18 +30,14 @@ namespace iChen.OpenProtocol
 
 		public RequestJobCardsListMessage (uint ControllerId, int Priority = 0) : base(Priority)
 		{
-			if (ControllerId <= 0) throw new ArgumentOutOfRangeException(nameof(ControllerId));
-
-			this.ControllerId = ControllerId;
+			this.ControllerId = (ControllerId > 0) ? ControllerId : throw new ArgumentOutOfRangeException(nameof(ControllerId));
 		}
 
 		/// <remarks>This constructor is internal and only used for deserialization.</remarks>
 		[JsonConstructor]
-		internal RequestJobCardsListMessage (long Sequence, uint ControllerId, int Priority) : base(Sequence, Priority)
+		internal RequestJobCardsListMessage (string ID, long Sequence, uint ControllerId, int Priority) : base(ID, Sequence, Priority)
 		{
-			if (ControllerId <= 0) throw new ArgumentOutOfRangeException(nameof(ControllerId));
-
-			this.ControllerId = ControllerId;
+			this.ControllerId = (ControllerId > 0) ? ControllerId : throw new ArgumentOutOfRangeException(nameof(ControllerId));
 		}
 
 		public override IEnumerable<KeyValuePair<string, object>> GetFields ()
@@ -61,17 +54,15 @@ namespace iChen.OpenProtocol
 		public JobCardsListMessage (uint ControllerId, IReadOnlyDictionary<string, JobCard> Data, int Priority = 0) :
 			base(Data, Priority, StringComparer.OrdinalIgnoreCase)
 		{
-			if (ControllerId <= 0) throw new ArgumentOutOfRangeException(nameof(ControllerId));
-			this.ControllerId = ControllerId;
+			this.ControllerId = (ControllerId > 0) ? ControllerId : throw new ArgumentOutOfRangeException(nameof(ControllerId));
 		}
 
 		/// <remarks>This constructor is internal and only used for deserialization.</remarks>
 		[JsonConstructor]
-		internal JobCardsListMessage (long Sequence, uint ControllerId, IReadOnlyDictionary<string, JobCard> Data, int Priority) :
-			base(Sequence, Data, Priority, StringComparer.OrdinalIgnoreCase)
+		internal JobCardsListMessage (string ID, long Sequence, uint ControllerId, IReadOnlyDictionary<string, JobCard> Data, int Priority) :
+			base(ID, Sequence, Data, Priority, StringComparer.OrdinalIgnoreCase)
 		{
-			if (ControllerId <= 0) throw new ArgumentOutOfRangeException(nameof(ControllerId));
-			this.ControllerId = ControllerId;
+			this.ControllerId = (ControllerId > 0) ? ControllerId : throw new ArgumentOutOfRangeException(nameof(ControllerId));
 		}
 
 		public override IEnumerable<KeyValuePair<string, object>> GetFields ()

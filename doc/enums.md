@@ -55,28 +55,6 @@ Filters
 |`OPCUA`|OPC UA communications|
 
 
-ControllerTypes
----------------
-
-|Code|Numeric Value|Description|
-|----|:-----------:|-----------|
-|`Unknown`|99|Unknown|
-|`Ai01`|1|Ai-01 _(deprecated)_|
-|`Ai02`|6|Ai-02|
-|`Ai11`|2|Ai-11 _(deprecated)_|
-|`Ai12`|7|Ai-12|
-|`CPC6`|8|CPC-6.0|
-|`MPC6`|9|MPC-6.0|
-|`CDC2000`|98|CDC2000 _(deprecated)_|
-|`CDC2000WIN`|3|CDC2000WIN|
-|`CDC3000`|4|CDC3000 _(deprecated)_|
-|`SPS3300`|0|R3000/SPS3300 _(deprecated)_|
-|`NewAge`|5|Beckhoff New-Age _(deprecated)_|
-|`CBmold300`|10|Beckhoff CBmold<sup>300</sup>|
-|`CBmold800`|11|Beckhoff CBmold<sup>800</sup>|
-|`MPC7`|12|MPC-7|
-
-
 OpModes
 -------
 

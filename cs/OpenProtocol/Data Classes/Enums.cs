@@ -31,25 +31,6 @@ namespace iChen.OpenProtocol
 		EN, B5, GB, FR, DE, IT, ES, PT, JA
 	}
 
-	public enum ControllerTypes
-	{
-		Unknown = 99,
-		Ai01 = 1,
-		Ai11 = 2,
-		Ai02 = 6,
-		Ai12 = 7,
-		CPC60 = 8,
-		MPC60 = 9,
-		CDC2000 = 98,
-		CDC3000 = 4,
-		CDC2000WIN = 3,
-		SPS3300 = 0,
-		NewAge = 5,
-		CBmold300 = 10,
-		CBmold800 = 11,
-		MPC7 = 12
-	}
-
 	public enum OpModes
 	{
 		Unknown = 0,

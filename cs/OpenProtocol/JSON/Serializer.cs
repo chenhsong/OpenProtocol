@@ -1,7 +1,7 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using System;
+﻿using System;
 using System.Reflection;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace iChen.OpenProtocol
 {
@@ -46,9 +46,7 @@ namespace iChen.OpenProtocol
 		{
 			if (message == null) throw new ArgumentNullException(nameof(message));
 
-			lock (typeof(JsonConvert)) {
-				return JsonConvert.SerializeObject(message, Formatting.None, SerializationSettings);
-			}
+			return JsonConvert.SerializeObject(message, Formatting.None, SerializationSettings);
 		}
 	}
 }

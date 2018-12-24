@@ -1,6 +1,6 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace iChen.OpenProtocol
 {
@@ -10,16 +10,14 @@ namespace iChen.OpenProtocol
 
 		public SystemMessageMessage (string Message, int Priority = 0) : base(Priority)
 		{
-			if (string.IsNullOrWhiteSpace(Message)) throw new ArgumentNullException(nameof(Message));
-			this.Message = Message;
+			this.Message = !string.IsNullOrWhiteSpace(Message) ? Message : throw new ArgumentNullException(nameof(Message));
 		}
 
 		/// <remarks>This constructor is internal and only used for deserialization.</remarks>
 		[JsonConstructor]
-		internal SystemMessageMessage (long Sequence, string Message, int Priority) : base(Sequence, Priority)
+		internal SystemMessageMessage (string ID, long Sequence, string Message, int Priority) : base(ID, Sequence, Priority)
 		{
-			if (string.IsNullOrWhiteSpace(Message)) throw new ArgumentNullException(nameof(Message));
-			this.Message = Message;
+			this.Message = !string.IsNullOrWhiteSpace(Message) ? Message : throw new ArgumentNullException(nameof(Message));
 		}
 
 		public override IEnumerable<KeyValuePair<string, object>> GetFields ()

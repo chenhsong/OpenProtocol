@@ -1,7 +1,7 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using Newtonsoft.Json;
 
 namespace iChen.OpenProtocol
 {
@@ -17,34 +17,26 @@ namespace iChen.OpenProtocol
 
 		public JoinMessage (Languages Language, string Version, string Password, string OrgId = null, Filters Filter = Filters.All, int Priority = 0) : base(Priority)
 		{
-			if (Language == Languages.Unknown) throw new ArgumentOutOfRangeException(nameof(Language));
-			if (string.IsNullOrWhiteSpace(Version)) throw new ArgumentNullException(nameof(Version));
 			if (OrgId != null && string.IsNullOrWhiteSpace(OrgId)) throw new ArgumentNullException(nameof(OrgId));
-			if (string.IsNullOrWhiteSpace(Password)) throw new ArgumentNullException(nameof(Password));
-			if (Filter == Filters.None) throw new ArgumentNullException(nameof(Filters));
 
-			this.Language = Language;
-			this.Version = Version.Trim();
+			this.Language = (Language != Languages.Unknown) ? Language : throw new ArgumentOutOfRangeException(nameof(Language));
+			this.Version = !string.IsNullOrWhiteSpace(Version) ? Version.Trim() : throw new ArgumentNullException(nameof(Version));
 			this.OrgId = OrgId?.Trim();
-			this.Password = Password.Trim();
-			this.Filter = Filter;
+			this.Password = !string.IsNullOrWhiteSpace(Password) ? Password.Trim() : throw new ArgumentNullException(nameof(Password));
+			this.Filter = (Filter != Filters.None) ? Filter : throw new ArgumentNullException(nameof(Filters));
 		}
 
 		/// <remarks>This constructor is internal and only used for deserialization.</remarks>
 		[JsonConstructor]
-		internal JoinMessage (long Sequence, string Version, string Password, int Priority, Languages Language = Languages.Unknown, string OrgId = null, Filters Filter = Filters.None) : base(Sequence, Priority)
+		internal JoinMessage (string ID, long Sequence, string Version, string Password, int Priority, Languages Language = Languages.Unknown, string OrgId = null, Filters Filter = Filters.None) : base(ID, Sequence, Priority)
 		{
-			if (Language == Languages.Unknown) throw new ArgumentOutOfRangeException(nameof(Language));
-			if (string.IsNullOrWhiteSpace(Version)) throw new ArgumentNullException(nameof(Version));
 			if (OrgId != null && string.IsNullOrWhiteSpace(OrgId)) throw new ArgumentNullException(nameof(OrgId));
-			if (string.IsNullOrWhiteSpace(Password)) throw new ArgumentNullException(nameof(Password));
-			if (Filter == Filters.None) throw new ArgumentNullException(nameof(Filters));
 
-			this.Language = Language;
-			this.Version = Version.Trim();
+			this.Language = (Language != Languages.Unknown) ? Language : throw new ArgumentOutOfRangeException(nameof(Language));
+			this.Version = !string.IsNullOrWhiteSpace(Version) ? Version.Trim() : throw new ArgumentNullException(nameof(Version));
 			this.OrgId = OrgId?.Trim();
-			this.Password = Password.Trim();
-			this.Filter = Filter;
+			this.Password = !string.IsNullOrWhiteSpace(Password) ? Password.Trim() : throw new ArgumentNullException(nameof(Password));
+			this.Filter = (Filter != Filters.None) ? Filter : throw new ArgumentNullException(nameof(Filters));
 		}
 
 		public override IEnumerable<KeyValuePair<string, object>> GetFields ()
@@ -71,7 +63,7 @@ namespace iChen.OpenProtocol
 
 		/// <remarks>This constructor is internal and only used for deserialization.</remarks>
 		[JsonConstructor]
-		internal JoinResponseMessage (long Sequence, uint Result, uint Level, string Message, int Priority) : base(Sequence, Priority)
+		internal JoinResponseMessage (string ID, long Sequence, uint Result, uint Level, string Message, int Priority) : base(ID, Sequence, Priority)
 		{
 			this.Result = Result;
 			this.Level = Level;

@@ -4,13 +4,13 @@ namespace iChen.OpenProtocol
 {
 	public class AliveMessage : Message
 	{
-		public AliveMessage () : base()
+		public AliveMessage () : base(0)
 		{
 		}
 
 		/// <remarks>This constructor is internal and only used for deserialization.</remarks>
 		[JsonConstructor]
-		internal AliveMessage (long Sequence, int Priority) : base(Sequence, Priority)
+		internal AliveMessage (string ID, long Sequence, int Priority) : base(ID, Sequence, Priority)
 		{
 		}
 	}

@@ -19,9 +19,6 @@ namespace iChen.OpenProtocol
 		}
 
 		public Type BindToType (string assemblyName, string typeName)
-		{
-			var resolvedTypeName = $"{typeof(Message).Namespace}.{typeName}{Message.MessageTypePostfix}";
-			return Type.GetType(resolvedTypeName, true);
-		}
+			=> Type.GetType($"{typeof(Message).Namespace}.{typeName}{Message.MessageTypePostfix}", true);
 	}
 }

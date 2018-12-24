@@ -12,8 +12,7 @@ namespace iChen.OpenProtocol
 		public uint ControllerId { get; }
 		public string DisplayName { get; }
 
-		[DefaultValue(ControllerTypes.Unknown)]
-		public ControllerTypes ControllerType { get; } = ControllerTypes.Unknown;
+		public string ControllerType { get; } = "Unknown";
 
 		public string Version { get; }
 		public string Model { get; }
@@ -41,25 +40,20 @@ namespace iChen.OpenProtocol
 		private static readonly Regex TtyRegex = new Regex(@"tty\w+", RegexOptions.Singleline | RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase);
 		private static readonly Regex SerialPortRegex = new Regex(@"COM(?<port>\d+)", RegexOptions.Singleline | RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture | RegexOptions.IgnoreCase);
 
-		public Controller (uint ControllerId, ControllerTypes ControllerType, string Version, string Model, string IP, OpModes OpMode, JobModes JobMode, string JobCardId, string DisplayName, double? GeoLatitude = null, double? GeoLongitude = null, IReadOnlyDictionary<string, double> LastCycleData = null, IReadOnlyDictionary<string, double> Variables = null, DateTime LastConnectionTime = default(DateTime), uint OperatorId = 0, string OperatorName = null, string MoldId = null)
+		public Controller (uint ControllerId, string ControllerType, string Version, string Model, string IP, OpModes OpMode, JobModes JobMode, string JobCardId, string DisplayName, double? GeoLatitude = null, double? GeoLongitude = null, IReadOnlyDictionary<string, double> LastCycleData = null, IReadOnlyDictionary<string, double> Variables = null, DateTime LastConnectionTime = default(DateTime), uint OperatorId = 0, string OperatorName = null, string MoldId = null)
 		{
-			if (ControllerId <= 0) throw new ArgumentOutOfRangeException(nameof(ControllerId));
-			if (ControllerType < 0) throw new ArgumentOutOfRangeException(nameof(ControllerType));
-			if (string.IsNullOrWhiteSpace(Version)) throw new ArgumentNullException(nameof(Version));
-			if (string.IsNullOrWhiteSpace(Model)) throw new ArgumentNullException(nameof(Model));
+			this.ControllerId = (ControllerId > 0) ? ControllerId : throw new ArgumentOutOfRangeException(nameof(ControllerId));
+			this.ControllerType = !string.IsNullOrWhiteSpace(ControllerType) ? ControllerType.Trim() : throw new ArgumentNullException(nameof(ControllerType));
+			this.Version = !string.IsNullOrWhiteSpace(Version) ? Version.Trim() : throw new ArgumentNullException(nameof(Version));
+			this.Model = !string.IsNullOrWhiteSpace(Model) ? Model.Trim() : throw new ArgumentNullException(nameof(Model));
+
 			if (string.IsNullOrWhiteSpace(IP)) throw new ArgumentNullException(nameof(IP));
-			if (string.IsNullOrWhiteSpace(DisplayName)) throw new ArgumentNullException(nameof(DisplayName));
-			if (OpMode == OpModes.Unknown) throw new ArgumentOutOfRangeException(nameof(OpMode));
-			if (JobMode == JobModes.Unknown) throw new ArgumentOutOfRangeException(nameof(JobMode));
-			if (OperatorName != null && string.IsNullOrWhiteSpace(OperatorName)) throw new ArgumentNullException(nameof(OperatorName));
-			if (JobCardId != null && string.IsNullOrWhiteSpace(JobCardId)) throw new ArgumentNullException(nameof(JobCardId));
-			if (MoldId != null && string.IsNullOrWhiteSpace(MoldId)) throw new ArgumentNullException(nameof(MoldId));
 
 			string strIP = IP.Trim();
 			var match = IPRegex.Match(strIP);
+
 			if (match.Success) {
-				IPAddress addr;
-				if (!IPAddress.TryParse(match.Groups["ip"].Value, out addr)) throw new ArgumentOutOfRangeException(nameof(IP));
+				if (!IPAddress.TryParse(match.Groups["ip"].Value, out IPAddress addr)) throw new ArgumentOutOfRangeException(nameof(IP));
 				strIP = addr.ToString() + (match.Groups["port"].Success ? ":" + match.Groups["port"].Value : null);
 			} else {
 				match = SerialPortRegex.Match(strIP);
@@ -71,21 +65,18 @@ namespace iChen.OpenProtocol
 				}
 			}
 
-			this.ControllerId = ControllerId;
-			this.ControllerType = ControllerType;
-			this.Version = Version.Trim();
-			this.Model = Model.Trim();
 			this.IP = strIP;
-			this.OpMode = OpMode;
-			this.JobMode = JobMode;
-			this.DisplayName = DisplayName.Trim();
-			this.JobCardId = JobCardId?.Trim();
+
+			this.OpMode = (OpMode != OpModes.Unknown) ? OpMode : throw new ArgumentOutOfRangeException(nameof(OpMode));
+			this.JobMode = (JobMode != JobModes.Unknown) ? JobMode : throw new ArgumentOutOfRangeException(nameof(JobMode));
+			this.DisplayName = !string.IsNullOrWhiteSpace(DisplayName) ? DisplayName.Trim() : throw new ArgumentNullException(nameof(DisplayName));
+			this.JobCardId = (JobCardId == null || !string.IsNullOrWhiteSpace(JobCardId)) ? JobCardId?.Trim() : throw new ArgumentNullException(nameof(JobCardId));
 			this.LastCycleData = LastCycleData?.ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.OrdinalIgnoreCase);
 			this.Variables = Variables?.ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.OrdinalIgnoreCase);
 			this.LastConnectionTime = LastConnectionTime;
 			this.OperatorId = OperatorId;
-			this.OperatorName = OperatorName;
-			this.MoldId = MoldId?.Trim();
+			this.OperatorName = (OperatorName == null || !string.IsNullOrWhiteSpace(OperatorName)) ? OperatorName?.Trim() : throw new ArgumentNullException(nameof(OperatorName));
+			this.MoldId = (MoldId == null || !string.IsNullOrWhiteSpace(MoldId)) ? MoldId?.Trim() : throw new ArgumentNullException(nameof(MoldId));
 
 			this.GeoLatitude = GeoLatitude;
 			this.GeoLongitude = GeoLongitude;

@@ -1,6 +1,6 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace iChen.OpenProtocol
 {
@@ -10,16 +10,14 @@ namespace iChen.OpenProtocol
 
 		public UpdateLanguageMessage (Languages Language, int Priority = 0) : base(Priority)
 		{
-			if (Language == Languages.Unknown) throw new ArgumentOutOfRangeException(nameof(Language));
-			this.Language = Language;
+			this.Language = (Language != Languages.Unknown) ? Language : throw new ArgumentOutOfRangeException(nameof(Language));
 		}
 
 		/// <remarks>This constructor is internal and only used for deserialization.</remarks>
 		[JsonConstructor]
-		internal UpdateLanguageMessage (long Sequence, Languages Language, int Priority) : base(Sequence, Priority)
+		internal UpdateLanguageMessage (string ID, long Sequence, Languages Language, int Priority) : base(ID, Sequence, Priority)
 		{
-			if (Language == Languages.Unknown) throw new ArgumentOutOfRangeException(nameof(Language));
-			this.Language = Language;
+			this.Language = (Language != Languages.Unknown) ? Language : throw new ArgumentOutOfRangeException(nameof(Language));
 		}
 
 		public override IEnumerable<KeyValuePair<string, object>> GetFields ()

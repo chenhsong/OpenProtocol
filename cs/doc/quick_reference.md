@@ -4,7 +4,7 @@
 Copyright © Chen Hsong Holdings Ltd.  All rights reserved.  
 .NET Framework Required: .NET Standard 1.6  
 Document Version: 4.1  
-Last Edited: 2018-01-23
+Last Edited: 2018-10-22
 
 
 Open Protocol™ Messages
@@ -90,13 +90,13 @@ dict.Add("Hello", 123);
 dict.Add("World", true);
 dict.Add("iChen", "Awesome");
 
-CycleDataMessage msg = new CycleDataMessage(99, dict);
+CycleDataMessage msg = new CycleDataMessage(99, null, null, 123, OpModes.Automatic, JobModes.ID02, dict);
 ~~~~~~~~~~~~
 
 or
 
 ~~~~~~~~~~~~csharp
-CycleDataMessage msg = new CycleDataMessage(99, new Dictionary<string, object>() {
-    { "Hello", 123 }, { "World", true }, { "iChen", "Awesome" }
-});
+CycleDataMessage msg = new CycleDataMessage(99, null, null, 123, OpModes.Automatic, JobModes.ID02,
+    new Dictionary<string, object>() { ["Hello"]=123, ["World"]=true, ["iChen"]="Awesome" }
+);
 ~~~~~~~~~~~~

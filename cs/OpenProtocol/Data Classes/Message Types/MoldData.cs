@@ -1,6 +1,6 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace iChen.OpenProtocol
 {
@@ -10,18 +10,14 @@ namespace iChen.OpenProtocol
 
 		public RequestMoldDataMessage (uint ControllerId, int Priority = 0) : base(Priority)
 		{
-			if (ControllerId <= 0) throw new ArgumentOutOfRangeException(nameof(ControllerId));
-
-			this.ControllerId = ControllerId;
+			this.ControllerId = (ControllerId > 0) ? ControllerId : throw new ArgumentOutOfRangeException(nameof(ControllerId));
 		}
 
 		/// <remarks>This constructor is internal and only used for deserialization.</remarks>
 		[JsonConstructor]
-		internal RequestMoldDataMessage (long Sequence, uint ControllerId, int Priority) : base(Sequence, Priority)
+		internal RequestMoldDataMessage (string ID, long Sequence, uint ControllerId, int Priority) : base(ID, Sequence, Priority)
 		{
-			if (ControllerId <= 0) throw new ArgumentOutOfRangeException(nameof(ControllerId));
-
-			this.ControllerId = ControllerId;
+			this.ControllerId = (ControllerId > 0) ? ControllerId : throw new ArgumentOutOfRangeException(nameof(ControllerId));
 		}
 
 		public override IEnumerable<KeyValuePair<string, object>> GetFields ()
@@ -33,13 +29,13 @@ namespace iChen.OpenProtocol
 
 	public class MoldDataMessage : CycleDataMessage
 	{
-		public MoldDataMessage (uint ControllerId, string JobCardId, string MoldId, uint OperatorId, IReadOnlyDictionary<string, double> Data, DateTime TimeStamp = default(DateTime), int Priority = 0)
-			: base(ControllerId, JobCardId, MoldId, OperatorId, Data, TimeStamp, Priority) { }
+		public MoldDataMessage (uint ControllerId, string JobCardId, string MoldId, uint OperatorId, OpModes OpMode, JobModes JobMode, IReadOnlyDictionary<string, double> Data, DateTime TimeStamp = default(DateTime), int Priority = 0)
+			: base(ControllerId, JobCardId, MoldId, OperatorId, OpMode, JobMode, Data, TimeStamp, Priority) { }
 
 		/// <remarks>This constructor is internal and only used for deserialization.</remarks>
 		[JsonConstructor]
-		internal MoldDataMessage (long Sequence, uint ControllerId, string JobCardId, string MoldId, uint OperatorId, IReadOnlyDictionary<string, double> Data, DateTime TimeStamp, int Priority)
-			: base(Sequence, ControllerId, JobCardId, MoldId, OperatorId, Data, TimeStamp, Priority) { }
+		internal MoldDataMessage (string ID, long Sequence, uint ControllerId, string JobCardId, string MoldId, uint OperatorId, OpModes OpMode, JobModes JobMode, IReadOnlyDictionary<string, double> Data, DateTime TimeStamp, int Priority)
+			: base(ID, Sequence, ControllerId, JobCardId, MoldId, OperatorId, OpMode, JobMode, Data, TimeStamp, Priority) { }
 	}
 
 	public class ReadMoldDataMessage : Message
@@ -49,22 +45,19 @@ namespace iChen.OpenProtocol
 
 		public ReadMoldDataMessage (uint ControllerId, string field, int Priority = 0) : base(Priority)
 		{
-			if (ControllerId <= 0) throw new ArgumentOutOfRangeException(nameof(ControllerId));
-			if (string.IsNullOrWhiteSpace(field)) throw new ArgumentNullException(nameof(field));
 
-			this.ControllerId = ControllerId;
-			this.Field = field;
+			this.ControllerId = (ControllerId > 0) ? ControllerId : throw new ArgumentOutOfRangeException(nameof(ControllerId));
+			this.Field = !string.IsNullOrWhiteSpace(field) ? field : throw new ArgumentNullException(nameof(field));
 		}
 
 		/// <remarks>This constructor is internal and only used for deserialization.</remarks>
 		[JsonConstructor]
-		internal ReadMoldDataMessage (long Sequence, uint ControllerId, string field, int Priority) : base(Sequence, Priority)
+		internal ReadMoldDataMessage (string ID, long Sequence, uint ControllerId, string field, int Priority) : base(ID, Sequence, Priority)
 		{
-			if (ControllerId <= 0) throw new ArgumentOutOfRangeException(nameof(ControllerId));
 			if (string.IsNullOrWhiteSpace(field)) throw new ArgumentNullException(nameof(field));
 
-			this.ControllerId = ControllerId;
-			this.Field = field;
+			this.ControllerId = (ControllerId > 0) ? ControllerId : throw new ArgumentOutOfRangeException(nameof(ControllerId));
+			this.Field = !string.IsNullOrWhiteSpace(field) ? field : throw new ArgumentNullException(nameof(field));
 		}
 
 		public override IEnumerable<KeyValuePair<string, object>> GetFields ()
@@ -87,7 +80,8 @@ namespace iChen.OpenProtocol
 
 		/// <remarks>This constructor is internal and only used for deserialization.</remarks>
 		[JsonConstructor]
-		internal MoldDataValueMessage (long Sequence, uint ControllerId, string field, double value, int Priority) : base(Sequence, ControllerId, field, Priority)
+		internal MoldDataValueMessage (string ID, long Sequence, uint ControllerId, string field, double value, int Priority)
+			: base(ID, Sequence, ControllerId, field, Priority)
 		{
 			this.Value = value;
 		}

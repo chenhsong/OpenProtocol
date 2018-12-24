@@ -75,7 +75,7 @@ lower priority, as much as possible.
 Therefore, **no assumption** should be made regarding to the order of message
 processing. If message sequence order is significant, the client should send
 messages one by one and only after receiving confirmations/replies on
-previoius messages.
+previous messages.
 
 
 iChen.OpenProtocol.Message
@@ -106,7 +106,7 @@ A `Message`-based class representing the iChen® 4.1 message.
 byte[] buffer = new byte[10240];
 // Receive the WebSocket message into the bubber
 ArraySegment<byte> segment = new ArraySegment<byte>(buffer);
-WebSocketReceiveResult result = await ws.ReceiveAsync(segment, ct);
+WebSocketReceiveResult result = await websock.ReceiveAsync(segment, ct);
 // Decode the message based on UTF-8
 string json = System.Encoding.UTF8.GetString(segment.Array, 0, result.Count);
 // Parse the JSON message into a message class
@@ -139,9 +139,9 @@ A `Message`-based class of type `T` representing the iChen® 4.1 message.
 ~~~~~~~~~~~~csharp
 // Create a buffer large enough to hold the message (say 10MB)
 byte[] buffer = new byte[10240];
-// Receive the WebSocket message into the bubber
+// Receive the WebSocket message into the buffer
 ArraySegment<byte> segment = new ArraySegment<byte>(buffer);
-WebSocketReceiveResult result = await ws.ReceiveAsync(segment, ct);
+WebSocketReceiveResult result = await websock.ReceiveAsync(segment, ct);
 // Decode the message based on UTF-8
 string json = System.Encoding.UTF8.GetString(segment.Array, 0, result.Count);
 // Parse the JSON message into a CycleDataMessage
@@ -175,7 +175,7 @@ string json = message.ToJSON();
 byte[] data = System.Encoding.UTF8.GetBytes(json);
 // Send the UTF-8 byte stream to the WebSocket
 ArraySegment<byte> segment = new ArraySegment<byte>(data);
-await ws.SendAsync(segment, WebSocketMessageType.Text, true, ct);
+await websock.SendAsync(segment, WebSocketMessageType.Text, true, ct);
 ~~~~~~~~~~~~
 
 

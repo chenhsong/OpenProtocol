@@ -1,20 +1,18 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Newtonsoft.Json;
 
 namespace iChen.OpenProtocol
 {
 	/// <remarks>This code is from enzi at http://stackoverflow.com/questions/8297541/how-do-i-change-the-default-type-for-numeric-deserialization </remarks>
 	internal class ObjectDictionaryJsonConverter : JsonConverter
 	{
-		private string Base64Prefix = "base64:";
+		private const string Base64Prefix = "base64:";
 
 		public override bool CanConvert (Type objectType)
-		{
-			return objectType.GetTypeInfo().IsAssignableFrom(typeof(Dictionary<string, object>).GetTypeInfo());
-		}
+			=> objectType.GetTypeInfo().IsAssignableFrom(typeof(Dictionary<string, object>).GetTypeInfo());
 
 		public override object ReadJson (JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
 		{
@@ -36,9 +34,9 @@ namespace iChen.OpenProtocol
 						}
 					case JsonToken.String: {
 							value = serializer.Deserialize(reader);
-							if (value is string && (value as string).StartsWith(Base64Prefix)) {
+							if (value is string strval && strval.StartsWith(Base64Prefix)) {
 								// convert base64-encoded strings to byte arrays
-								value = Convert.FromBase64String((value as string).Substring(Base64Prefix.Length));
+								value = Convert.FromBase64String(strval.Substring(Base64Prefix.Length));
 							}
 							break;
 						}
@@ -56,23 +54,24 @@ namespace iChen.OpenProtocol
 
 		public override void WriteJson (JsonWriter writer, object value, JsonSerializer serializer)
 		{
-			if (!(value is IReadOnlyDictionary<string, object>)) {
-				serializer.Serialize(writer, value);
-				return;
-			}
+			switch (value) {
+				case IReadOnlyDictionary<string, object> dict when dict.Values.Any(val => val != null && val is byte[]): {
+						// Has byte-array, convert byte-arrays into base64-encoded strings
+						var copy = dict.Select(kv => (kv.Value != null && kv.Value is byte[])
+															? new KeyValuePair<string, object>(kv.Key, Base64Prefix + Convert.ToBase64String(kv.Value as byte[]))
+															: kv).ToDictionary(kv => kv.Key, kv => kv.Value);
 
-			var dict = (IReadOnlyDictionary<string, object>) value;
+						serializer.Serialize(writer, copy);
+						break;
+					}
 
-			if (!dict.Values.Any(val => val != null && val is byte[])) {
-				// No byte array
-				serializer.Serialize(writer, value);
-			} else {
-				// Has byte-array, convert byte-arrays into base64-encoded strings
-				var copy = dict.Select(kv => (kv.Value != null && kv.Value is byte[])
-													? new KeyValuePair<string, object>(kv.Key, Base64Prefix + Convert.ToBase64String(kv.Value as byte[]))
-													: kv).ToDictionary(kv => kv.Key, kv => kv.Value);
+				case IReadOnlyDictionary<string, object> dict: {
+						// No byte array
+						serializer.Serialize(writer, value);
+						break;
+					}
 
-				serializer.Serialize(writer, copy);
+				default: serializer.Serialize(writer, value); return;
 			}
 		}
 	}

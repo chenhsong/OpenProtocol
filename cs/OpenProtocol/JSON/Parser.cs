@@ -1,5 +1,5 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
+using Newtonsoft.Json;
 
 namespace iChen.OpenProtocol
 {
@@ -23,12 +23,7 @@ namespace iChen.OpenProtocol
 		{
 			if (json == null) throw new ArgumentNullException(nameof(json));
 
-			lock (typeof(JsonConvert)) {
-				var test = @"{""CLAMP1"":987.65,""CLAMP2"":42,""FAST"":true}";
-				var dict = JsonConvert.DeserializeObject(test, ParseSettings);
-
-				return (Message) JsonConvert.DeserializeObject(json, ParseSettings);
-			}
+			return (Message) JsonConvert.DeserializeObject(json, ParseSettings);
 		}
 	}
 }

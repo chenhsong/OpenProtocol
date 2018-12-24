@@ -3,9 +3,9 @@ iChen® 4.1 Open Protocol™ .NET Library Messages Reference
 
 Copyright © Chen Hsong Holdings Ltd.  All rights reserved.  
 .NET Framework Required: .NET Standard 1.6  
-For `iChen.OpenProtocol.dll` version: 4.1.1 and up  
-Document Version: 4.1.1  
-Last Edited: 2018-06-30
+For `iChen.OpenProtocol.dll` version: 4.1.2 and up  
+Document Version: 4.1.2  
+Last Edited: 2018-10-22
 
 
 Introduction
@@ -33,7 +33,6 @@ Enum Types
 | Type Name |Description                   |Flag? |
 |:----------|:-----------------------------|:----:|
 |[`Languages`](../../doc/enums.md#languages)|Language encoding codes       |No    |
-|[`ControllerTypes`](../../doc/enums.md#controllertypes)|Type(s) of controllers  |No    |
 |[`OpModes`](../../doc/enums.md#opmodes)|Operation modes               |No    |
 |[`JobModes`](../../doc/enums.md#jobmodes)|Job modes                     |No    |
 |[`Filters`](../../doc/enums.md#filters)|Type(s) of messages to receive|Yes   |
@@ -55,7 +54,7 @@ An *immutable* class containing information on a controller (i.e. machine).
 |:-------------------|:--------:|:--------------:|:-------:|:------------------------------------|
 |`ControllerId`      |`UInt32`  |`controllerId`  |`number` |Unique numeric ID for this controller|
 |`DisplayName`       |`String`  |`displayName`   |`string` |Human-friendly name for display      |
-|`ControllerType`|[`ControllerTypes`](../../doc/enums.md#controllertypes) enum|`controllerType`|`string`|Type of controller            |
+|`ControllerType`    |`String`  |`controllerType`|`string` |Type of controller                   |
 |`Version`           |`String`  |`version`       |`string` |The version of the controller        |
 |`Model`             |`String`  |`model`         |`string` |The machine model                    |
 |`IP`                |`String`  |`IP`            |`string` |IP address of the controller, in the format "`x.x.x.x`"|
@@ -687,11 +686,13 @@ connected controllers.
 |:-------------------|:-------:|:------------:|:-------:|:---------------------------------|
 |`Sequence`          |`Int64`  |`sequence`    |`number` |*Inherited from [`Message`](#message)*        |
 |`Priority`          |`Int32`  |`priority`    |`number` |*Inherited from [`Message`](#message)*        |
-|`TimeStamp`        |`DateTIme`|`timestamp`   |`string` |Date/time (in ISO-8601 format)    |
+|`TimeStamp`         |`DateTIme`|`timestamp`   |`string` |Date/time (in ISO-8601 format)    |
 |`ControllerId`      |`UInt32` |`controllerId`|`number` |*Inherited from [`MoldDataMessage`](#molddatamessage)*|
 |`JobCardId`         |`String` |`jobCardId`   |`string` |Unique ID of the current job card loaded (if any)|
 |`MoldId`            |`String` |`moldId`      |`string` |Unique ID of the current mold data set loaded (if any)|
-|`OperatorId`|`Nullable<UInt32>`|`operatorId` |`number` |Unique ID of the current logged-on user, zero if no user is logged on|
+|`OperatorId`        |`Nullable<UInt32>`|`operatorId` |`number` |Unique ID of the current logged-on user, zero if no user is logged on|
+|`OpMode`            |[`OpModes`](../../doc/enums.md#opmodes) enum|`opMode`|`string` |Current operation mode of the controller|
+|`JobMode`           |[`JobModes`](../../doc/enums.md#jobmodes) enum|`jobMode`|`string` |Current job mode of the controller   |
 |`Data`              |`IReadOnlyDictionary` `<String,Double>`|`data`|`object`|A data dictionary containing a set of cycle data|
 |`Count`             |`Int32`  |              |         |Same as `Data.Count`              |
 
@@ -722,6 +723,8 @@ connected controllers.
   "jobCardId":"XYZ",
   "operatorId":987,
   "moldId":"ABC123",
+  "opMode":"Automatic",
+  "jobMode":"ID08",
   "sequence":123,
   "priority":10,
   "data":{
@@ -785,11 +788,13 @@ with zero values are not included in the resultant data dictionary.
 |:-------------------|:-------:|:------------:|:-------:|:---------------------------------|
 |`Sequence`          |`Int64`  |`sequence`    |`number` |*Inherited from [`Message`](#message)*        |
 |`Priority`          |`Int32`  |`priority`    |`number` |*Inherited from [`Message`](#message)*        |
-|`TimeStamp`        |`DateTIme`|`timestamp`   |`string` |Date/time (in ISO-8601 format)    |
+|`TimeStamp`         |`DateTIme`|`timestamp`   |`string` |Date/time (in ISO-8601 format)    |
 |`ControllerId`      |`UInt32` |`controllerId`|`number` |*Inherited from [`MoldDataMessage`](#molddatamessage)*|
 |`JobCardId`         |`String` |`jobCardId`   |`string` |Unique ID of the current job card loaded (if any)|
 |`MoldId`            |`String` |`moldId`      |`string` |Unique ID of the current mold data set loaded (if any)|
 |`OperatorId`|`Nullable<UInt32>`|`operatorId` |`number` |Unique ID of the current logged-on user, zero if no user is logged on|
+|`OpMode`            |[`OpModes`](../../doc/enums.md#opmodes) enum|`opMode`|`string` |Current operation mode of the controller|
+|`JobMode`           |[`JobModes`](../../doc/enums.md#jobmodes) enum|`jobMode`|`string` |Current job mode of the controller   |
 |`Data`              |`IReadOnlyDictionary` `<String,Double>`|`data`|`object`|A data dictionary containing a set of mold settings |
 |`Count`             |`Int32`  |              |         |Same as `Data.Count`              |
 
@@ -820,6 +825,8 @@ with zero values are not included in the resultant data dictionary.
   "jobCardId":"XYZ",
   "operatorId":987,
   "moldId":"ABC123",
+  "opMode":"Automatic",
+  "jobMode":"ID08",
   "sequence":123,
   "priority":10,
   "data":{

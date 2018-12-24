@@ -1,9 +1,9 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace iChen.OpenProtocol
 {
@@ -14,7 +14,11 @@ namespace iChen.OpenProtocol
 	{
 		private static readonly IReadOnlyDictionary<string, string> Mappings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
 		{
-			{ "ID",  "id" }, { "TimeStamp", "timestamp" }, { "IP", "IP" }, { "IPAddress", "IPAddress" }, { "GUID", "guid" }
+			["ID"] = "id",
+			["TimeStamp"] = "timestamp",
+			["IP"] = "IP",
+			["IPAddress"] = "IPAddress",
+			["GUID"] = "guid"
 		};
 
 		protected override JsonDictionaryContract CreateDictionaryContract (Type objectType)

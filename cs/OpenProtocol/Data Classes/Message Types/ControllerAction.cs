@@ -1,6 +1,6 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace iChen.OpenProtocol
 {
@@ -14,23 +14,17 @@ namespace iChen.OpenProtocol
 
 		public ControllerActionMessage (uint ControllerId, uint ActionId, DateTime TimeStamp = default(DateTime), int Priority = 0) : base(Priority)
 		{
-			if (ControllerId <= 0) throw new ArgumentOutOfRangeException(nameof(ControllerId));
-			if (ActionId <= 0) throw new ArgumentOutOfRangeException(nameof(ActionId));
-
-			this.ControllerId = ControllerId;
-			this.ActionId = ActionId;
+			this.ControllerId = (ControllerId > 0) ? ControllerId : throw new ArgumentOutOfRangeException(nameof(ControllerId));
+			this.ActionId = (ActionId > 0) ? ActionId : throw new ArgumentOutOfRangeException(nameof(ActionId));
 			this.TimeStamp = (TimeStamp == default(DateTime)) ? DateTime.Now : TimeStamp;
 		}
 
 		/// <remarks>This constructor is internal and only used for deserialization.</remarks>
 		[JsonConstructor]
-		internal ControllerActionMessage (long Sequence, uint ControllerId, uint ActionId, DateTime TimeStamp, int Priority) : base(Sequence, Priority)
+		internal ControllerActionMessage (string ID, long Sequence, uint ControllerId, uint ActionId, DateTime TimeStamp, int Priority) : base(ID, Sequence, Priority)
 		{
-			if (ControllerId <= 0) throw new ArgumentOutOfRangeException(nameof(ControllerId));
-			if (ActionId <= 0) throw new ArgumentOutOfRangeException(nameof(ActionId));
-
-			this.ControllerId = ControllerId;
-			this.ActionId = ActionId;
+			this.ControllerId = (ControllerId > 0) ? ControllerId : throw new ArgumentOutOfRangeException(nameof(ControllerId));
+			this.ActionId = (ActionId > 0) ? ActionId : throw new ArgumentOutOfRangeException(nameof(ActionId));
 			this.TimeStamp = (TimeStamp == default(DateTime)) ? DateTime.Now : TimeStamp;
 		}
 
