@@ -25,11 +25,29 @@ Release 4.2
 
 ### Breaking Changes
 
-- C# 7.0 or higher is now required.
-
 - `ControllerType` field in `Controller` is changed to `String` in
   order to accommodate future controller types. 
   
 - The `ControllerTypes` `enum` is removed.
 
 - `JSON` representation of `ControllerStateMessage` is refined.
+
+
+Release 4.1.1
+=============
+
+## New Features
+
+* Geo-location fields (not yet used)
+
+* `OperatorName` field
+
+## Breaking Changes
+
+* `ControllerStatusMessage` and `Controller` constructors are modified to take an extra `OperatorName` parameter.
+
+* The `Controller` constructor is modified to take extra geo-location fields.
+
+* C# 7.2 or higher is now required.
+
+
