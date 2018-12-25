@@ -7,8 +7,7 @@
 		"noImplicitAny": true,
 		"noImplicitReturns": true,
 		"noImplicitThis": true,
-		"sourceMap": true,
-		"typeRoots": [ "../../lib" ]
+		"sourceMap": true
 	},
 	"compileOnSave": true
 }

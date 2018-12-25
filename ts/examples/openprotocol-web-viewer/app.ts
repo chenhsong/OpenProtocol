@@ -150,7 +150,7 @@ document.addEventListener("DOMContentLoaded", () =>
 
 				let access_level = parseInt(resp, 10);
 				if (access_level > 10) access_level = 10;
-				if (access_level <= 0) return iChen.OpenProtocol.createMessage("OperatorInfo", { controllerId: operator_message.controllerId, operatorId: 0, name: "Disallowed", level: 0 });
+				if (access_level <= 0) return iChen.OpenProtocol.createMessage("OperatorInfo", { controllerId: operator_message.controllerId, operatorId: 0, name: "Disallowed", password: operator_message.password, level: 0 });
 				return iChen.OpenProtocol.createMessage("OperatorInfo", { controllerId: operator_message.controllerId, operatorId: access_level * 100, name: "User" + access_level, password: operator_message.password, level: access_level });
 			}
 

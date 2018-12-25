@@ -7,8 +7,9 @@
 		"noImplicitAny": true,
 		"noImplicitReturns": true,
 		"noImplicitThis": true,
+		"declaration": true,
 		"sourceMap": true,
-		"outDir": "../lib"
+		"outFile": "../lib/iChen.OpenProtocol.js"
 	},
 	"compileOnSave": true
 }

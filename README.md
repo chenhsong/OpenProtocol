@@ -1,3 +1,4 @@
-# Description
+Description
+===========
 
-OpenProtocol&trade; libraries for iChen System 4.0.
+Open Protocol™ libraries for iChen® System 4.0.

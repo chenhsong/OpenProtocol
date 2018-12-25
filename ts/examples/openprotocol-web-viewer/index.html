@@ -1,45 +1,17 @@
 ﻿<!DOCTYPE html>
 
 <html lang="en">
+
 <head>
 	<meta charset="utf-8" />
 	<title>iChen 4.1 Open Protocol Web Viewer</title>
 	<style>
-		.info
-		{
-			color: black;
-		}
-
-		.command
-		{
-			white-space: pre;
-			color: magenta;
-			font-weight: bold;
-		}
-
-		.reply
-		{
-			white-space: pre;
-			color: limegreen;
-			font-weight: bold;
-		}
-
-		.message
-		{
-			white-space: pre;
-			color: darkblue;
-			font-weight: bold;
-		}
-
-		.error
-		{
-			color: red;
-		}
-
-		.warning
-		{
-			background-color: yellow;
-		}
+		.info	{	color: black;	}
+		.command { white-space: pre; color: magenta; font-weight: bold; }
+		.reply { white-space: pre; color: limegreen; font-weight: bold; }
+		.message { white-space: pre; color: darkblue; font-weight: bold; }
+		.error { color:red; }
+		.warning { background-color: yellow; }
 	</style>
 
 	<!-- Load the interface module from the correct path, comment out the incorrect ones -->
@@ -50,6 +22,7 @@
 
 	<script src="app.js"></script>
 </head>
+
 <body>
 	<div>
 		<label for="txtUrl">URL: </label><input id="txtUrl" type="text" style="width:15em;" />
@@ -67,4 +40,5 @@
 
 	<div id="messages"></div>
 </body>
+
 </html>

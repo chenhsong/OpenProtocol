@@ -1,16 +1,20 @@
-# Open Protocol&trade; Access Library (TypeScript)
+Open Protocol™ Access Library (TypeScript)
+=========================================
 
 Language Version: 2.5 or above
 
-## Location
+Location
+--------
 
 The library module is located in `../lib/iChen.OpenProtocol.js` or `../lib/iChen.OpenProtocol.min.js`
 
-## Typings
+Typings
+-------
 
 A typings file can be found in `../lib/iChen.OpenProtocol.d.ts`
 
-## How to Use in a TypeScript Project
+How to Use in a TypeScript Project
+---------------------------------
 
 ### Typings
 
@@ -34,14 +38,14 @@ or (if minified version)
 
 ### API Usage
 
-An global object called `iChen.OpenProtocol` will be available for you to create various Open Protocol&trade; messages.
+A global object named `iChen.OpenProtocol` is available for creating various Open Protocol™ message objects.
 In particular, the `iChen.OpenProtocol.createMessage` function can create different messages based on parameters provided.
 
-To converse with an iChen&reg; System server, simply:
+To converse with an iChen® Server, simply:
 
 1. Create a WebSocket connection to the server
 2. Create a `Join` message
-3. Login to the server by sending the `Join` message
+3. Login to the server by sending the `Join` message (in JSON format) through the WebSocket connection
 4. Start listening to reply messages and respond
 
 See the various example programs for details.

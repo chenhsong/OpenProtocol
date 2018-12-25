@@ -1,5 +1,4 @@
-document.addEventListener("DOMContentLoaded", function ()
-{
+document.addEventListener("DOMContentLoaded", function() {
 	/// Mock job scheduling system
 	var Jobs = [
 		{ jobCardId: "JOB_CARD_1", moldId: "MOULD_001", progress: 0, total: 8000 },
@@ -20,12 +19,11 @@ document.addEventListener("DOMContentLoaded", function ()
 
 	// Hook up buttons
 	btnConnect.addEventListener("click", run);
-	btnGetMoldData.addEventListener("click", function () { return getMoldData(parseInt(txtId.value, 10)); });
-	btnReadMoldData.addEventListener("click", function () { return readMoldData(parseInt(txtId.value, 10), txtField.value); });
+	btnGetMoldData.addEventListener("click", function() { return getMoldData(parseInt(txtId.value, 10)); });
+	btnReadMoldData.addEventListener("click", function() { return readMoldData(parseInt(txtId.value, 10), txtField.value); });
 
 	// Log text to page
-	function logText(type, text)
-	{
+	function logText(type, text) {
 		var div = document.createElement("div");
 		div.className = type;
 
@@ -46,8 +44,7 @@ document.addEventListener("DOMContentLoaded", function ()
 	var handle = 0;
 
 	// Send a message via WebSocket
-	function sendMessage(msg, type)
-	{
+	function sendMessage(msg, type) {
 		if (!type) type = "command";
 		var json = JSON.stringify(msg);
 		logText(type, "Sent: " + json);
@@ -55,8 +52,7 @@ document.addEventListener("DOMContentLoaded", function ()
 	}
 
 	// Main loop
-	function run()
-	{
+	function run() {
 		var url = txtUrl.value.trim(); // WebSocket URL
 		var password = txtPwd.value.trim(); // Password
 
@@ -86,31 +82,27 @@ document.addEventListener("DOMContentLoaded", function ()
 		// Create a WebSocket connection to the server
 		ws = new WebSocket(url);
 
-		ws.onopen = function ()
-		{
+		ws.onopen = function() {
 			// Initialize handshake with server
 			logText("info", "WebSocket connection established.");
 
 			// Send a JOIN message
 			sendMessage({ $type: "Join", language: "EN", version: "1.0", password: password, filter: "All, JobCards, Operators", sequence: ++seq });
 
-			loopHandle = setInterval(function () { sendMessage({ $type: "Alive", sequence: ++seq, priority: -10 }); }, 5000);
+			loopHandle = setInterval(function() { sendMessage({ $type: "Alive", sequence: ++seq, priority: -10 }); }, 5000);
 		};
 
 		// Wire up WebSocket events
-		ws.onerror = function (ev)
-		{
+		ws.onerror = function(ev) {
 			console.error(ev);
 			logText("error", "An error has occurred!");
 		};
-		ws.onclose = function (ev)
-		{
+		ws.onclose = function(ev) {
 			logText("info", "WebSocket connection to iChen 4.0 Server is closed.");
 			logText("info", "Code = " + ev.code + ", Reason = " + ev.reason);
 			clearInterval(loopHandle);
 		};
-		ws.onmessage = function (msg)
-		{
+		ws.onmessage = function(msg) {
 			try {
 				logText("message", "Received: " + msg.data);
 				var reply_message = handleMessage(JSON.parse(msg.data));
@@ -120,8 +112,7 @@ document.addEventListener("DOMContentLoaded", function ()
 	}
 
 	// Handle message
-	function handleMessage(message)
-	{
+	function handleMessage(message) {
 		switch (message.$type) {
 			case "JoinResponse": {
 				// Send a REQ_CNTRLER_LIST message
@@ -155,8 +146,7 @@ document.addEventListener("DOMContentLoaded", function ()
 	}
 
 	// Send command to get mold data
-	function getMoldData(id)
-	{
+	function getMoldData(id) {
 		if (id === undefined || id === null || isNaN(id)) {
 			alert("Please enter a valid machine number.");
 			txtId.focus();
@@ -168,8 +158,7 @@ document.addEventListener("DOMContentLoaded", function ()
 	}
 
 	// Send command to read mold data value
-	function readMoldData(id, field)
-	{
+	function readMoldData(id, field) {
 		if (id === undefined || id === null || isNaN(id)) {
 			alert("Please enter a valid machine number.");
 			txtId.focus();
