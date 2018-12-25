@@ -37,8 +37,8 @@ declare namespace iChen.OpenProtocol {
     type OpModes = "Manual" | "SemiAutomatic" | "Automatic" | "Others" | "Offline" | "Unknown";
     type JobModes = "ID01" | "ID02" | "ID03" | "ID04" | "ID05" | "ID06" | "ID07" | "ID08" | "ID09" | "ID10" | "ID11" | "ID12" | "ID13" | "ID14" | "ID15" | "Offline";
     type CommandMessageTypes = "Alive" | "RequestControllersList" | "Join" | "RequestMoldData" | "ReadMoldData" | "JobCardsList" | "OperatorInfo";
-    type ResponseMessages = "ControllersList" | "JoinResponse" | "MoldData" | "MoldDataValue" | "CycleData" | "ControllerAction" | "ControllerStatus" | "RequestJobCardsList" | "LoginOperator";
-    type ValidMessageTypes = CommandMessageTypes | ResponseMessages;
+    type ResponseMessageTypes = "ControllersList" | "JoinResponse" | "MoldData" | "MoldDataValue" | "CycleData" | "ControllerAction" | "ControllerStatus" | "RequestJobCardsList" | "LoginOperator";
+    type ValidMessageTypes = CommandMessageTypes | ResponseMessageTypes;
     type KeyValue<K, V> = {
         key: K;
         value: V;

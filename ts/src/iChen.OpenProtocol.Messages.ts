@@ -9,8 +9,8 @@ namespace iChen.OpenProtocol
 	export type JobModes = "ID01" | "ID02" | "ID03" | "ID04" | "ID05" | "ID06" | "ID07" | "ID08" | "ID09" | "ID10" | "ID11" | "ID12" | "ID13" | "ID14" | "ID15" | "Offline";
 
 	export type CommandMessageTypes = "Alive" | "RequestControllersList" | "Join" | "RequestMoldData" | "ReadMoldData" | "JobCardsList" | "OperatorInfo";
-	export type ResponseMessages = "ControllersList" | "JoinResponse" | "MoldData" | "MoldDataValue" | "CycleData" | "ControllerAction" | "ControllerStatus" | "RequestJobCardsList" | "LoginOperator";
-	export type ValidMessageTypes = CommandMessageTypes | ResponseMessages;
+	export type ResponseMessageTypes = "ControllersList" | "JoinResponse" | "MoldData" | "MoldDataValue" | "CycleData" | "ControllerAction" | "ControllerStatus" | "RequestJobCardsList" | "LoginOperator";
+	export type ValidMessageTypes = CommandMessageTypes | ResponseMessageTypes;
 
 	// Other types
 	export type KeyValue<K, V> = { key: K; value: V; }
