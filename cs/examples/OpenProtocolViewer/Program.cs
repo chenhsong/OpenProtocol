@@ -73,6 +73,7 @@ namespace iChen.OpenProtocol.Example
 
 				var buffer = new byte[10240];
 				var segment = new ArraySegment<byte>(buffer);
+				var sb = new StringBuilder();
 
 				// Loop until canceled
 				for (; !ct.IsCancellationRequested;) {
@@ -80,9 +81,21 @@ namespace iChen.OpenProtocol.Example
 						// Receive WebSocket message
 						var response = await websock.ReceiveAsync(segment, ct);
 						var response_length = response.Count;
-						var json_text = Encoding.UTF8.GetString(segment.Array, 0, response_length);
+						var text = Encoding.UTF8.GetString(segment.Array, 0, response_length);
+						Console.WriteLine($"{response_length} byte(s) received: {text}");
 
-						Console.WriteLine($"{response_length} byte(s) received: {json_text}");
+						string json_text;
+
+						if (!response.EndOfMessage) {
+							sb.Append(text);
+							continue;
+						} else if (sb.Length == 0) {
+							json_text = text;
+						} else {
+							sb.Append(text);
+							json_text = sb.ToString();
+							sb.Clear();
+						}
 
 						// Handle the message
 						var reply_message = HandleMessage(json_text);
