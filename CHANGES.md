@@ -1,7 +1,8 @@
 Release 4.2
 ===========
 
-### Enhancements
+Enhancements
+------------
 
 - Messages can optinally contain a unique `ID` field (randomly
   generated) for tracking purposes. A new method `CreateUniqueID`
@@ -23,7 +24,8 @@ Release 4.2
 - As `Message`'s are, mostly, immutable, the `JSON` representation
   of a `Message` is cached for reuse.
 
-### Breaking Changes
+Breaking Changes
+----------------
 
 - `ControllerType` field in `Controller` is changed to `String` in
   order to accommodate future controller types. 
@@ -36,18 +38,18 @@ Release 4.2
 Release 4.1.1
 =============
 
-## New Features
+New Features
+------------
 
-* Geo-location fields (not yet used)
+- Geo-location fields (not yet used)
 
-* `OperatorName` field
+- `OperatorName` field
 
-## Breaking Changes
+Breaking Changes
+----------------
 
-* `ControllerStatusMessage` and `Controller` constructors are modified to take an extra `OperatorName` parameter.
+- `ControllerStatusMessage` and `Controller` constructors are modified to take an extra `OperatorName` parameter.
 
-* The `Controller` constructor is modified to take extra geo-location fields.
+- The `Controller` constructor is modified to take extra geo-location fields.
 
-* C# 7.2 or higher is now required.
-
-
+- C# 7.2 or higher is now required.
