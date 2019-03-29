@@ -1,8 +1,9 @@
-﻿iChen® 4.1 Open Protocol™ .NET Library Quick Reference
-====================================================================
+﻿iChen® 4 Open Protocol™ .NET Library Quick Reference
+====================================================
 
 Copyright © Chen Hsong Holdings Ltd.  All rights reserved.  
 .NET Framework Required: .NET Standard 1.6  
+`iChen.OpenProtocol.dll` version: 4.1 and up  
 Document Version: 4.1  
 Last Edited: 2018-10-22
 

@@ -1,4 +1,4 @@
-iChen®; 4.1 Open Protocol™ Library Reference - Action Codes
+iChen®; 4 Open Protocol™ Library Reference - Action Codes
 =========================================================
 
 Copyright © 2016 Chen Hsong Holdings Ltd.  All rights reserved.

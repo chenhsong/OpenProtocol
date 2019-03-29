@@ -1,11 +1,11 @@
-iChen® 4.1 Open Protocol™ .NET Library Messages Reference
+iChen® 4 Open Protocol™ .NET Library Messages Reference
 =======================================================
 
 Copyright © Chen Hsong Holdings Ltd.  All rights reserved.  
 .NET Framework Required: .NET Standard 1.6  
-For `iChen.OpenProtocol.dll` version: 4.1.2 and up  
-Document Version: 4.1.2  
-Last Edited: 2018-10-22
+`iChen.OpenProtocol.dll` version: 4.2.1 and up  
+Document Version: 4.2.1  
+Last Edited: 2019-03-29
 
 
 Introduction
@@ -778,9 +778,11 @@ This class implements the `RESP_MOLD` message, which is sent from the
 iChen® 4.1 Server to the client in response to a [`RequestMoldDataMessage`](#requestmolddatamessage)
 message.
 
+#### Important
+
 Mold settings can be numerous (i.e. more than 1,000), but not all
 variables/fields are used. In order to reduce payload size, variables/fields
-with zero values are not included in the resultant data dictionary.
+with **zero values** are **NOT** included in the resultant data dictionary.
 
 ### Properties
 
@@ -849,10 +851,12 @@ ReadMoldDataMessage
 The iChen® 4.1 Server keeps a cache of the states of all mold settings
 for each controller. This class implements the READ_MOLD_DATA message which is
 sent to the iChen® 4.1 Server to read the current value of a particular
-mold setting.
+mold setting based on the cached values.
 
 The server responds with a [`MoldDataValueMessage`](#molddatavaluemessage)
-message.
+message (if `Field` is set) including the current value of the requested mold
+setting, or a [`MoldDataMessage`](#molddatamessage) including the current
+values of all mold settings (if `Field` is `null`, empty or white-space).
 
 ### Properties
 
@@ -861,7 +865,7 @@ message.
 |`Sequence`          |`Int64`  |`sequence`    |`number` |*Inherited from [`Message`](#message)*     |
 |`Priority`          |`Int32`  |`priority`    |`number` |*Inherited from [`Message`](#message)*     |
 |`ControllerId`      |`UInt32` |`controllerId`|`number` |Unique ID of the controller    |
-|`Field`             |`String` |`field`       |`string` |Name of the mold setting to read.|
+|`Field`             |`String` |`field`       |`string` |Name of the mold setting to read, `null` for all.|
 
 ### JSON Format Example
 

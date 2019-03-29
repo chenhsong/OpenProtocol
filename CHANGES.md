@@ -1,10 +1,23 @@
+Release 4.2.1
+=============
+
+Enhancements
+------------
+
+- Setting `Field` to null or an empty/white-space string in
+  `ReadMoldDataMessage` now returns a `MoldDataMessage` with the
+  full set of buffered mold setting values instead of causing an
+  exception.  Under this situation, a `MoldDataValueMessage` will
+  not be returned.
+
+
 Release 4.2
 ===========
 
 Enhancements
 ------------
 
-- Messages can optinally contain a unique `ID` field (randomly
+- Messages can optionally contain a unique `ID` field (randomly
   generated) for tracking purposes. A new method `CreateUniqueID`
   creates this unique ID, over-writing whatever is in the `ID`
   field previously.

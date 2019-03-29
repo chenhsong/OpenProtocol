@@ -1,4 +1,4 @@
-iChen® 4.1 Open Protocol™ Library Reference - Cycle Data
+iChen® 4 Open Protocol™ Library Reference - Cycle Data
 ======================================================
 
 Copyright © 2016 Chen Hsong Holdings Ltd.  All rights reserved.

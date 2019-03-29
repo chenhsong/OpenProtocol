@@ -1,4 +1,4 @@
-iChen® 4.1 Open Protocol™ Library Reference - Enum Types
+iChen® 4 Open Protocol™ Library Reference - Enum Types
 ======================================================
 
 Copyright © 2016 Chen Hsong Holdings Ltd.  All rights reserved.
@@ -8,7 +8,7 @@ Languages
 ---------
 
 `Languages` represent the language for textual information sent between the
-iChen&reg; 4.1 server and clients.
+iChen&reg; server and clients.
 
 |Code|Numeric Value|Description|
 |----|:-----------:|-----------|
@@ -27,7 +27,7 @@ iChen&reg; 4.1 server and clients.
 Filters
 -------
 
-`Filters` controls what type(s) of messages the iChen&reg; 4.1 server will send to each client.
+`Filters` controls what type(s) of messages the iChen&reg; server will send to each client.
 
 ### Regular messages
 

@@ -43,21 +43,18 @@ namespace iChen.OpenProtocol
 		public uint ControllerId { get; }
 		public string Field { get; }
 
-		public ReadMoldDataMessage (uint ControllerId, string field, int Priority = 0) : base(Priority)
+		public ReadMoldDataMessage (uint ControllerId, string field = null, int Priority = 0) : base(Priority)
 		{
-
 			this.ControllerId = (ControllerId > 0) ? ControllerId : throw new ArgumentOutOfRangeException(nameof(ControllerId));
-			this.Field = !string.IsNullOrWhiteSpace(field) ? field : throw new ArgumentNullException(nameof(field));
+			this.Field = !string.IsNullOrWhiteSpace(field) ? field : null;
 		}
 
 		/// <remarks>This constructor is internal and only used for deserialization.</remarks>
 		[JsonConstructor]
 		internal ReadMoldDataMessage (string ID, long Sequence, uint ControllerId, string field, int Priority) : base(ID, Sequence, Priority)
 		{
-			if (string.IsNullOrWhiteSpace(field)) throw new ArgumentNullException(nameof(field));
-
 			this.ControllerId = (ControllerId > 0) ? ControllerId : throw new ArgumentOutOfRangeException(nameof(ControllerId));
-			this.Field = !string.IsNullOrWhiteSpace(field) ? field : throw new ArgumentNullException(nameof(field));
+			this.Field = !string.IsNullOrWhiteSpace(field) ? field : null;
 		}
 
 		public override IEnumerable<KeyValuePair<string, object>> GetFields ()
