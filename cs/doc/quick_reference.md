@@ -9,7 +9,7 @@ Last Edited: 2018-10-22
 
 
 Open Protocol™ Messages
--------------------------------
+-----------------------
 
 The iChen® System 4 communicates with third-party
 outside systems via a standardized **WebSocket** interface

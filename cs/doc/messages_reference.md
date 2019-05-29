@@ -2,10 +2,10 @@ iChen® 4 Open Protocol™ .NET Library Messages Reference
 =======================================================
 
 Copyright © Chen Hsong Holdings Ltd.  All rights reserved.  
-.NET Framework Required: .NET Standard 1.6  
+.NET Environment Required: .NET Standard 1.6  
 `iChen.OpenProtocol.dll` version: 4.2.1 and up  
 Document Version: 4.2.1  
-Last Edited: 2019-03-29
+Last Edited: 2019-05-29
 
 
 Introduction
@@ -17,11 +17,38 @@ iChen® System via industry-standard WebSocket (IETF RFC 6455)
 connections with text-based payloads. All messages passed in the protocol are
 serialized to plain-text in **JSON** format.
 
-To assist in connectivity, an access library is provided for the Microsoft
-.NET Framework. The library contains types, interfaces and classes useful for
+To assist in connectivity, an access library is provided for Microsoft
+.NET. This library contains types, interfaces and classes useful for
 constructing, serializing and parsing **JSON**-formatted messages.
 
+
+Protocol
+--------
+
 ![MIS/MES Communications Chart](comms_chart.png)
+
+A client initiates a session with Open Protocol™ by first creating a
+`WebSocket` and connecting to the iChen® 4 Server's Open Protocol™ port
+(configurable on the server, defaults to 5788).  The server and the client
+communicate via **JSON**-formatted text-based messages sent over the
+WebSocket connection.
+
+After the WebSocket connection is made, a session starts with the client
+sending a [`Join`](#joinmessage) message to the server.  The server responds
+with a [`JoinResponse`](#joinresponsemessage) message, and the session is
+established.
+
+It is essential that the client *maintains* the session by periodically sending
+an [`Alive`](#alivemessage) to the server.  If the server does not receive
+any `Alive` message within a time-out period (configurable on the server,
+defaults to 20 seconds), the server assumes that the client is dead and may
+terminate the WebSocket connection unilaterally.
+
+Conversely, the server sends an [`Alive`](#alivemessage) message back to the
+client periodically (configurable on the server, defaults to every 10 seconds).
+If the client does not receive any `Alive` message within a reasonable time-out
+period, the server can be assumed to be dead and the client should terminnate
+the WebSocket connection.
 
 
 Enum Types
@@ -58,8 +85,8 @@ An *immutable* class containing information on a controller (i.e. machine).
 |`Version`           |`String`  |`version`       |`string` |The version of the controller        |
 |`Model`             |`String`  |`model`         |`string` |The machine model                    |
 |`IP`                |`String`  |`IP`            |`string` |IP address of the controller, in the format "`x.x.x.x`"|
-|`OpMode`        |[`OpModes`](../../doc/enums.md#opmodes) enum|`opMode`        |`string` |Current operation mode of the controller|
-|`JobMode`      |[`JobModes`](../../doc/enums.md#jobmodes) enum|`jobMode`       |`string` |Current job mode of the controller   |
+|`OpMode`            |[`OpModes`](../../doc/enums.md#opmodes) enum|`opMode`        |`string` |Current operation mode of the controller|
+|`JobMode`           |[`JobModes`](../../doc/enums.md#jobmodes) enum|`jobMode`       |`string` |Current job mode of the controller   |
 |`JobCardId`         |`String`  |`jobCardId`     |`string` |Unique ID of the current job card loaded (if any)|
 |`LastCycleData`     |`IReadOnlyDictionary` `<String,Double>`|`lastCycleData`|`object`|A data dictionary (if any) containing the last set of cycle data on the controller|
 |`Variables`         |`IReadOnlyDictionary` `<String,Double>`|`variables`|`object`|A data dictionary (if any) containing the latest values of all pollable variables on the controller|
@@ -195,6 +222,34 @@ All message classes are *immutable*.
 ~~~~~~~~~~~~
 
 
+AliveMessage
+------------
+
+> Assembly: `iChen.OpenProtocol.dll`  
+> Namespace: `iChen.OpenProtocol`  
+> Base class: `iChen.OpenProtocol.Message`
+
+### Description
+
+This class implements the `ALIVE` message, which must be sent between the client
+and the iChen® 4 Server at regular intervals.
+
+If the server does not receive this message after a time-out period
+(configurable on the server, defaults to 20 seconds), the client is assumed to
+be dead and the server may stop sending updates to the client. The server then
+may or may not terminate the connection.
+
+If this message is not received from the server for a time-out period
+(configurable on the server, defaults to 10 seconds), the server can be assumed
+dead and the client can terminate the connection.
+
+### JSON Format Example
+
+~~~~~~~~~~~~json
+{ "$type":"Alive", "sequence":123, "priority":10 }
+~~~~~~~~~~~~
+
+
 JoinMessage
 -----------
 
@@ -311,30 +366,6 @@ message.
   "sequence":123,
   "priority":10
 }
-~~~~~~~~~~~~
-
-
-AliveMessage
-------------
-
-> Assembly: `iChen.OpenProtocol.dll`  
-> Namespace: `iChen.OpenProtocol`  
-> Base class: `iChen.OpenProtocol.Message`
-
-### Description
-
-This class implements the `ALIVE` message, which must be sent to the
-iChen® 4 Server at regular intervals.
-
-If the server does not receive this message after a time-out period
-(configurable, initially set to 10 seconds), the client is assumed to be dead
-and the server may stop sending updates to the client. The server then may or
-may not terminate the connection.
-
-### JSON Format Example
-
-~~~~~~~~~~~~json
-{ "$type":"Alive", "sequence":123, "priority":10 }
 ~~~~~~~~~~~~
 
 
