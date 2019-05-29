@@ -11,7 +11,7 @@ Last Edited: 2019-03-29
 Introduction
 ------------
 
-The iChen® System 4.1 publishes an open communications protocol for
+The iChen® System 4 publishes an open communications protocol for
 third-party connectivity. An external system communicates with the
 iChen® System via industry-standard WebSocket (IETF RFC 6455)
 connections with text-based payloads. All messages passed in the protocol are
@@ -162,7 +162,7 @@ Message (abstract base class)
 
 ### Description
 
-This class is the abstract base class for all iChen® 4.1 Open
+This class is the abstract base class for all iChen® 4 Open
 Protocol™ message type classes.
 
 All message classes are *immutable*.
@@ -205,7 +205,7 @@ JoinMessage
 ### Description
 
 This class implements the `JOIN` request message, which must be sent to the
-iChen® 4.1 Server immediately after establishing a connection.
+iChen® 4 Server immediately after establishing a connection.
 
 If this message is not sent, or if the server fails to authenticate the
 connection, then the server may or may not terminate the connection and/or
@@ -220,11 +220,11 @@ message.
 |:-------------------|:-------:|:-----------:|:-------:|:------------------------------|
 |`Sequence`          |`Int64`  |`sequence`   |`number` |*Inherited from [`Message`](#message)*     |
 |`Priority`          |`Int32`  |`priority`   |`number` |*Inherited from [`Message`](#message)*     |
-|`Language`   |[`Languages`](../../doc/enums.md#languages) enum|`language`   |`string` |Language encoding              |
-|`Version`           |`String` |`version`    |`string` |The maximum protocol version supported, in the format "`4.1.2.3`"|
+|`Language`          |[`Languages`](../../doc/enums.md#languages) enum|`language`   |`string` |Language encoding              |
+|`Version`           |`String` |`version`    |`string` |The maximum protocol version supported, in the format "`x.x.x.x`"|
 |`OrgId`             |`String` |`orgId`      |`string` |Organization ID (if any)       |
 |`Password`          |`String` |`password`   |`string` |Password to join the server    |
-|`Filter`      |[`Filters`](../../doc/enums.md#filters) enum |`filter`     |`string` |A filter (if any) containing what type(s) of messages to receive|
+|`Filter`            |[`Filters`](../../doc/enums.md#filters) enum |`filter`     |`string` |A filter (if any) containing what type(s) of messages to receive|
 
 ### Filter
 
@@ -267,7 +267,7 @@ the authorized messages will be sent by the server, effectively limiting the
 {
   "$type":"Join",
   "language":"EN",
-  "version":"4.1",
+  "version":"4.0",
   "password":"xxxxxxx",
   "filter":"Status, Cycle, Alarms, Audit",
   "sequence":123,
@@ -286,7 +286,7 @@ JoinResponseMessage
 ### Description
 
 This class implements the `RESP_JOIN` message, which is sent from the
-iChen® 4.1 Server to a client in response to a [`JoinMessage`](#joinmessage)
+iChen® 4 Server to a client in response to a [`JoinMessage`](#joinmessage)
 message.
 
 ### Properties
@@ -324,7 +324,7 @@ AliveMessage
 ### Description
 
 This class implements the `ALIVE` message, which must be sent to the
-iChen® 4.1 Server at regular intervals.
+iChen® 4 Server at regular intervals.
 
 If the server does not receive this message after a time-out period
 (configurable, initially set to 10 seconds), the client is assumed to be dead
@@ -348,7 +348,7 @@ LoginOperatorMessage
 ### Description
 
 This class implements the `REQ_PWD_LEVEL` request message, which is sent by
-the iChen® 4.1 Server when a connected controller attempts to
+the iChen® 4 Server when a connected controller attempts to
 authenticate and authorize a user password.
 
 The client should respond with a [`OperatorInfoMessage`](#operatorinfomessage)
@@ -386,7 +386,7 @@ OperatorInfoMessage
 ### Description
 
 This class implements the `RESP_PWD_LEVEL` message, which is to the
-iChen® 4.1 Server in response to a `LoginOperator` message.
+iChen® 4 Server in response to a `LoginOperator` message.
 
 ### Properties
 
@@ -408,12 +408,12 @@ request message.
 
 If the `Password` provided is not authenticated or not authorized to access
 the controller, then this [`OperatorInfoMessage`](#operatorinfomessage) should
-be sent to the iChen® 4.1 Server with the lowest access level (default
+be sent to the iChen® 4 Server with the lowest access level (default
 to zero).
 
 If the `Password` provided is authenticated and authorized to access the
 controller, then this [`OperatorInfoMessage`](#operatorinfomessage) should be
-sent to the iChen® 4.1 Server with the appropriate access level
+sent to the iChen® 4 Server with the appropriate access level
 (typically 0-10).
 
 ### JSON Format Example
@@ -442,7 +442,7 @@ RequestControllersListMessage
 ### Description
 
 This class implements the `REQ_CNTRLER_LIST` message, which is sent to the
-iChen® 4.1 Server to request a list of controllers (i.e. machines)
+iChen® 4 Server to request a list of controllers (i.e. machines)
 currently connected to the server.
 
 The server responds with a [`ControllersListMessage`](#controllerslistmessage)
@@ -465,7 +465,7 @@ ControllersListMessage
 ### Description
 
 This class implements the `RESP_CNTRLER_LIST` message, which is sent from the
-iChen® 4.1 Server to the client in response to the [`RequestControllersListMessage`](#requestcontrollerslistmessage)
+iChen® 4 Server to the client in response to the [`RequestControllersListMessage`](#requestcontrollerslistmessage)
 message.
 
 ### Properties
@@ -560,7 +560,7 @@ RequestJobCardsListMessage
 ### Description
 
 This class implements the `REQ_JOBCARDS_LIST` message, which is sent by the
-iChen® 4.1 Server when a connected controller requests a list of job
+iChen® 4 Server when a connected controller requests a list of job
 cards.
 
 The client should respond with a [`JobCardsListMessage`](#jobcardslistmessage)
@@ -591,7 +591,7 @@ JobCardsListMessage
 ### Description
 
 This class implements the `RESP_JOBSLIST` message, which should be sent to the
-iChen® 4.1 Server in response to a [`RequestJobCardsListMessage`](#requestjobcardslistmessage)
+iChen® 4 Server in response to a [`RequestJobCardsListMessage`](#requestjobcardslistmessage)
 message.
 
 ### Properties
@@ -677,7 +677,7 @@ CycleDataMessage
 ### Description
 
 This class implements the `CYCLE_DATA` message, which is sent from the
-iChen® 4.1 Server to the client at the end of each machine cycle for all
+iChen® 4 Server to the client at the end of each machine cycle for all
 connected controllers.
 
 ### Properties
@@ -745,7 +745,7 @@ RequestMoldDataMessage
 ### Description
 
 This class implements the `REQ_MOLD` message, which is sent to the
-iChen® 4.1 Server to request the set of mold settings data of a
+iChen® 4 Server to request the set of mold settings data of a
 controller currently connected to the server.
 
 The server responds with a [`MoldDataMessage`](#molddatamessage) message.
@@ -775,7 +775,7 @@ MoldDataMessage
 ### Description
 
 This class implements the `RESP_MOLD` message, which is sent from the
-iChen® 4.1 Server to the client in response to a [`RequestMoldDataMessage`](#requestmolddatamessage)
+iChen® 4 Server to the client in response to a [`RequestMoldDataMessage`](#requestmolddatamessage)
 message.
 
 #### Important
@@ -848,9 +848,9 @@ ReadMoldDataMessage
 
 ### Description
 
-The iChen® 4.1 Server keeps a cache of the states of all mold settings
+The iChen® 4 Server keeps a cache of the states of all mold settings
 for each controller. This class implements the READ_MOLD_DATA message which is
-sent to the iChen® 4.1 Server to read the current value of a particular
+sent to the iChen® 4 Server to read the current value of a particular
 mold setting based on the cached values.
 
 The server responds with a [`MoldDataValueMessage`](#molddatavaluemessage)
@@ -890,10 +890,10 @@ MoldDataValueMessage
 ### Description
 
 This class implements the `RESP_MOLD_DATA_VALUE` message, which is sent from
-the iChen® 4.1 Server to the client in response to a [`ReadMoldDataMessage`](#readmolddatamessage)
+the iChen® 4 Server to the client in response to a [`ReadMoldDataMessage`](#readmolddatamessage)
 message.
 
-The iChen® 4.1 Server keeps a cache of the states of all mold settings
+The iChen® 4 Server keeps a cache of the states of all mold settings
 for each controller. The current cached value for the particular mold setting
 requested is sent.
 
@@ -931,7 +931,7 @@ ControllerStatusMessage
 ### Description
 
 This class implements the `UPD_CNTRLER` message, which is sent from the
-iChen® 4.1 Server to the client whenever status of a connected
+iChen® 4 Server to the client whenever status of a connected
 controller changes. Only the changed fields will be set, with other
 fields/properties being set to `null` or an appropriate default value as they
 are not relevant.
@@ -992,7 +992,7 @@ ControllerActionMessage
 ### Description
 
 This class implements the `CNTRLER_ACTION` message, which is sent from the
-iChen® 4.1 Server to the client whenever the current *action* of a
+iChen® 4 Server to the client whenever the current *action* of a
 connected controller changes.
 
 ### Properties

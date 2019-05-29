@@ -11,7 +11,7 @@ Last Edited: 2018-10-22
 Open Protocol™ Messages
 -------------------------------
 
-The iChen System® (version 4.1 or above) communicates with third-party
+The iChen® System 4 communicates with third-party
 outside systems via a standardized **WebSocket** interface
 (IETF RFC 6455) with messages transmitted in plain text encoded in
 **JSON** format.
