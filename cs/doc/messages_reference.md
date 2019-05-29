@@ -22,10 +22,12 @@ To assist in connectivity, an access library is provided for Microsoft
 constructing, serializing and parsing **JSON**-formatted messages.
 
 
-Protocol
---------
+Protocol Overview
+-----------------
 
-![MIS/MES Communications Chart](comms_chart.png)
+![Communications Chart](https://chenhsong.github.io/iChen/doc/comms_chart.png)
+
+### Eablish Connection
 
 A client initiates a session with Open Protocol™ by first creating a
 `WebSocket` and connecting to the iChen® 4 Server's Open Protocol™ port
@@ -33,10 +35,14 @@ A client initiates a session with Open Protocol™ by first creating a
 communicate via **JSON**-formatted text-based messages sent over the
 WebSocket connection.
 
+### `Join` & `JoinResponse`
+
 After the WebSocket connection is made, a session starts with the client
 sending a [`Join`](#joinmessage) message to the server.  The server responds
 with a [`JoinResponse`](#joinresponsemessage) message, and the session is
 established.
+
+### Connection Maintenance via `Alive`
 
 It is essential that the client *maintains* the session by periodically sending
 an [`Alive`](#alivemessage) to the server.  If the server does not receive
