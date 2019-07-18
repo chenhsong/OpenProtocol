@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace iChen.OpenProtocol.Example
 {
@@ -59,7 +57,10 @@ namespace iChen.OpenProtocol.Example
 
 			// Check message type
 
-			if (message is JoinResponseMessage) {
+			if (message is AliveMessage) {
+				// Send an ALIVE when received one
+				return new AliveMessage();
+			} else if (message is JoinResponseMessage) {
 				// Send a REQ_CNTRLER_LIST message
 				return new RequestControllersListMessage();
 			} else if (message is LoginOperatorMessage) {

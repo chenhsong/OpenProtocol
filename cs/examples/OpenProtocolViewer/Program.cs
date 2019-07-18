@@ -10,7 +10,7 @@ namespace iChen.OpenProtocol.Example
 	{
 		private static void Main ()
 		{
-			Console.WriteLine("iChen 4.1 Open Protocol Viewer");
+			Console.WriteLine("iChen 4 Open Protocol Viewer");
 			Console.WriteLine();
 
 			// Read parameters
@@ -41,7 +41,7 @@ namespace iChen.OpenProtocol.Example
 			var message_data = Encoding.UTF8.GetBytes(json_text);
 
 			await websock.SendAsync(new ArraySegment<byte>(message_data), WebSocketMessageType.Text, true, ct);
-			Console.WriteLine($"Message sent: {json_text}");
+			Console.WriteLine($"Sent ({json_text.Length}): {json_text}");
 		}
 
 		private static async Task ConnectToiChenServerAsync (string url, string password, CancellationToken ct)
@@ -82,7 +82,7 @@ namespace iChen.OpenProtocol.Example
 						var response = await websock.ReceiveAsync(segment, ct);
 						var response_length = response.Count;
 						var text = Encoding.UTF8.GetString(segment.Array, 0, response_length);
-						Console.WriteLine($"{response_length} byte(s) received: {text}");
+						Console.WriteLine($"Received ({response_length}): {text}");
 
 						string json_text;
 
