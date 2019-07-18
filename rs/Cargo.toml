@@ -1,0 +1,18 @@
+[package]
+name = "ichen-openprotocol"
+description = "iChen Open Protocol access library."
+version = "0.1.0"
+edition = "2018"
+authors = ["Chen Hsong"]
+readme = "README.md"
+license = "MIT"
+
+[dependencies]
+serde = { version = "*", features = ["derive"] }
+serde_json = "*"
+chrono = { version="*", features = ["serde"] }
+regex = "*"
+lazy_static = "*"
+strum = "*"
+strum_macros = "*"
+websocket = "*"
