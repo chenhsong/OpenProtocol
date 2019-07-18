@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("iChen Open Protocol Viewer")]
-[assembly: AssemblyDescription("A sample viewer for the iChen 4.1 Open Protocol")]
+[assembly: AssemblyDescription("A sample viewer for the iChen 4 Open Protocol")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Chen Hsong Holdings Ltd.")]
 [assembly: AssemblyProduct("OpenProtocolViewer")]

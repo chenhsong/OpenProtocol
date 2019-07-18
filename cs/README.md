@@ -1,5 +1,5 @@
 Open Protocol™ .NET Interface Library
-==========================================
+=====================================
 
 .Net assembly to interface with the iChen® System using Open Protocol™.
 

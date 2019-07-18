@@ -45,7 +45,7 @@ established.
 ### Connection Maintenance via `Alive`
 
 It is essential that the client *maintains* the session by periodically sending
-an [`Alive`](#alivemessage) to the server.  If the server does not receive
+an [`Alive`](#alivemessage) message to the server.  If the server does not receive
 any `Alive` message within a time-out period (configurable on the server,
 defaults to 20 seconds), the server assumes that the client is dead and may
 terminate the WebSocket connection unilaterally.
