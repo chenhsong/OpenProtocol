@@ -1,3 +1,20 @@
+Release 4.2.2
+=============
+
+Enhancements
+------------
+
+- Added new Rust interface library with examples.
+
+Bug Fixes
+---------
+
+- `TypeName` field of `Message` is now thread-safe.
+
+- `OperatorInfo` now takes zero in the `OperatorId` field indicating
+  that the operator is not found.
+
+
 Release 4.2.1
 =============
 
