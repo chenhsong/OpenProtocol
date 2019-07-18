@@ -44,7 +44,7 @@ namespace iChen.OpenProtocol
 		public OperatorInfoMessage (uint ControllerId, uint OperatorId, string Name, string Password, byte Level, int Priority = 0) : base(Priority)
 		{
 			this.ControllerId = (ControllerId > 0) ? ControllerId : throw new ArgumentOutOfRangeException(nameof(ControllerId));
-			this.OperatorId = (OperatorId > 0) ? OperatorId : throw new ArgumentOutOfRangeException(nameof(OperatorId));
+			this.OperatorId = OperatorId;
 			this.Password = !string.IsNullOrWhiteSpace(Password) ? Password.Trim() : throw new ArgumentNullException(nameof(Password));
 			this.Name = !string.IsNullOrWhiteSpace(Name) ? Name.Trim() : throw new ArgumentNullException(nameof(Name));
 			this.Level = Level;
@@ -55,7 +55,7 @@ namespace iChen.OpenProtocol
 		internal OperatorInfoMessage (string ID, long Sequence, uint ControllerId, uint OperatorId, string Name, string Password, byte Level, int Priority) : base(ID, Sequence, Priority)
 		{
 			this.ControllerId = (ControllerId > 0) ? ControllerId : throw new ArgumentOutOfRangeException(nameof(ControllerId));
-			this.OperatorId = (OperatorId > 0) ? OperatorId : throw new ArgumentOutOfRangeException(nameof(OperatorId));
+			this.OperatorId = OperatorId;
 			this.Password = !string.IsNullOrWhiteSpace(Password) ? Password.Trim() : throw new ArgumentNullException(nameof(Password));
 			this.Name = !string.IsNullOrWhiteSpace(Name) ? Name.Trim() : throw new ArgumentNullException(nameof(Name));
 			this.Level = Level;
