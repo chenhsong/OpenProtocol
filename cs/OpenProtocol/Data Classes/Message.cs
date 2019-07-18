@@ -23,12 +23,14 @@ namespace iChen.OpenProtocol
 		public string TypeName
 		{
 			get {
-				if (_typeName == null) {
-					_typeName = GetType().Name;
-					if (_typeName.EndsWith(MessageTypePostfix)) _typeName = _typeName.Substring(0, _typeName.Length - MessageTypePostfix.Length);
-				}
+				lock (this) {
+					if (_typeName == null) {
+						_typeName = GetType().Name;
+						if (_typeName.EndsWith(MessageTypePostfix)) _typeName = _typeName.Substring(0, _typeName.Length - MessageTypePostfix.Length);
+					}
 
-				return _typeName;
+					return _typeName;
+				}
 			}
 		}
 
@@ -65,9 +67,9 @@ namespace iChen.OpenProtocol
 		public void CreateUniqueID ()
 		{
 			ID = Guid.NewGuid().ToString().Replace("-", "").ToLowerInvariant();
-			_JsonText = null;	// The class is supposed to be immutable (other than this method), so clear the cached JSON text
+			_JsonText = null; // The class is supposed to be immutable (other than this method), so clear the cached JSON text
 		}
-		
+
 		/// <summary>
 		/// Get all the fields in a message.
 		/// </summary>
