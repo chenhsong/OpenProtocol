@@ -709,7 +709,7 @@ mod test {
             ControllersList { data, .. } => {
                 assert_eq!(2, data.len());
                 let c = data.get(&NonZeroU32::new(12345).unwrap()).unwrap();
-                assert_eq!("Hello", c.display_name.unwrap());
+                assert_eq!("Hello", c.display_name.as_ref().unwrap());
             }
             _ => panic!("Expected ControllersList, got {:?}", m),
         };

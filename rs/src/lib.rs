@@ -13,17 +13,17 @@
 //! as soon as possible.
 //!
 //! The result is minimal allocations and copying, but at the cost of stricter lifetime management,
-//! especially when deserializing -- the message struct cannot outlive the original JSON text string as
+//! especially when deserializing -- the message struct cannot out-live the original JSON text string as
 //! fields are borrowed extensively from the original JSON string.
 //!
 //! Another implication due to extensive usage of borrowed string slices is that strings literals with
 //! escape sequences will cause parsing errors because the actual string cannot be simply borrowed from
 //! the original JSON string.  Luckily this is extremely rare for most fields holding ID's etc.
 //! For this reason, user-defined text fields (such as operator name) are modeled using `Cow<&str>` instead.
-//! 
+//!
 
-use std::borrow::Cow;
 use lazy_static;
+use std::borrow::Cow;
 
 // Modules
 mod controller;
