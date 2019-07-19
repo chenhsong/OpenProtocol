@@ -105,8 +105,8 @@ impl<'a> JobCard<'a> {
     }
 
     fn check(&self) -> Result<()> {
-        check_string_empty(&self.job_card_id, "job_card_id")?;
-        check_string_empty(&self.mold_id, "mold_id")?;
+        check_string_empty(self.job_card_id, "job_card_id")?;
+        check_string_empty(self.mold_id, "mold_id")?;
         if self.progress > self.total {
             return Err(OpenProtocolError::ConstraintViolated(Box::new(format!(
                 "JobCard progress ({}) must not be larger than total ({}).",
@@ -250,7 +250,7 @@ pub enum Message<'a> {
     #[serde(rename_all = "camelCase")]
     CycleData {
         controller_id: NonZeroU32,
-        data: HashMap<String, f64>,
+        data: HashMap<&'a str, f64>,
 
         timestamp: DateTime<FixedOffset>,
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -329,7 +329,7 @@ pub enum Message<'a> {
     #[serde(rename_all = "camelCase")]
     MoldData {
         controller_id: NonZeroU32,
-        data: HashMap<String, f64>,
+        data: HashMap<&'a str, f64>,
 
         timestamp: DateTime<FixedOffset>,
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -499,23 +499,23 @@ impl<'a> Message<'a> {
                 controller,
                 ..
             } => {
-                check_optional_str_empty(&display_name, "display_name")?;
-                check_optional_str_whitespace(&operator_name, "operator_name")?;
-                check_optional_str_whitespace(&job_card_id, "job_card_id")?;
-                check_optional_str_whitespace(&mold_id, "mold_id")?;
+                check_optional_str_empty(display_name, "display_name")?;
+                check_optional_str_whitespace(operator_name, "operator_name")?;
+                check_optional_str_whitespace(job_card_id, "job_card_id")?;
+                check_optional_str_whitespace(mold_id, "mold_id")?;
 
                 if let Some(s) = state {
                     s.check()?;
                 }
                 if let Some(kv) = alarm {
-                    check_string_empty(&kv.key, "alarm.key")?;
+                    check_string_empty(kv.key, "alarm.key")?;
                 }
                 if let Some(kv) = audit {
-                    check_string_empty(&kv.key, "audit.key")?;
+                    check_string_empty(kv.key, "audit.key")?;
                     check_f64(&kv.value, "audit.value")?;
                 }
                 if let Some(kv) = variable {
-                    check_string_empty(&kv.key, "variable.key")?;
+                    check_string_empty(kv.key, "variable.key")?;
                     check_f64(&kv.value, "variable.value")?;
                 }
                 if let Some(c) = controller {
@@ -534,8 +534,8 @@ impl<'a> Message<'a> {
                 for d in data.iter() {
                     check_f64(d.1, d.0)?;
                 }
-                check_optional_str_empty(&job_card_id, "job_card_id")?;
-                check_optional_str_empty(&mold_id, "mold_id")?;
+                check_optional_str_empty(job_card_id, "job_card_id")?;
+                check_optional_str_empty(mold_id, "mold_id")?;
                 options.check()
             }
             JobCardsList { options, data, .. } => {
@@ -552,9 +552,9 @@ impl<'a> Message<'a> {
                 language,
                 ..
             } => {
-                check_optional_str_empty(&org_id, "org_id")?;
-                check_string_empty(&version, "version")?;
-                check_string_empty(&password, "password")?;
+                check_optional_str_empty(org_id, "org_id")?;
+                check_string_empty(version, "version")?;
+                check_string_empty(password, "password")?;
                 if *language == Language::Unknown {
                     return Err(OpenProtocolError::InvalidField(
                         Box::new("language".to_string()),
@@ -573,18 +573,18 @@ impl<'a> Message<'a> {
                 for d in data.iter() {
                     check_f64(d.1, d.0)?;
                 }
-                check_optional_str_empty(&job_card_id, "job_card_id")?;
-                check_optional_str_empty(&mold_id, "mold_id")?;
+                check_optional_str_empty(job_card_id, "job_card_id")?;
+                check_optional_str_empty(mold_id, "mold_id")?;
                 options.check()
             }
             ReadMoldData { options, field, .. } => {
-                check_string_empty(&field, "field")?;
+                check_string_empty(field, "field")?;
                 options.check()
             }
             MoldDataValue {
                 options, field, value, ..
             } => {
-                check_string_empty(&field, "field")?;
+                check_string_empty(field, "field")?;
                 check_f64(&value, "value")?;
                 options.check()
             }
@@ -640,11 +640,11 @@ mod test {
 
     #[test]
     fn test_mold_data() {
-        let mut map = HashMap::<String, f64>::new();
+        let mut map = HashMap::<&str, f64>::new();
 
-        map.insert("Hello".to_string(), 123.0);
-        map.insert("World".to_string(), -987.6543);
-        map.insert("foo".to_string(), 0.0);
+        map.insert("Hello", 123.0);
+        map.insert("World", -987.6543);
+        map.insert("foo", 0.0);
 
         let m = MoldData {
             controller_id: NonZeroU32::new(123).unwrap(),
