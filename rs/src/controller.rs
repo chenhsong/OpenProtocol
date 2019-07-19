@@ -5,7 +5,10 @@ use lazy_static::*;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::error::Error;
+use std::net::Ipv4Addr;
 use std::num::NonZeroU32;
+use std::str::FromStr;
 
 /// A data structure containing information on a single user on the system.
 ///
@@ -133,15 +136,43 @@ impl<'a> Controller<'a> {
             static ref COM_REGEX: Regex = Regex::new(r#"^COM(\d+)$"#).unwrap();
         }
 
-        if !IP_REGEX.is_match(&self.address) {
-            if !TTY_REGEX.is_match(&self.address) {
-                if COM_REGEX.is_match(&self.address) {
-                    //self.ip = COM_REGEX.replace_all(&self.ip, "COM$port").to_string();
-                } else {
+        if !IP_REGEX.is_match(self.address) {
+            if !TTY_REGEX.is_match(self.address) {
+                if !COM_REGEX.is_match(self.address) {
                     return Err(OpenProtocolError::InvalidField(
                         Box::new("ip".to_string()),
                         Box::new(self.address.to_string()),
                     ));
+                }
+            }
+        } else {
+            // Check IP address validity
+            let (address, port) = self.address.split_at(self.address.find(':').unwrap());
+
+            match Ipv4Addr::from_str(address) {
+                Ok(_) => (),
+                Err(err) => {
+                    return Err(OpenProtocolError::InvalidField(
+                        Box::new("ip[address]".to_string()),
+                        Box::new(format!("{} ({})", address, err.description())),
+                    ))
+                }
+            }
+
+            match u8::from_str(&port[1..]) {
+                Ok(n) => {
+                    if n <= 0 {
+                        return Err(OpenProtocolError::InvalidField(
+                            Box::new("ip[port]".to_string()),
+                            Box::new(format!("{} (cannot be zero)", port)),
+                        ));
+                    }
+                }
+                Err(err) => {
+                    return Err(OpenProtocolError::InvalidField(
+                        Box::new("ip[port]".to_string()),
+                        Box::new(format!("{} ({})", port, err.description())),
+                    ))
                 }
             }
         }
