@@ -198,7 +198,7 @@ impl Default for Controller<'_> {
             controller_type: "Unknown",
             version: "Unknown",
             model: "Unknown",
-            address: "0.0.0.0:0",
+            address: "0.0.0.0:1",
             geo_location: None,
             op_mode: OpMode::Unknown,
             job_mode: JobMode::Unknown,
@@ -233,17 +233,17 @@ mod test {
         c.check().unwrap();
         let serialized = serde_json::to_string(&c).unwrap();
         assert_eq!(
-            r#"{"controllerId":1,"controllerType":"Unknown","version":"Unknown","model":"Unknown","IP":"0.0.0.0:0","opMode":"Automatic","jobMode":"ID02","operatorId":123,"operatorName":"John"}"#,
+            r#"{"controllerId":1,"controllerType":"Unknown","version":"Unknown","model":"Unknown","IP":"0.0.0.0:1","opMode":"Automatic","jobMode":"ID02","operatorId":123,"operatorName":"John"}"#,
             serialized);
     }
 
     #[test]
     fn test_controller_deserialize() {
-        let c: Controller = serde_json::from_str(r#"{"controllerId":1,"controllerType":"Unknown","version":"Unknown","model":"Unknown","IP":"0.0.0.0:0","opMode":"Automatic","jobMode":"ID02","operatorId":123,"operatorName":"John"}"#).unwrap();
+        let c: Controller = serde_json::from_str(r#"{"controllerId":1,"controllerType":"Unknown","version":"Unknown","model":"Unknown","IP":"127.0.0.1:123","opMode":"Automatic","jobMode":"ID02","operatorId":123,"operatorName":"John"}"#).unwrap();
         c.check().unwrap();
 
         assert_eq!(
-            r#"Controller { controller_id: 1, display_name: None, controller_type: "Unknown", version: "Unknown", model: "Unknown", ip: "0.0.0.0:0", geo_latitude: None, geo_longitude: None, op_mode: Automatic, job_mode: ID02, last_cycle_data: None, variables: None, last_connection_time: None, operator: Some(Operator { operator_id: 123, operator_name: Some("John") }), job_card_id: None, mold_id: None, private: () }"#,
+            r#"Controller { controller_id: 1, display_name: None, controller_type: "Unknown", version: "Unknown", model: "Unknown", address: "127.0.0.1:123", geo_location: None, op_mode: Automatic, job_mode: ID02, last_cycle_data: None, variables: None, last_connection_time: None, operator: Some(Operator { operator_id: 123, operator_name: Some("John") }), job_card_id: None, mold_id: None, private: () }"#,
             format!("{:?}", &c));
     }
 
