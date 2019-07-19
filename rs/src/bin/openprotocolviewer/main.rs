@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::io::{stdin, Write};
 use std::iter::FromIterator;
+use std::num::NonZeroU32;
 use std::sync::mpsc::channel;
 use std::thread;
 
@@ -41,7 +42,10 @@ fn process_message<'a>(
                 None
             } else {
                 // When the JOIN is successful, send RequestControllersList
-                Some(OP_Message::new_request_controllers_list())
+                Some(OP_Message::RequestControllersList {
+                    controller_id: None,
+                    options: Default::default(),
+                })
             }
         }
         // MIS integration - User login
@@ -54,31 +58,35 @@ fn process_message<'a>(
                 Some((pwd, level, name)) => {
                     println!("User found: password={}, access level={}.", pwd, level);
                     // Return access level
-                    Some(OP_Message::<'a>::new_operator_info(
-                        controller_id.get(),
-                        Some((*level + 1) as u32),
-                        &name,
-                        &pwd,
-                        *level,
-                    ))
+                    Some(OP_Message::OperatorInfo {
+                        controller_id: controller_id,
+                        operator_id: NonZeroU32::new((*level + 1) as u32),
+                        name: name,
+                        password: pwd,
+                        level: *level,
+                        options: Default::default(),
+                    })
                 }
                 None => {
                     println!("No user found with password: {}.", password);
                     // Return no access
-                    Some(OP_Message::<'a>::new_operator_info(
-                        controller_id.get(),
-                        None,
-                        "Not Allowed",
-                        "Password Disallowed",
-                        0,
-                    ))
+                    Some(OP_Message::OperatorInfo {
+                        controller_id: controller_id,
+                        operator_id: None,
+                        name: "Not Allowed",
+                        password: "Password Disallowed",
+                        level: 0,
+                        options: Default::default(),
+                    })
                 }
             }
         }
         // MIS integration - Load jobs list
-        OP_Message::RequestJobCardsList { controller_id, .. } => {
-            Some(OP_Message::new_job_cards_list(controller_id.get(), jobs))
-        }
+        OP_Message::RequestJobCardsList { controller_id, .. } => Some(OP_Message::JobCardsList {
+            controller_id: controller_id,
+            data: jobs.iter().map(|jc| (jc.job_card_id, jc.clone())).collect(),
+            options: Default::default(),
+        }),
         // Other messages - Nothing to process
         _ => None,
     }

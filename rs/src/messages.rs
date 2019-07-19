@@ -292,7 +292,7 @@ pub enum Message<'a> {
     Join {
         #[serde(skip_serializing_if = "Option::is_none")]
         org_id: Option<&'a str>,
-        version: &'a str ,
+        version: &'a str,
         password: &'a str,
         language: Language,
         #[serde(
@@ -468,113 +468,6 @@ impl<'a> Message<'a> {
             password: password,
             language: DEFAULT_LANGUAGE,
             filter: filter,
-            options: Default::default(),
-        }
-    }
-
-    /// Create a `REQ_CONTROLLERS_LIST` message.
-    ///
-    pub fn new_request_controllers_list() -> Self {
-        RequestControllersList {
-            controller_id: None,
-            options: Default::default(),
-        }
-    }
-
-    /// Create a `REQ_CONTROLLER_LIST` message specifying a specific controller.
-    ///
-    /// `controller_id` cannot be zero. The type is `u32` for convenience only.
-    /// A zero value should not be passed.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `controller_id` is zero.
-    ///
-    pub fn new_request_controllers_list_with_id(controller_id: u32) -> Self {
-        RequestControllersList {
-            controller_id: Some(NonZeroU32::new(controller_id).unwrap()),
-            options: Default::default(),
-        }
-    }
-
-    /// Create a `REQ_MOLD_DATA` message.
-    ///
-    /// `controller_id` cannot be zero. The type is `u32` for convenience only.
-    /// A zero value should not be passed.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `controller_id` is zero.
-    ///
-    pub fn new_request_mold_data(controller_id: u32) -> Self {
-        RequestMoldData {
-            controller_id: NonZeroU32::new(controller_id).unwrap(),
-            options: Default::default(),
-        }
-    }
-
-    /// Create a `READ_MOLD_DATA_VALUE` message.
-    ///
-    /// `controller_id` cannot be zero. The type is `u32` for convenience only.
-    /// A zero value should not be passed.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `controller_id` is zero.
-    ///
-    pub fn new_read_mold_data_value(controller_id: u32, field: &'a str) -> Self {
-        ReadMoldData {
-            controller_id: NonZeroU32::new(controller_id).unwrap(),
-            field: field,
-            options: Default::default(),
-        }
-    }
-
-    /// Create a `JOB_CARDS_LIST` message.
-    ///
-    /// `controller_id` cannot be zero. The type is `u32` for convenience only.
-    /// A zero value should not be passed.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `controller_id` is zero.
-    ///
-    pub fn new_job_cards_list(controller_id: u32, data: &[JobCard<'a>]) -> Self {
-        let mut dict: HashMap<&str, JobCard> = HashMap::new();
-
-        for job in data.into_iter() {
-            dict.insert(job.job_card_id, job.clone());
-        }
-
-        JobCardsList {
-            controller_id: NonZeroU32::new(controller_id).unwrap(),
-            data: dict,
-            options: Default::default(),
-        }
-    }
-
-    /// Create an `OPERATOR_INFO` message.
-    ///
-    /// `controller_id` and `operator_id` cannot be zero. Their types are `u32` for convenience only.
-    /// Zero values should not be passed.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `controller_id` or `operator_id` is zero.
-    ///
-    pub fn new_operator_info(
-        controller_id: u32,
-        operator_id: Option<u32>,
-        name: &'a str,
-        password: &'a str,
-        level: u8,
-    ) -> Self {
-        OperatorInfo::<'a> {
-            controller_id: NonZeroU32::new(controller_id).unwrap(),
-            operator_id: operator_id.map(|x| NonZeroU32::new(x).unwrap()),
-            level: level,
-            name: name,
-            password: password,
             options: Default::default(),
         }
     }
