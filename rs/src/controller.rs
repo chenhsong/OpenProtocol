@@ -19,7 +19,8 @@ pub struct Operator<'a> {
     /// Unique user ID, which cannot be zero.
     pub operator_id: NonZeroU32,
     /// Name of the user.
-    pub operator_name: Option<&'a str>,
+    #[serde(borrow)]
+    pub operator_name: Option<Cow<'a, str>>,
 }
 
 /// A data structure containing a single physical geo-location.
@@ -50,7 +51,8 @@ pub struct Controller<'a> {
     //
     /// User-specified human-friendly name for the machine.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<&'a str>,
+    #[serde(borrow)]
+    pub display_name: Option<Cow<'a, str>>,
     //
     /// Controller type.
     ///
@@ -104,10 +106,12 @@ pub struct Controller<'a> {
     //
     /// Active job ID (if any) on the controller.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub job_card_id: Option<&'a str>,
+    #[serde(borrow)]
+    pub job_card_id: Option<Cow<'a, str>>,
     /// ID of the set of mold data currently loaded (if any) on the controller.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub mold_id: Option<&'a str>,
+    #[serde(borrow)]
+    pub mold_id: Option<Cow<'a, str>>,
     /// Private field.
     #[serde(skip_serializing)]
     #[serde(default)]
@@ -120,8 +124,8 @@ impl<'a> Controller<'a> {
         check_string_empty(self.controller_type, "controller_type")?;
         check_string_empty(self.version, "version")?;
         check_string_empty(self.model, "version")?;
-        check_optional_str_empty(&self.job_card_id, "job_card_id")?;
-        check_optional_str_empty(&self.mold_id, "mold_id")?;
+        check_optional_cowstr_empty(&self.job_card_id, "job_card_id")?;
+        check_optional_cowstr_empty(&self.mold_id, "mold_id")?;
 
         // Check Geo-location
         if let Some(geo) = &self.geo_location {
@@ -222,7 +226,7 @@ mod test {
             job_mode: JobMode::ID02,
             operator: Some(Operator {
                 operator_id: NonZeroU32::new(123).unwrap(),
-                operator_name: Some("John"),
+                operator_name: Some(Cow::from("John")),
             }),
             ..Default::default()
         };
@@ -254,7 +258,7 @@ mod test {
         let c = Controller {
             operator: Some(Operator {
                 operator_id: NonZeroU32::new(123).unwrap(),
-                operator_name: Some("John"),
+                operator_name: Some(Cow::from("John")),
             }),
             ..Default::default()
         };

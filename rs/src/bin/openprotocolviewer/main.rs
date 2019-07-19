@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::io::{stdin, Write};
 use std::iter::FromIterator;
@@ -62,7 +63,7 @@ fn process_message<'a>(json: &'a str, constants: &'a Constants<'a>) -> Option<OP
                     Some(OP_Message::OperatorInfo {
                         controller_id: controller_id,
                         operator_id: NonZeroU32::new((*level + 1) as u32),
-                        name: name,
+                        name: Cow::from(name),
                         password: password,
                         level: *level,
                         options: Default::default(),
@@ -74,7 +75,7 @@ fn process_message<'a>(json: &'a str, constants: &'a Constants<'a>) -> Option<OP
                     Some(OP_Message::OperatorInfo {
                         controller_id: controller_id,
                         operator_id: None,
-                        name: "Not Allowed",
+                        name: Cow::from("Not Allowed"),
                         password: password,
                         level: 0,
                         options: Default::default(),
@@ -85,7 +86,11 @@ fn process_message<'a>(json: &'a str, constants: &'a Constants<'a>) -> Option<OP
         // MIS integration - Load jobs list
         OP_Message::RequestJobCardsList { controller_id, .. } => Some(OP_Message::JobCardsList {
             controller_id: controller_id,
-            data: constants.jobs.iter().map(|jc| (jc.job_card_id, jc.clone())).collect(),
+            data: constants
+                .jobs
+                .iter()
+                .map(|jc| (jc.job_card_id.as_ref(), jc.clone()))
+                .collect(),
             options: Default::default(),
         }),
         // Other messages - Nothing to process

@@ -27,7 +27,19 @@ pub fn check_optional_str_empty<'a>(opt: &Option<&str>, field: &'static str) -> 
     }
 }
 
-pub fn check_optional_str_whitespace<'a>(opt: &Option<&str>, field: &'static str) -> Result<'static, ()> {
+pub fn check_optional_cowstr_empty(opt: &Option<Cow<'_, str>>, field: &'static str) -> Result<'static, ()> {
+    if let Some(text) = opt {
+        if text.trim().is_empty() {
+            Err(OpenProtocolError::EmptyField(Cow::from(field)))
+        } else {
+            Ok(())
+        }
+    } else {
+        Ok(())
+    }
+}
+
+pub fn check_optional_cowstr_whitespace(opt: &Option<Cow<'_, str>>, field: &'static str) -> Result<'static, ()> {
     if let Some(text) = opt {
         if !text.is_empty() && text.trim().is_empty() {
             return Err(OpenProtocolError::EmptyField(Cow::from(field)));
@@ -60,9 +72,9 @@ pub fn check_f64<'a>(value: &f64, field: &'a str) -> Result<'a, ()> {
     }
 }
 
-pub fn deserialize_null_to_empty_string<'de, D>(d: D) -> std::result::Result<Option<&'de str>, D::Error>
+pub fn deserialize_null_to_empty_string<'de, D>(d: D) -> std::result::Result<Option<Cow<'de, str>>, D::Error>
 where
     D: Deserializer<'de>,
 {
-    Deserialize::deserialize(d).map(|x: Option<_>| x.or(Some("")))
+    Deserialize::deserialize(d).map(|x: Option<&str>| Some(Cow::from(x.unwrap_or(""))))
 }
