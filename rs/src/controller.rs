@@ -145,9 +145,9 @@ impl<'a> Controller<'a> {
             if !TTY_REGEX.is_match(self.address) {
                 if !COM_REGEX.is_match(self.address) {
                     return Err(OpenProtocolError::InvalidField {
-                        field: Cow::from("ip"),
-                        value: Cow::from(self.address),
-                        description: Cow::from(""),
+                        field: "ip".into(),
+                        value: self.address.into(),
+                        description: "".into(),
                     });
                 }
             }
@@ -157,9 +157,9 @@ impl<'a> Controller<'a> {
 
             if let Err(err) = Ipv4Addr::from_str(address) {
                 return Err(OpenProtocolError::InvalidField {
-                    field: Cow::from("ip[address]"),
-                    value: Cow::from(address),
-                    description: Cow::from(format!("{} ({})", address, err.description())),
+                    field: "ip[address]".into(),
+                    value: address.into(),
+                    description: format!("{} ({})", address, err.description()).into(),
                 });
             }
 
@@ -170,17 +170,17 @@ impl<'a> Controller<'a> {
                 Ok(n) => {
                     if n <= 0 {
                         return Err(OpenProtocolError::InvalidField {
-                            field: Cow::from("ip[port]"),
-                            value: Cow::from(port),
-                            description: Cow::from("IP port cannot be zero."),
+                            field: "ip[port]".into(),
+                            value: port.into(),
+                            description: "IP port cannot be zero.".into(),
                         });
                     }
                 }
                 Err(err) => {
                     return Err(OpenProtocolError::InvalidField {
-                        field: Cow::from("ip[port]"),
-                        value: Cow::from(port),
-                        description: Cow::from(err.description().to_string()),
+                        field: "ip[port]".into(),
+                        value: port.into(),
+                        description: err.description().to_string().into(),
                     })
                 }
             }
@@ -226,7 +226,7 @@ mod test {
             job_mode: JobMode::ID02,
             operator: Some(Operator {
                 operator_id: NonZeroU32::new(123).unwrap(),
-                operator_name: Some(Cow::from("John")),
+                operator_name: Some("John".into()),
             }),
             ..Default::default()
         };
@@ -258,7 +258,7 @@ mod test {
         let c = Controller {
             operator: Some(Operator {
                 operator_id: NonZeroU32::new(123).unwrap(),
-                operator_name: Some(Cow::from("John")),
+                operator_name: Some("John".into()),
             }),
             ..Default::default()
         };

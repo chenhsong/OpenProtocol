@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::io::{stdin, Write};
 use std::iter::FromIterator;
@@ -63,7 +62,7 @@ fn process_message<'a>(json: &'a str, constants: &'a Constants<'a>) -> Option<OP
                     Some(OP_Message::OperatorInfo {
                         controller_id: controller_id,
                         operator_id: NonZeroU32::new((*level + 1) as u32),
-                        name: Cow::from(name),
+                        name: name.into(),
                         password: password,
                         level: *level,
                         options: Default::default(),
@@ -75,7 +74,7 @@ fn process_message<'a>(json: &'a str, constants: &'a Constants<'a>) -> Option<OP
                     Some(OP_Message::OperatorInfo {
                         controller_id: controller_id,
                         operator_id: None,
-                        name: Cow::from("Not Allowed"),
+                        name: "Not Allowed".into(),
                         password: password,
                         level: 0,
                         options: Default::default(),

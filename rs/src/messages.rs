@@ -50,24 +50,22 @@ pub struct MessageOptions<'a> {
 
 impl<'a> MessageOptions<'a> {
     pub fn new() -> Self {
-        MessageOptions {
-            id: None,
-            sequence: SEQ.fetch_add(1, Ordering::SeqCst),
-            priority: 0,
-            private: (),
-        }
+        Default::default()
     }
 
     pub fn new_with_priority(priority: i32) -> Self {
-        let mut m = MessageOptions::new();
-        m.priority = priority;
-        m
+        Self {
+            priority: priority,
+            ..Default::default()
+        }
     }
 
     pub fn new_with_priority_and_id(priority: i32, id: &'a str) -> Self {
-        let mut m = MessageOptions::new_with_priority(priority);
-        m.id = Some(Cow::from(id));
-        m
+        Self {
+            id: Some(id.into()),
+            priority: priority,
+            ..Default::default()
+        }
     }
 
     fn check(&self) -> Result<'static, ()> {
@@ -77,7 +75,12 @@ impl<'a> MessageOptions<'a> {
 
 impl Default for MessageOptions<'_> {
     fn default() -> Self {
-        MessageOptions::new()
+        Self {
+            id: None,
+            sequence: SEQ.fetch_add(1, Ordering::SeqCst),
+            priority: 0,
+            private: (),
+        }
     }
 }
 
@@ -101,8 +104,8 @@ pub struct JobCard<'a> {
 impl<'a> JobCard<'a> {
     pub fn new(job_card_id: &'a str, mold_id: &'a str, progress: u32, total: u32) -> Self {
         Self {
-            job_card_id: Cow::from(job_card_id),
-            mold_id: Cow::from(mold_id),
+            job_card_id: job_card_id.into(),
+            mold_id: mold_id.into(),
             progress: progress,
             total: total,
         }
@@ -112,10 +115,13 @@ impl<'a> JobCard<'a> {
         check_string_empty(&self.job_card_id, "job_card_id")?;
         check_string_empty(&self.mold_id, "mold_id")?;
         if self.progress > self.total {
-            return Err(OpenProtocolError::ConstraintViolated(Cow::from(format!(
-                "JobCard progress ({}) must not be larger than total ({}).",
-                self.progress, self.total
-            ))));
+            return Err(OpenProtocolError::ConstraintViolated(
+                format!(
+                    "JobCard progress ({}) must not be larger than total ({}).",
+                    self.progress, self.total
+                )
+                .into(),
+            ));
         }
         Ok(())
     }
@@ -573,9 +579,9 @@ impl<'a> Message<'a> {
                 check_string_empty(password, "password")?;
                 if *language == Language::Unknown {
                     return Err(OpenProtocolError::InvalidField {
-                        field: Cow::from("language"),
-                        value: Cow::from("Unknown"),
-                        description: Cow::from("Language cannot be Unknown."),
+                        field: "language".into(),
+                        value: "Unknown".into(),
+                        description: "Language cannot be Unknown.".into(),
                     });
                 }
                 options.check()
@@ -619,10 +625,13 @@ impl<'a> Message<'a> {
                 check_string_empty(name, "name")?;
                 check_string_empty(password, "password")?;
                 if *level > MAX_OPERATOR_LEVEL {
-                    return Err(OpenProtocolError::ConstraintViolated(Cow::from(format!(
-                        "Level {} is too high - must be between 0 and {}.",
-                        level, MAX_OPERATOR_LEVEL
-                    ))));
+                    return Err(OpenProtocolError::ConstraintViolated(
+                        format!(
+                            "Level {} is too high - must be between 0 and {}.",
+                            level, MAX_OPERATOR_LEVEL
+                        )
+                        .into(),
+                    ));
                 }
                 options.check()
             }
@@ -640,7 +649,7 @@ mod test {
     fn test_alive() {
         let m = Alive {
             options: MessageOptions {
-                id: Some(Cow::from("Hello")),
+                id: Some("Hello".into()),
                 sequence: 999,
                 priority: 20,
                 private: (),
@@ -668,7 +677,7 @@ mod test {
             data: map,
 
             timestamp: DateTime::parse_from_rfc3339("2019-02-26T02:03:04+08:00").unwrap(),
-            job_card_id: Some(Cow::from("Hello World!")),
+            job_card_id: Some("Hello World!".into()),
             mold_id: None,
             operator_id: Some(NonZeroU32::new(42).unwrap()),
 
