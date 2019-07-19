@@ -1,11 +1,13 @@
 use super::{OpenProtocolError, Result};
 use serde::{Deserialize, Deserializer};
+use std::borrow::Cow;
 
-pub fn check_string_empty(text: &str, field: &'static str) -> Result<()> {
+pub fn check_string_empty(text: &str, field: &'static str) -> Result<'static, ()> {
     if text.trim().is_empty() {
-        return Err(OpenProtocolError::EmptyField(field));
+        Err(OpenProtocolError::EmptyField(Cow::from(field)))
+    } else {
+        Ok(())
     }
-    Ok(())
 }
 
 #[allow(clippy::trivially_copy_pass_by_ref)]
@@ -13,40 +15,46 @@ pub fn is_zero(num: &i32) -> bool {
     *num == 0
 }
 
-pub fn check_optional_str_empty(opt: &Option<&str>, field: &'static str) -> Result<()> {
+pub fn check_optional_str_empty<'a>(opt: &Option<&str>, field: &'static str) -> Result<'static, ()> {
     if let Some(text) = opt {
         if text.trim().is_empty() {
-            return Err(OpenProtocolError::EmptyField(field));
+            Err(OpenProtocolError::EmptyField(Cow::from(field)))
+        } else {
+            Ok(())
         }
+    } else {
+        Ok(())
     }
-    Ok(())
 }
 
-pub fn check_optional_str_whitespace(opt: &Option<&str>, field: &'static str) -> Result<()> {
+pub fn check_optional_str_whitespace<'a>(opt: &Option<&str>, field: &'static str) -> Result<'static, ()> {
     if let Some(text) = opt {
         if !text.is_empty() && text.trim().is_empty() {
-            return Err(OpenProtocolError::EmptyField(field));
+            return Err(OpenProtocolError::EmptyField(Cow::from(field)));
         }
     }
     Ok(())
 }
 
-pub fn check_f64(value: &f64, field: &str) -> Result<()> {
+pub fn check_f64<'a>(value: &f64, field: &'a str) -> Result<'a, ()> {
     if value.is_nan() {
-        Err(OpenProtocolError::InvalidField(
-            Box::new(field.to_string()),
-            Box::new("NaN".to_string()),
-        ))
+        Err(OpenProtocolError::InvalidField {
+            field: Cow::from(field),
+            value: Cow::from("NaN"),
+            description: Cow::from("NaN is not supported."),
+        })
     } else if value.is_infinite() {
-        Err(OpenProtocolError::InvalidField(
-            Box::new(field.to_string()),
-            Box::new("Infinity".to_string()),
-        ))
+        Err(OpenProtocolError::InvalidField {
+            field: Cow::from(field),
+            value: Cow::from("Infinity"),
+            description: Cow::from("Infinity is not supported."),
+        })
     } else if !value.is_normal() && *value != 0.0 {
-        Err(OpenProtocolError::InvalidField(
-            Box::new(field.to_string()),
-            Box::new("Subnormal".to_string()),
-        ))
+        Err(OpenProtocolError::InvalidField {
+            field: Cow::from(field),
+            value: Cow::from("Sub-normal"),
+            description: Cow::from("Sub-normal numbers are not supported."),
+        })
     } else {
         Ok(())
     }

@@ -4,6 +4,7 @@ use chrono::{DateTime, FixedOffset};
 use lazy_static::*;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::error::Error;
 use std::net::Ipv4Addr;
@@ -33,7 +34,7 @@ pub struct GeoLocation {
 }
 
 impl GeoLocation {
-    fn check(&self) -> Result<()> {
+    fn check(&self) -> Result<'static, ()> {
         check_f64(&self.geo_latitude, "geo_latitude")?;
         check_f64(&self.geo_longitude, "geo_longitude")?;
         Ok(())
@@ -114,7 +115,7 @@ pub struct Controller<'a> {
 }
 
 impl<'a> Controller<'a> {
-    pub(crate) fn check(&self) -> Result<()> {
+    pub(crate) fn check(&self) -> Result<'a, ()> {
         // String fields should not be empty
         check_string_empty(self.controller_type, "controller_type")?;
         check_string_empty(self.version, "version")?;
@@ -139,10 +140,11 @@ impl<'a> Controller<'a> {
         if !IP_REGEX.is_match(self.address) {
             if !TTY_REGEX.is_match(self.address) {
                 if !COM_REGEX.is_match(self.address) {
-                    return Err(OpenProtocolError::InvalidField(
-                        Box::new("ip".to_string()),
-                        Box::new(self.address.to_string()),
-                    ));
+                    return Err(OpenProtocolError::InvalidField {
+                        field: Cow::from("ip"),
+                        value: Cow::from(self.address),
+                        description: Cow::from(""),
+                    });
                 }
             }
         } else {
@@ -150,27 +152,32 @@ impl<'a> Controller<'a> {
             let (address, port) = self.address.split_at(self.address.find(':').unwrap());
 
             if let Err(err) = Ipv4Addr::from_str(address) {
-                return Err(OpenProtocolError::InvalidField(
-                    Box::new("ip[address]".to_string()),
-                    Box::new(format!("{} ({})", address, err.description())),
-                ));
+                return Err(OpenProtocolError::InvalidField {
+                    field: Cow::from("ip[address]"),
+                    value: Cow::from(address),
+                    description: Cow::from(format!("{} ({})", address, err.description())),
+                });
             }
 
             // Check port
-            match u16::from_str(&port[1..]) {
+            let port = &port[1..];
+
+            match u16::from_str(port) {
                 Ok(n) => {
                     if n <= 0 {
-                        return Err(OpenProtocolError::InvalidField(
-                            Box::new("ip[port]".to_string()),
-                            Box::new(format!("{} (cannot be zero)", port)),
-                        ));
+                        return Err(OpenProtocolError::InvalidField {
+                            field: Cow::from("ip[port]"),
+                            value: Cow::from(port),
+                            description: Cow::from("IP port cannot be zero."),
+                        });
                     }
                 }
                 Err(err) => {
-                    return Err(OpenProtocolError::InvalidField(
-                        Box::new("ip[port]".to_string()),
-                        Box::new(format!("{} ({})", port, err.description())),
-                    ))
+                    return Err(OpenProtocolError::InvalidField {
+                        field: Cow::from("ip[port]"),
+                        value: Cow::from(port),
+                        description: Cow::from(err.description().to_string()),
+                    })
                 }
             }
         }

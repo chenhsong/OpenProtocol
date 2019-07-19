@@ -3,6 +3,7 @@ use self::utils::*;
 use super::*;
 use chrono::{DateTime, FixedOffset};
 use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::num::NonZeroU32;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -47,7 +48,7 @@ pub struct MessageOptions<'a> {
 }
 
 impl<'a> MessageOptions<'a> {
-    pub fn new() -> MessageOptions<'a> {
+    pub fn new() -> Self {
         MessageOptions {
             id: None,
             sequence: SEQ.fetch_add(1, Ordering::SeqCst),
@@ -56,19 +57,19 @@ impl<'a> MessageOptions<'a> {
         }
     }
 
-    pub fn new_with_priority(priority: i32) -> MessageOptions<'a> {
+    pub fn new_with_priority(priority: i32) -> Self {
         let mut m = MessageOptions::new();
         m.priority = priority;
         m
     }
 
-    pub fn new_with_priority_and_id(priority: i32, id: &'a str) -> MessageOptions<'a> {
+    pub fn new_with_priority_and_id(priority: i32, id: &'a str) -> Self {
         let mut m = MessageOptions::new_with_priority(priority);
         m.id = Some(id);
         m
     }
 
-    fn check(&self) -> Result<()> {
+    fn check(&self) -> Result<'static, ()> {
         check_optional_str_empty(&self.id, "id")
     }
 }
@@ -104,11 +105,11 @@ impl<'a> JobCard<'a> {
         }
     }
 
-    fn check(&self) -> Result<()> {
+    fn check(&self) -> Result<'static, ()> {
         check_string_empty(self.job_card_id, "job_card_id")?;
         check_string_empty(self.mold_id, "mold_id")?;
         if self.progress > self.total {
-            return Err(OpenProtocolError::ConstraintViolated(Box::new(format!(
+            return Err(OpenProtocolError::ConstraintViolated(Cow::from(format!(
                 "JobCard progress ({}) must not be larger than total ({}).",
                 self.progress, self.total
             ))));
@@ -148,8 +149,8 @@ pub struct StateValues<'a> {
     pub mold_id: Option<&'a str>,
 }
 
-impl<'a> StateValues<'a> {
-    fn check(&self) -> Result<()> {
+impl StateValues<'_> {
+    fn check(&self) -> Result<'static, ()> {
         check_optional_str_empty(&self.job_card_id, "job_card_id")?;
         check_optional_str_empty(&self.mold_id, "mold_id")?;
         Ok(())
@@ -411,12 +412,12 @@ impl<'a> Message<'a> {
     ///   For example, if current progress (`progress`) field of a `JobCard` structure is larger than
     ///   its total production count (`total`) field.
     ///
-    pub fn parse_from_json_str(json: &'a str) -> Result<Self> {
+    pub fn parse_from_json_str(json: &'a str) -> Result<'a, Self> {
         match serde_json::from_str::<Message>(json) {
-            Ok(m) => match m.check() {
-                Ok(_) => Ok(m),
-                Err(err) => Err(err),
-            },
+            Ok(m) => {
+                m.check()?;
+                Ok(m)
+            }
             Err(err) => Err(OpenProtocolError::JsonError(err)),
         }
     }
@@ -436,7 +437,7 @@ impl<'a> Message<'a> {
     ///   For example, if current progress (`progress`) field of a `JobCard` structure is larger than
     ///   its total production count (`total`) field.
     ///
-    pub fn to_json_str(&self) -> Result<String> {
+    pub fn to_json_str(&self) -> Result<'_, String> {
         self.check()?;
 
         match serde_json::to_string(self) {
@@ -472,7 +473,7 @@ impl<'a> Message<'a> {
         }
     }
 
-    fn check(&self) -> Result<()> {
+    fn check(&self) -> Result<'a, ()> {
         match self {
             Alive { options, .. }
             | ControllerAction { options, .. }
@@ -556,10 +557,11 @@ impl<'a> Message<'a> {
                 check_string_empty(version, "version")?;
                 check_string_empty(password, "password")?;
                 if *language == Language::Unknown {
-                    return Err(OpenProtocolError::InvalidField(
-                        Box::new("language".to_string()),
-                        Box::new("Unknown".to_string()),
-                    ));
+                    return Err(OpenProtocolError::InvalidField {
+                        field: Cow::from("language"),
+                        value: Cow::from("Unknown"),
+                        description: Cow::from("Language cannot be Unknown."),
+                    });
                 }
                 options.check()
             }
@@ -602,7 +604,7 @@ impl<'a> Message<'a> {
                 check_string_empty(name, "name")?;
                 check_string_empty(password, "password")?;
                 if *level > MAX_OPERATOR_LEVEL {
-                    return Err(OpenProtocolError::ConstraintViolated(Box::new(format!(
+                    return Err(OpenProtocolError::ConstraintViolated(Cow::from(format!(
                         "Level {} is too high - must be between 0 and {}.",
                         level, MAX_OPERATOR_LEVEL
                     ))));
