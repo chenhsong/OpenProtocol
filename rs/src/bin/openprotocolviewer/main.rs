@@ -54,7 +54,7 @@ fn process_message<'a>(
             password,
             ..
         } => {
-            match users.get(&password) {
+            match users.get(password) {
                 Some((pwd, level, name)) => {
                     println!("User found: password={}, access level={}.", pwd, level);
                     // Return access level

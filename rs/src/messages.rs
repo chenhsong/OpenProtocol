@@ -24,13 +24,13 @@ const MAX_OPERATOR_LEVEL: u8 = 10;
 ///
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct MessageOptions {
+pub struct MessageOptions<'a> {
     /// Unique ID (if any) of the message for tracking and storage retrieval purposes.
     ///
     /// The iChen Server may tag certain messages with a unique tracking key that can be used to
     /// retrieve the message from persistent storage later.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
+    pub id: Option<&'a str>,
     /// Ever-increasing message sequence number.
     ///
     /// This number is usually auto-incremented with each message created, starting from 1.
@@ -46,8 +46,8 @@ pub struct MessageOptions {
     private: (),
 }
 
-impl MessageOptions {
-    pub fn new() -> MessageOptions {
+impl<'a> MessageOptions<'a> {
+    pub fn new() -> MessageOptions<'a> {
         MessageOptions {
             id: None,
             sequence: SEQ.fetch_add(1, Ordering::SeqCst),
@@ -56,24 +56,24 @@ impl MessageOptions {
         }
     }
 
-    pub fn new_with_priority(priority: i32) -> MessageOptions {
+    pub fn new_with_priority(priority: i32) -> MessageOptions<'a> {
         let mut m = MessageOptions::new();
         m.priority = priority;
         m
     }
 
-    pub fn new_with_priority_and_id(priority: i32, id: String) -> MessageOptions {
+    pub fn new_with_priority_and_id(priority: i32, id: &'a str) -> MessageOptions<'a> {
         let mut m = MessageOptions::new_with_priority(priority);
         m.id = Some(id);
         m
     }
 
     fn check(&self) -> Result<()> {
-        check_optional_string_empty(&self.id, "id")
+        check_optional_str_empty(&self.id, "id")
     }
 }
 
-impl Default for MessageOptions {
+impl Default for MessageOptions<'_> {
     fn default() -> Self {
         MessageOptions::new()
     }
@@ -130,7 +130,7 @@ pub struct KeyValuePair<K, V> {
 ///
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct StateValues {
+pub struct StateValues<'a> {
     /// Current operating mold of the controller.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub op_mode: Option<OpMode>,
@@ -142,16 +142,16 @@ pub struct StateValues {
     pub operator_id: Option<NonZeroU32>,
     /// Current active job ID (if any) on the controller.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub job_card_id: Option<String>,
+    pub job_card_id: Option<&'a str>,
     /// Unique ID of the set of mold data currently loaded (if any) on the controller.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub mold_id: Option<String>,
+    pub mold_id: Option<&'a str>,
 }
 
-impl StateValues {
+impl<'a> StateValues<'a> {
     fn check(&self) -> Result<()> {
-        check_optional_string_empty(&self.job_card_id, "job_card_id")?;
-        check_optional_string_empty(&self.mold_id, "mold_id")?;
+        check_optional_str_empty(&self.job_card_id, "job_card_id")?;
+        check_optional_str_empty(&self.mold_id, "mold_id")?;
         Ok(())
     }
 }
@@ -164,7 +164,7 @@ pub enum Message<'a> {
     #[serde(rename_all = "camelCase")]
     Alive {
         #[serde(flatten)]
-        options: MessageOptions,
+        options: MessageOptions<'a>,
     },
     #[serde(rename_all = "camelCase")]
     ControllerAction {
@@ -173,7 +173,7 @@ pub enum Message<'a> {
         timestamp: DateTime<FixedOffset>,
 
         #[serde(flatten)]
-        options: MessageOptions,
+        options: MessageOptions<'a>,
 
         #[serde(skip_serializing)]
         #[serde(default)]
@@ -185,14 +185,14 @@ pub enum Message<'a> {
         controller_id: Option<NonZeroU32>,
 
         #[serde(flatten)]
-        options: MessageOptions,
+        options: MessageOptions<'a>,
     },
     #[serde(rename_all = "camelCase")]
     ControllersList {
-        data: HashMap<NonZeroU32, Controller>,
+        data: HashMap<NonZeroU32, Controller<'a>>,
 
         #[serde(flatten)]
-        options: MessageOptions,
+        options: MessageOptions<'a>,
 
         #[serde(skip_serializing)]
         #[serde(default)]
@@ -203,7 +203,7 @@ pub enum Message<'a> {
         controller_id: NonZeroU32,
 
         #[serde(skip_serializing_if = "Option::is_none")]
-        display_name: Option<String>,
+        display_name: Option<&'a str>,
         #[serde(skip_serializing_if = "Option::is_none")]
         is_connected: Option<bool>,
 
@@ -213,35 +213,35 @@ pub enum Message<'a> {
         job_mode: Option<JobMode>,
 
         #[serde(skip_serializing_if = "Option::is_none")]
-        alarm: Option<KeyValuePair<String, bool>>,
+        alarm: Option<KeyValuePair<&'a str, bool>>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        audit: Option<KeyValuePair<String, f64>>,
+        audit: Option<KeyValuePair<&'a str, f64>>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        variable: Option<KeyValuePair<String, f64>>,
+        variable: Option<KeyValuePair<&'a str, f64>>,
 
         #[serde(skip_serializing_if = "Option::is_none")]
         operator_id: Option<u32>,
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(default)]
         #[serde(deserialize_with = "deserialize_null_to_empty_string")]
-        operator_name: Option<String>,
+        operator_name: Option<&'a str>,
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(default)]
         #[serde(deserialize_with = "deserialize_null_to_empty_string")]
-        job_card_id: Option<String>,
+        job_card_id: Option<&'a str>,
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(default)]
         #[serde(deserialize_with = "deserialize_null_to_empty_string")]
-        mold_id: Option<String>,
+        mold_id: Option<&'a str>,
 
         #[serde(skip_serializing_if = "Option::is_none")]
-        state: Option<StateValues>,
+        state: Option<StateValues<'a>>,
 
         #[serde(skip_serializing_if = "Option::is_none")]
-        controller: Option<Box<Controller>>,
+        controller: Option<Box<Controller<'a>>>,
 
         #[serde(flatten)]
-        options: MessageOptions,
+        options: MessageOptions<'a>,
 
         #[serde(skip_serializing)]
         #[serde(default)]
@@ -254,16 +254,16 @@ pub enum Message<'a> {
 
         timestamp: DateTime<FixedOffset>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        job_card_id: Option<String>,
+        job_card_id: Option<&'a str>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        mold_id: Option<String>,
+        mold_id: Option<&'a str>,
         operator_id: Option<NonZeroU32>,
 
         op_mode: OpMode,
         job_mode: JobMode,
 
         #[serde(flatten)]
-        options: MessageOptions,
+        options: MessageOptions<'a>,
 
         #[serde(skip_serializing)]
         #[serde(default)]
@@ -274,7 +274,7 @@ pub enum Message<'a> {
         controller_id: NonZeroU32,
 
         #[serde(flatten)]
-        options: MessageOptions,
+        options: MessageOptions<'a>,
 
         #[serde(skip_serializing)]
         #[serde(default)]
@@ -286,7 +286,7 @@ pub enum Message<'a> {
         data: HashMap<&'a str, JobCard<'a>>,
 
         #[serde(flatten)]
-        options: MessageOptions,
+        options: MessageOptions<'a>,
     },
     #[serde(rename_all = "camelCase")]
     Join {
@@ -302,7 +302,7 @@ pub enum Message<'a> {
         filter: HashSet<Filter>,
 
         #[serde(flatten)]
-        options: MessageOptions,
+        options: MessageOptions<'a>,
     },
     #[serde(rename_all = "camelCase")]
     JoinResponse {
@@ -310,10 +310,10 @@ pub enum Message<'a> {
         #[serde(skip_serializing_if = "Option::is_none")]
         level: Option<u32>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        message: Option<String>,
+        message: Option<&'a str>,
 
         #[serde(flatten)]
-        options: MessageOptions,
+        options: MessageOptions<'a>,
 
         #[serde(skip_serializing)]
         #[serde(default)]
@@ -324,7 +324,7 @@ pub enum Message<'a> {
         controller_id: NonZeroU32,
 
         #[serde(flatten)]
-        options: MessageOptions,
+        options: MessageOptions<'a>,
     },
     #[serde(rename_all = "camelCase")]
     MoldData {
@@ -333,16 +333,16 @@ pub enum Message<'a> {
 
         timestamp: DateTime<FixedOffset>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        job_card_id: Option<String>,
+        job_card_id: Option<&'a str>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        mold_id: Option<String>,
+        mold_id: Option<&'a str>,
         operator_id: Option<NonZeroU32>,
 
         op_mode: OpMode,
         job_mode: JobMode,
 
         #[serde(flatten)]
-        options: MessageOptions,
+        options: MessageOptions<'a>,
 
         #[serde(skip_serializing)]
         #[serde(default)]
@@ -354,16 +354,16 @@ pub enum Message<'a> {
         field: &'a str,
 
         #[serde(flatten)]
-        options: MessageOptions,
+        options: MessageOptions<'a>,
     },
     #[serde(rename_all = "camelCase")]
     MoldDataValue {
         controller_id: NonZeroU32,
-        field: String,
+        field: &'a str,
         value: f64,
 
         #[serde(flatten)]
-        options: MessageOptions,
+        options: MessageOptions<'a>,
 
         #[serde(skip_serializing)]
         #[serde(default)]
@@ -372,10 +372,10 @@ pub enum Message<'a> {
     #[serde(rename_all = "camelCase")]
     LoginOperator {
         controller_id: NonZeroU32,
-        password: String,
+        password: &'a str,
 
         #[serde(flatten)]
-        options: MessageOptions,
+        options: MessageOptions<'a>,
 
         #[serde(skip_serializing)]
         #[serde(default)]
@@ -391,7 +391,7 @@ pub enum Message<'a> {
         level: u8,
 
         #[serde(flatten)]
-        options: MessageOptions,
+        options: MessageOptions<'a>,
     },
 }
 
@@ -499,10 +499,10 @@ impl<'a> Message<'a> {
                 controller,
                 ..
             } => {
-                check_optional_string_empty(&display_name, "display_name")?;
-                check_optional_string_whitespace(&operator_name, "operator_name")?;
-                check_optional_string_whitespace(&job_card_id, "job_card_id")?;
-                check_optional_string_whitespace(&mold_id, "mold_id")?;
+                check_optional_str_empty(&display_name, "display_name")?;
+                check_optional_str_whitespace(&operator_name, "operator_name")?;
+                check_optional_str_whitespace(&job_card_id, "job_card_id")?;
+                check_optional_str_whitespace(&mold_id, "mold_id")?;
 
                 if let Some(s) = state {
                     s.check()?;
@@ -534,8 +534,8 @@ impl<'a> Message<'a> {
                 for d in data.iter() {
                     check_f64(d.1, d.0)?;
                 }
-                check_optional_string_empty(&job_card_id, "job_card_id")?;
-                check_optional_string_empty(&mold_id, "mold_id")?;
+                check_optional_str_empty(&job_card_id, "job_card_id")?;
+                check_optional_str_empty(&mold_id, "mold_id")?;
                 options.check()
             }
             JobCardsList { options, data, .. } => {
@@ -573,8 +573,8 @@ impl<'a> Message<'a> {
                 for d in data.iter() {
                     check_f64(d.1, d.0)?;
                 }
-                check_optional_string_empty(&job_card_id, "job_card_id")?;
-                check_optional_string_empty(&mold_id, "mold_id")?;
+                check_optional_str_empty(&job_card_id, "job_card_id")?;
+                check_optional_str_empty(&mold_id, "mold_id")?;
                 options.check()
             }
             ReadMoldData { options, field, .. } => {
@@ -599,8 +599,8 @@ impl<'a> Message<'a> {
                 level,
                 ..
             } => {
-                check_string_empty(&name, "name")?;
-                check_string_empty(&password, "password")?;
+                check_string_empty(name, "name")?;
+                check_string_empty(password, "password")?;
                 if *level > MAX_OPERATOR_LEVEL {
                     return Err(OpenProtocolError::ConstraintViolated(Box::new(format!(
                         "Level {} is too high - must be between 0 and {}.",
@@ -623,7 +623,7 @@ mod test {
     fn test_alive() {
         let m = Alive {
             options: MessageOptions {
-                id: Some("Hello".to_string()),
+                id: Some("Hello"),
                 sequence: 999,
                 priority: 20,
                 private: (),
@@ -651,7 +651,7 @@ mod test {
             data: map,
 
             timestamp: DateTime::parse_from_rfc3339("2019-02-26T02:03:04+08:00").unwrap(),
-            job_card_id: Some("Hello World!".to_string()),
+            job_card_id: Some("Hello World!"),
             mold_id: None,
             operator_id: Some(NonZeroU32::new(42).unwrap()),
 
@@ -692,7 +692,7 @@ mod test {
             ControllersList { data, .. } => {
                 assert_eq!(2, data.len());
                 let c = data.get(&NonZeroU32::new(12345).unwrap()).unwrap();
-                assert_eq!("Hello", c.display_name.as_ref().unwrap());
+                assert_eq!("Hello", c.display_name.unwrap());
             }
             _ => panic!("Expected ControllersList, got {:?}", m),
         };
@@ -739,7 +739,7 @@ mod test {
                 assert_eq!(50, options.priority);
                 assert_eq!(1, options.sequence);
                 assert_eq!(123, controller_id.get());
-                assert_eq!("Testing", display_name.as_ref().unwrap());
+                assert_eq!("Testing", display_name.unwrap());
                 let c = controller.unwrap();
                 assert_eq!("JM138Ai", c.model);
                 let d = c.last_cycle_data.unwrap();

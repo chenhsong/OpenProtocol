@@ -11,11 +11,11 @@ use std::num::NonZeroU32;
 ///
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Operator {
+pub struct Operator<'a> {
     /// Unique user ID, which cannot be zero.
     pub operator_id: NonZeroU32,
     /// Name of the user.
-    pub operator_name: Option<String>,
+    pub operator_name: Option<&'a str>,
 }
 
 /// A data structure containing a single physical geo-location.
@@ -40,13 +40,13 @@ impl GeoLocation {
 ///
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Controller {
+pub struct Controller<'a> {
     /// Unique ID of the controller, which cannot be zero.
     pub controller_id: NonZeroU32,
     //
     /// User-specified human-friendly name for the machine.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
+    pub display_name: Option<&'a str>,
     //
     /// Controller type.
     ///
@@ -56,13 +56,13 @@ pub struct Controller {
     /// * `Ai12`
     /// * `CDC2000WIN`
     /// * `MPC7`
-    pub controller_type: String,
+    pub controller_type: &'a str,
     //
     /// Version of the controller's firmware.
-    pub version: String,
+    pub version: &'a str,
     //
     /// Machine model.
-    pub model: String,
+    pub model: &'a str,
     //
     /// Address of the controller.
     ///
@@ -70,7 +70,7 @@ pub struct Controller {
     ///
     /// For a serial-connected controller, this is usually the serial port device name, such as `COM1`, `ttyS0`.
     #[serde(rename = "IP")]
-    pub address: String,
+    pub address: &'a str,
     //
     /// Physical geo-location of the controller (if any).
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -96,28 +96,28 @@ pub struct Controller {
     /// Current logged-in user (if any) on the controller
     #[serde(flatten)]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub operator: Option<Operator>,
+    pub operator: Option<Operator<'a>>,
     //
     /// Active job ID (if any) on the controller.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub job_card_id: Option<String>,
+    pub job_card_id: Option<&'a str>,
     /// ID of the set of mold data currently loaded (if any) on the controller.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub mold_id: Option<String>,
+    pub mold_id: Option<&'a str>,
     /// Private field.
     #[serde(skip_serializing)]
     #[serde(default)]
     private: (),
 }
 
-impl Controller {
+impl<'a> Controller<'a> {
     pub(crate) fn check(&self) -> Result<()> {
         // String fields should not be empty
         check_string_empty(&self.controller_type, "controller_type")?;
         check_string_empty(&self.version, "version")?;
         check_string_empty(&self.model, "version")?;
-        check_optional_string_empty(&self.job_card_id, "job_card_id")?;
-        check_optional_string_empty(&self.mold_id, "mold_id")?;
+        check_optional_str_empty(&self.job_card_id, "job_card_id")?;
+        check_optional_str_empty(&self.mold_id, "mold_id")?;
 
         // Check Geo-location
         if let Some(geo) = &self.geo_location {
@@ -140,7 +140,7 @@ impl Controller {
                 } else {
                     return Err(OpenProtocolError::InvalidField(
                         Box::new("ip".to_string()),
-                        Box::new(self.address.clone()),
+                        Box::new(self.address.to_string()),
                     ));
                 }
             }
@@ -150,15 +150,15 @@ impl Controller {
     }
 }
 
-impl Default for Controller {
+impl Default for Controller<'_> {
     fn default() -> Self {
         Controller {
             controller_id: NonZeroU32::new(1).unwrap(),
             display_name: None,
-            controller_type: "Unknown".to_string(),
-            version: "Unknown".to_string(),
-            model: "Unknown".to_string(),
-            address: "0.0.0.0:0".to_string(),
+            controller_type: "Unknown",
+            version: "Unknown",
+            model: "Unknown",
+            address: "0.0.0.0:0",
             geo_location: None,
             op_mode: OpMode::Unknown,
             job_mode: JobMode::Unknown,
@@ -186,7 +186,7 @@ mod test {
             job_mode: JobMode::ID02,
             operator: Some(Operator {
                 operator_id: NonZeroU32::new(123).unwrap(),
-                operator_name: Some("John".to_string()),
+                operator_name: Some("John"),
             }),
             ..Default::default()
         };
@@ -218,7 +218,7 @@ mod test {
         let c = Controller {
             operator: Some(Operator {
                 operator_id: NonZeroU32::new(123).unwrap(),
-                operator_name: Some("John".to_string()),
+                operator_name: Some("John"),
             }),
             ..Default::default()
         };
@@ -230,17 +230,17 @@ mod test {
         let mut c: Controller = Default::default();
 
         // 1.02.003.004:05
-        c.address = "1.02.003.004:05".to_string();
+        c.address = "1.02.003.004:05";
         c.check().unwrap();
         assert_eq!("1.02.003.004:05", c.address);
 
         // COM123
-        c.address = "COM123".to_string();
+        c.address = "COM123";
         c.check().unwrap();
         assert_eq!("COM123", c.address);
 
         // ttyABC
-        c.address = "ttyABC".to_string();
+        c.address = "ttyABC";
         c.check().unwrap();
         assert_eq!("ttyABC", c.address);
     }

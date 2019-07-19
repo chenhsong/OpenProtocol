@@ -40,6 +40,15 @@ pub fn check_optional_string_whitespace(opt: &Option<String>, field: &'static st
     Ok(())
 }
 
+pub fn check_optional_str_whitespace(opt: &Option<&str>, field: &'static str) -> Result<()> {
+    if let Some(text) = opt {
+        if !text.is_empty() && text.trim().is_empty() {
+            return Err(OpenProtocolError::EmptyField(field));
+        }
+    }
+    Ok(())
+}
+
 pub fn check_f64(value: &f64, field: &str) -> Result<()> {
     if value.is_nan() {
         Err(OpenProtocolError::InvalidField(
@@ -61,9 +70,9 @@ pub fn check_f64(value: &f64, field: &str) -> Result<()> {
     }
 }
 
-pub fn deserialize_null_to_empty_string<'de, D>(d: D) -> std::result::Result<Option<String>, D::Error>
+pub fn deserialize_null_to_empty_string<'de, D>(d: D) -> std::result::Result<Option<&'de str>, D::Error>
 where
     D: Deserializer<'de>,
 {
-    Deserialize::deserialize(d).map(|x: Option<_>| x.or(Some("".to_string())))
+    Deserialize::deserialize(d).map(|x: Option<_>| x.or(Some("")))
 }
