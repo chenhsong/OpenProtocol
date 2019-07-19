@@ -11,12 +11,13 @@ use websocket::{Message, OwnedMessage};
 use ichen_openprotocol::Message as OP_Message;
 use ichen_openprotocol::{Filter, JobCard};
 
+struct Constants<'a> {
+    users: HashMap<&'a str, (u8, String)>,
+    jobs: Vec<JobCard<'a>>,
+}
+
 // Act on Open Protocol message and generate response
-fn process_message<'a>(
-    json: &str,
-    users: &'a HashMap<String, (String, u8, String)>,
-    jobs: &[JobCard<'a>],
-) -> Option<OP_Message<'a>> {
+fn process_message<'a>(json: &'a str, constants: &'a Constants<'a>) -> Option<OP_Message<'a>> {
     let message;
 
     // Parse message
@@ -54,15 +55,15 @@ fn process_message<'a>(
             password,
             ..
         } => {
-            match users.get(password) {
-                Some((pwd, level, name)) => {
-                    println!("User found: password={}, access level={}.", pwd, level);
+            match constants.users.get(password) {
+                Some((level, name)) => {
+                    println!("User found: password={}, access level={}.", password, level);
                     // Return access level
                     Some(OP_Message::OperatorInfo {
                         controller_id: controller_id,
                         operator_id: NonZeroU32::new((*level + 1) as u32),
                         name: name,
-                        password: pwd,
+                        password: password,
                         level: *level,
                         options: Default::default(),
                     })
@@ -74,7 +75,7 @@ fn process_message<'a>(
                         controller_id: controller_id,
                         operator_id: None,
                         name: "Not Allowed",
-                        password: "Password Disallowed",
+                        password: password,
                         level: 0,
                         options: Default::default(),
                     })
@@ -84,7 +85,7 @@ fn process_message<'a>(
         // MIS integration - Load jobs list
         OP_Message::RequestJobCardsList { controller_id, .. } => Some(OP_Message::JobCardsList {
             controller_id: controller_id,
-            data: jobs.iter().map(|jc| (jc.job_card_id, jc.clone())).collect(),
+            data: constants.jobs.iter().map(|jc| (jc.job_card_id, jc.clone())).collect(),
             options: Default::default(),
         }),
         // Other messages - Nothing to process
@@ -146,39 +147,36 @@ fn main() {
 
     println!("Connection to iChen Server established.");
 
-    // Mock users database mapping user password --> access level (0-10)
-    let users = HashMap::<String, (String, u8, String)>::from_iter(
-        [
-            "000000", "111111", "222222", "333333", "444444", "555555", "666666", "777777", "888888", "999999",
-            "123456",
-        ]
-        .iter()
-        .enumerate()
-        .map(|(index, value)| {
-            (
-                value.to_string(),
-                (value.to_string(), index as u8, format!("MISUser{}", index)),
-            )
-        }),
-    );
-
-    // Mock job scheduling system
-    let jobs = [
-        JobCard::new("JOB_CARD_1", "ABC-123", 0, 8000),
-        JobCard::new("JOB_CARD_2", "M002", 2000, 10000),
-        JobCard::new("JOB_CARD_3", "MOULD_003", 888, 3333),
-        JobCard::new("JOB_CARD_4", "MOULD_004", 123, 45678),
-    ];
+    let constants = Constants {
+        // Mock users database mapping user password --> access level (0-10)
+        users: HashMap::from_iter(
+            [
+                "000000", "111111", "222222", "333333", "444444", "555555", "666666", "777777", "888888", "999999",
+                "123456",
+            ]
+            .iter()
+            .enumerate()
+            .map(|(index, value)| (*value, (index as u8, format!("MISUser{}", index)))),
+        ),
+        // Mock job scheduling system
+        jobs: vec![
+            JobCard::new("JOB_CARD_1", "ABC-123", 0, 8000),
+            JobCard::new("JOB_CARD_2", "M002", 2000, 10000),
+            JobCard::new("JOB_CARD_3", "MOULD_003", 888, 3333),
+            JobCard::new("JOB_CARD_4", "MOULD_004", 123, 45678),
+        ],
+    };
 
     // Display built-in's
     println!("=================================================");
     println!("Built-in Users for Testing:");
-    users
+    constants
+        .users
         .iter()
-        .for_each(|(_, (u, a, n))| println!("> Name={}, Password={}, Level={}", n, u, a));
+        .for_each(|(u, (a, n))| println!("> Name={}, Password={}, Level={}", n, u, a));
     println!("=================================================");
     println!("Built-in Job Cards for Testing:");
-    jobs.iter().for_each(|j| {
+    constants.jobs.iter().for_each(|j| {
         println!(
             "> Name={}, Mold={}, Quantity={}/{}",
             j.job_card_id, j.mold_id, j.progress, j.total
@@ -228,7 +226,7 @@ fn main() {
                     println!("Received ({}): {}", json.len(), json);
 
                     // Process the message
-                    match process_message(&json, &users, &jobs) {
+                    match process_message(&json, &constants) {
                         // Has a response message...
                         Some(msg) => match msg.to_json_str() {
                             // Serialize it to JSON and send it
