@@ -85,10 +85,10 @@ pub struct Controller<'a> {
     //
     /// Last set of cycle data (if any) received from the controller.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub last_cycle_data: Option<HashMap<String, f64>>,
+    pub last_cycle_data: Option<HashMap<&'a str, f64>>,
     /// Last-known states (if any) of controller variables.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub variables: Option<HashMap<String, f64>>,
+    pub variables: Option<HashMap<&'a str, f64>>,
     /// Time of last connection.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub last_connection_time: Option<DateTime<FixedOffset>>,
@@ -113,9 +113,9 @@ pub struct Controller<'a> {
 impl<'a> Controller<'a> {
     pub(crate) fn check(&self) -> Result<()> {
         // String fields should not be empty
-        check_string_empty(&self.controller_type, "controller_type")?;
-        check_string_empty(&self.version, "version")?;
-        check_string_empty(&self.model, "version")?;
+        check_string_empty(self.controller_type, "controller_type")?;
+        check_string_empty(self.version, "version")?;
+        check_string_empty(self.model, "version")?;
         check_optional_str_empty(&self.job_card_id, "job_card_id")?;
         check_optional_str_empty(&self.mold_id, "mold_id")?;
 
@@ -125,7 +125,7 @@ impl<'a> Controller<'a> {
         }
 
         // Check IP address
-        check_string_empty(&self.address, "address")?;
+        check_string_empty(self.address, "address")?;
 
         lazy_static! {
             static ref IP_REGEX: Regex = Regex::new(r#"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,5}$"#).unwrap();
