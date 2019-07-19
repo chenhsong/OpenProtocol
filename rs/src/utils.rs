@@ -13,27 +13,9 @@ pub fn is_zero(num: &i32) -> bool {
     *num == 0
 }
 
-pub fn check_optional_string_empty(opt: &Option<String>, field: &'static str) -> Result<()> {
-    if let Some(text) = opt {
-        if text.trim().is_empty() {
-            return Err(OpenProtocolError::EmptyField(field));
-        }
-    }
-    Ok(())
-}
-
 pub fn check_optional_str_empty(opt: &Option<&str>, field: &'static str) -> Result<()> {
     if let Some(text) = opt {
         if text.trim().is_empty() {
-            return Err(OpenProtocolError::EmptyField(field));
-        }
-    }
-    Ok(())
-}
-
-pub fn check_optional_string_whitespace(opt: &Option<String>, field: &'static str) -> Result<()> {
-    if let Some(text) = opt {
-        if !text.is_empty() && text.trim().is_empty() {
             return Err(OpenProtocolError::EmptyField(field));
         }
     }
