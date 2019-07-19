@@ -149,17 +149,15 @@ impl<'a> Controller<'a> {
             // Check IP address validity
             let (address, port) = self.address.split_at(self.address.find(':').unwrap());
 
-            match Ipv4Addr::from_str(address) {
-                Ok(_) => (),
-                Err(err) => {
-                    return Err(OpenProtocolError::InvalidField(
-                        Box::new("ip[address]".to_string()),
-                        Box::new(format!("{} ({})", address, err.description())),
-                    ))
-                }
+            if let Err(err) = Ipv4Addr::from_str(address) {
+                return Err(OpenProtocolError::InvalidField(
+                    Box::new("ip[address]".to_string()),
+                    Box::new(format!("{} ({})", address, err.description())),
+                ));
             }
 
-            match u8::from_str(&port[1..]) {
+            // Check port
+            match u16::from_str(&port[1..]) {
                 Ok(n) => {
                     if n <= 0 {
                         return Err(OpenProtocolError::InvalidField(
