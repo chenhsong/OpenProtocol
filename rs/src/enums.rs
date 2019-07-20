@@ -29,6 +29,7 @@ pub enum Language {
 }
 
 impl Language {
+    /// Returns true if Language::Unknown.
     pub fn is_unknown(&self) -> bool {
         *self == Language::Unknown
     }
@@ -65,18 +66,29 @@ pub enum OpMode {
 }
 
 impl OpMode {
+    /// Returns true if OpMode::Unknown.
     pub fn is_unknown(&self) -> bool {
         *self == OpMode::Unknown
     }
 
+    /// Returns true if OpMode::Offline.
     pub fn is_offline(&self) -> bool {
         *self == OpMode::Offline
     }
 
+    /// All variants other than OpMode::Unknown and OpMode::Offline means on-line.
     pub fn is_online(&self) -> bool {
         match self {
             OpMode::Unknown | OpMode::Offline => false,
             _ => true,
+        }
+    }
+
+    /// A machine is producing if it is in either Automatic or Semi-Automatic mode.
+    pub fn is_producing(&self) -> bool {
+        match self {
+            OpMode::SemiAutomatic | OpMode::Automatic => true,
+            _ => false,
         }
     }
 }
@@ -121,14 +133,17 @@ pub enum JobMode {
 }
 
 impl JobMode {
+    /// Returns true if JobMode::Unknown.
     pub fn is_unknown(&self) -> bool {
         *self == JobMode::Unknown
     }
 
+    /// Returns true if JobMode::Offline.
     pub fn is_offline(&self) -> bool {
         *self == JobMode::Offline
     }
 
+    /// All variants other than JobMode::Unknown and JobMode::Offline means on-line.
     pub fn is_online(&self) -> bool {
         match self {
             JobMode::Unknown | JobMode::Offline => false,
