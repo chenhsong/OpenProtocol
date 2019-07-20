@@ -18,8 +18,9 @@
 //!
 //! Another implication due to extensive usage of borrowed string slices is that strings literals with
 //! escape sequences will cause parsing errors because the actual string cannot be simply borrowed from
-//! the original JSON string.  Luckily this is extremely rare for most fields holding ID's etc.
-//! For this reason, user-defined text fields (such as operator name) are modeled using `Cow<&str>` instead.
+//! the original JSON string.  Luckily this is extremely rare for most fields holding names, ID's etc.
+//! For this reason, only certain user-defined text fields (such as `job_card_id`) that may contain
+//! escaped characters (especially the double-quote) and therefore are modeled using `Cow<&str>` instead.
 //!
 
 use lazy_static;
