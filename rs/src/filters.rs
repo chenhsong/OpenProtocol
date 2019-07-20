@@ -45,8 +45,39 @@ pub enum Filter {
     /// MIS/MES integration: User authorization messages.
     Operators,
     //
-    /// MIS/MES integration: Connect to the OPC UA server.
+    /// Industrial bus integration: Connect to the OPC UA server.
     OPCUA,
+}
+
+impl Filter {
+    /// Returns true if Filter::All.
+    pub fn is_all(&self) -> bool {
+        *self == Filter::All
+    }
+
+    /// Returns true if machine-related filter flags.
+    pub fn is_machine(&self) -> bool {
+        match self {
+            Filter::Status | Filter::Cycle | Filter::Mold | Filter::Actions | Filter::Alarms | Filter::Audit => true,
+            _ => false,
+        }
+    }
+
+    /// Returns true if MIS/MES-related filter flags.
+    pub fn is_mis(&self) -> bool {
+        match self {
+            Filter::JobCards | Filter::Operators => true,
+            _ => false,
+        }
+    }
+
+    /// Returns true if interface of an industrial bus (e.g. OPC UA).
+    pub fn is_bus(&self) -> bool {
+        match self {
+            Filter::OPCUA => true,
+            _ => false,
+        }
+    }
 }
 
 // Custom serializer and deserializer
