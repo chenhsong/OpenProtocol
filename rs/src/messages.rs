@@ -132,8 +132,12 @@ pub struct KeyValuePair<K, V> {
 #[serde(rename_all = "camelCase")]
 pub struct StateValues<'a> {
     /// Current operating mold of the controller.
+    #[serde(skip_serializing_if = "OpMode::is_unknown")]
+    #[serde(default)]
     pub op_mode: OpMode,
     /// Current job mode of the controller.
+    #[serde(skip_serializing_if = "JobMode::is_unknown")]
+    #[serde(default)]
     pub job_mode: JobMode,
     /// Unique ID of the current logged-in user (if any) on the controller.
     #[serde(skip_serializing_if = "Option::is_none")]

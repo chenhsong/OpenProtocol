@@ -28,6 +28,18 @@ pub enum Language {
     JA,
 }
 
+impl Language {
+    pub fn is_unknown(&self) -> bool {
+        *self == Language::Unknown
+    }
+}
+
+impl Default for Language {
+    fn default() -> Self {
+        Language::Unknown
+    }
+}
+
 /// Operating modes of the controller.
 ///
 /// For details, see [here](https://github.com/chenhsong/OpenProtocol/blob/master/doc/enums.md#opmodes).
@@ -50,6 +62,29 @@ pub enum OpMode {
     ///
     /// When the controller is off-line, both its operating mode and job mode should be `Offline`.
     Offline,
+}
+
+impl OpMode {
+    pub fn is_unknown(&self) -> bool {
+        *self == OpMode::Unknown
+    }
+
+    pub fn is_offline(&self) -> bool {
+        *self == OpMode::Offline
+    }
+
+    pub fn is_online(&self) -> bool {
+        match self {
+            OpMode::Unknown | OpMode::Offline => false,
+            _ => true,
+        }
+    }
+}
+
+impl Default for OpMode {
+    fn default() -> Self {
+        OpMode::Unknown
+    }
 }
 
 /// Job modes of the controller.
@@ -83,4 +118,27 @@ pub enum JobMode {
     ///
     /// When the controller is off-line, both its operating mode and job mode should be `Offline`.
     Offline,
+}
+
+impl JobMode {
+    pub fn is_unknown(&self) -> bool {
+        *self == JobMode::Unknown
+    }
+
+    pub fn is_offline(&self) -> bool {
+        *self == JobMode::Offline
+    }
+
+    pub fn is_online(&self) -> bool {
+        match self {
+            JobMode::Unknown | JobMode::Offline => false,
+            _ => true,
+        }
+    }
+}
+
+impl Default for JobMode {
+    fn default() -> Self {
+        JobMode::Unknown
+    }
 }
