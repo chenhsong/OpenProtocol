@@ -19,8 +19,7 @@ pub struct Operator<'a> {
     /// Unique user ID, which cannot be zero.
     pub operator_id: NonZeroU32,
     /// Name of the user.
-    #[serde(borrow)]
-    pub operator_name: Option<Cow<'a, str>>,
+    pub operator_name: Option<&'a str>,
 }
 
 /// A data structure containing a single physical geo-location.
@@ -51,8 +50,7 @@ pub struct Controller<'a> {
     //
     /// User-specified human-friendly name for the machine.
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(borrow)]
-    pub display_name: Option<Cow<'a, str>>,
+    pub display_name: Option<&'a str>,
     //
     /// Controller type.
     ///
@@ -124,8 +122,8 @@ impl<'a> Controller<'a> {
         check_string_empty(self.controller_type, "controller_type")?;
         check_string_empty(self.version, "version")?;
         check_string_empty(self.model, "version")?;
-        check_optional_cowstr_empty(&self.job_card_id, "job_card_id")?;
-        check_optional_cowstr_empty(&self.mold_id, "mold_id")?;
+        check_optional_str_empty(&self.job_card_id, "job_card_id")?;
+        check_optional_str_empty(&self.mold_id, "mold_id")?;
 
         // Check Geo-location
         if let Some(geo) = &self.geo_location {
@@ -226,7 +224,7 @@ mod test {
             job_mode: JobMode::ID02,
             operator: Some(Operator {
                 operator_id: NonZeroU32::new(123).unwrap(),
-                operator_name: Some("John".into()),
+                operator_name: Some("John"),
             }),
             ..Default::default()
         };
@@ -258,7 +256,7 @@ mod test {
         let c = Controller {
             operator: Some(Operator {
                 operator_id: NonZeroU32::new(123).unwrap(),
-                operator_name: Some("John".into()),
+                operator_name: Some("John"),
             }),
             ..Default::default()
         };

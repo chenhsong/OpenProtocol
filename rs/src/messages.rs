@@ -31,8 +31,7 @@ pub struct MessageOptions<'a> {
     /// The iChen Server may tag certain messages with a unique tracking key that can be used to
     /// retrieve the message from persistent storage later.
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(borrow)]
-    pub id: Option<Cow<'a, str>>,
+    pub id: Option<&'a str>,
     /// Ever-increasing message sequence number.
     ///
     /// This number is usually auto-incremented with each message created, starting from 1.
@@ -69,7 +68,7 @@ impl<'a> MessageOptions<'a> {
     }
 
     fn check(&self) -> Result<'static, ()> {
-        check_optional_cowstr_empty(&self.id, "id")
+        check_optional_str_empty(&self.id, "id")
     }
 }
 
@@ -102,15 +101,6 @@ pub struct JobCard<'a> {
 }
 
 impl<'a> JobCard<'a> {
-    pub fn new(job_card_id: &'a str, mold_id: &'a str, progress: u32, total: u32) -> Self {
-        Self {
-            job_card_id: job_card_id.into(),
-            mold_id: mold_id.into(),
-            progress: progress,
-            total: total,
-        }
-    }
-
     fn check(&self) -> Result<'static, ()> {
         check_string_empty(&self.job_card_id, "job_card_id")?;
         check_string_empty(&self.mold_id, "mold_id")?;
@@ -142,11 +132,9 @@ pub struct KeyValuePair<K, V> {
 #[serde(rename_all = "camelCase")]
 pub struct StateValues<'a> {
     /// Current operating mold of the controller.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub op_mode: Option<OpMode>,
+    pub op_mode: OpMode,
     /// Current job mode of the controller.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub job_mode: Option<JobMode>,
+    pub job_mode: JobMode,
     /// Unique ID of the current logged-in user (if any) on the controller.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub operator_id: Option<NonZeroU32>,
@@ -162,8 +150,8 @@ pub struct StateValues<'a> {
 
 impl StateValues<'_> {
     fn check(&self) -> Result<'static, ()> {
-        check_optional_cowstr_empty(&self.job_card_id, "job_card_id")?;
-        check_optional_cowstr_empty(&self.mold_id, "mold_id")?;
+        check_optional_str_empty(&self.job_card_id, "job_card_id")?;
+        check_optional_str_empty(&self.mold_id, "mold_id")?;
         Ok(())
     }
 }
@@ -215,8 +203,7 @@ pub enum Message<'a> {
         controller_id: NonZeroU32,
 
         #[serde(skip_serializing_if = "Option::is_none")]
-        #[serde(borrow)]
-        display_name: Option<Cow<'a, str>>,
+        display_name: Option<&'a str>,
         #[serde(skip_serializing_if = "Option::is_none")]
         is_connected: Option<bool>,
 
@@ -235,23 +222,21 @@ pub enum Message<'a> {
         #[serde(skip_serializing_if = "Option::is_none")]
         operator_id: Option<u32>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        #[serde(deserialize_with = "deserialize_null_to_empty_string")]
+        #[serde(deserialize_with = "deserialize_null_to_empty_str")]
         #[serde(default)]
-        #[serde(borrow)]
-        operator_name: Option<Cow<'a, str>>,
+        operator_name: Option<&'a str>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        #[serde(deserialize_with = "deserialize_null_to_empty_string")]
+        #[serde(deserialize_with = "deserialize_null_to_empty_cowstr")]
         #[serde(default)]
         #[serde(borrow)]
         job_card_id: Option<Cow<'a, str>>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        #[serde(deserialize_with = "deserialize_null_to_empty_string")]
+        #[serde(deserialize_with = "deserialize_null_to_empty_cowstr")]
         #[serde(default)]
         #[serde(borrow)]
         mold_id: Option<Cow<'a, str>>,
 
-        #[serde(skip_serializing_if = "Option::is_none")]
-        state: Option<StateValues<'a>>,
+        state: StateValues<'a>,
 
         #[serde(skip_serializing_if = "Option::is_none")]
         controller: Option<Box<Controller<'a>>>,
@@ -269,16 +254,9 @@ pub enum Message<'a> {
         data: HashMap<&'a str, f64>,
 
         timestamp: DateTime<FixedOffset>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        #[serde(borrow)]
-        job_card_id: Option<Cow<'a, str>>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        #[serde(borrow)]
-        mold_id: Option<Cow<'a, str>>,
-        operator_id: Option<NonZeroU32>,
 
-        op_mode: OpMode,
-        job_mode: JobMode,
+        #[serde(flatten)]
+        state: StateValues<'a>,
 
         #[serde(flatten)]
         options: MessageOptions<'a>,
@@ -351,16 +329,9 @@ pub enum Message<'a> {
         data: HashMap<&'a str, f64>,
 
         timestamp: DateTime<FixedOffset>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        #[serde(borrow)]
-        job_card_id: Option<Cow<'a, str>>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        #[serde(borrow)]
-        mold_id: Option<Cow<'a, str>>,
-        operator_id: Option<NonZeroU32>,
 
-        op_mode: OpMode,
-        job_mode: JobMode,
+        #[serde(flatten)]
+        state: StateValues<'a>,
 
         #[serde(flatten)]
         options: MessageOptions<'a>,
@@ -407,8 +378,7 @@ pub enum Message<'a> {
         controller_id: NonZeroU32,
         #[serde(skip_serializing_if = "Option::is_none")]
         operator_id: Option<NonZeroU32>,
-        #[serde(borrow)]
-        name: Cow<'a, str>,
+        name: &'a str,
         password: &'a str,
         level: u8,
 
@@ -521,14 +491,12 @@ impl<'a> Message<'a> {
                 controller,
                 ..
             } => {
-                check_optional_cowstr_empty(display_name, "display_name")?;
-                check_optional_cowstr_whitespace(operator_name, "operator_name")?;
-                check_optional_cowstr_whitespace(job_card_id, "job_card_id")?;
-                check_optional_cowstr_whitespace(mold_id, "mold_id")?;
+                check_optional_str_empty(display_name, "display_name")?;
+                check_optional_str_whitespace(operator_name, "operator_name")?;
+                check_optional_str_whitespace(job_card_id, "job_card_id")?;
+                check_optional_str_whitespace(mold_id, "mold_id")?;
+                state.check()?;
 
-                if let Some(s) = state {
-                    s.check()?;
-                }
                 if let Some(kv) = alarm {
                     check_string_empty(kv.key, "alarm.key")?;
                 }
@@ -547,17 +515,13 @@ impl<'a> Message<'a> {
                 options.check()
             }
             CycleData {
-                options,
-                data,
-                job_card_id,
-                mold_id,
-                ..
+                options, data, state, ..
             } => {
                 for d in data.iter() {
                     check_f64(d.1, d.0)?;
                 }
-                check_optional_cowstr_empty(job_card_id, "job_card_id")?;
-                check_optional_cowstr_empty(mold_id, "mold_id")?;
+                check_optional_str_empty(&state.job_card_id, "job_card_id")?;
+                check_optional_str_empty(&state.mold_id, "mold_id")?;
                 options.check()
             }
             JobCardsList { options, data, .. } => {
@@ -587,17 +551,13 @@ impl<'a> Message<'a> {
                 options.check()
             }
             MoldData {
-                options,
-                data,
-                job_card_id,
-                mold_id,
-                ..
+                options, data, state, ..
             } => {
                 for d in data.iter() {
                     check_f64(d.1, d.0)?;
                 }
-                check_optional_cowstr_empty(job_card_id, "job_card_id")?;
-                check_optional_cowstr_empty(mold_id, "mold_id")?;
+                check_optional_str_empty(&state.job_card_id, "job_card_id")?;
+                check_optional_str_empty(&state.mold_id, "mold_id")?;
                 options.check()
             }
             ReadMoldData { options, field, .. } => {
@@ -649,7 +609,7 @@ mod test {
     fn test_alive() {
         let m = Alive {
             options: MessageOptions {
-                id: Some("Hello".into()),
+                id: Some("Hello"),
                 sequence: 999,
                 priority: 20,
                 private: (),
@@ -677,12 +637,14 @@ mod test {
             data: map,
 
             timestamp: DateTime::parse_from_rfc3339("2019-02-26T02:03:04+08:00").unwrap(),
-            job_card_id: Some("Hello World!".into()),
-            mold_id: None,
-            operator_id: Some(NonZeroU32::new(42).unwrap()),
 
-            op_mode: OpMode::SemiAutomatic,
-            job_mode: JobMode::Offline,
+            state: StateValues {
+                job_card_id: Some("Hello World!".into()),
+                mold_id: None,
+                operator_id: Some(NonZeroU32::new(42).unwrap()),
+                op_mode: OpMode::SemiAutomatic,
+                job_mode: JobMode::Offline,
+            },
 
             options: MessageOptions {
                 id: None,
@@ -718,7 +680,7 @@ mod test {
             ControllersList { data, .. } => {
                 assert_eq!(2, data.len());
                 let c = data.get(&NonZeroU32::new(12345).unwrap()).unwrap();
-                assert_eq!("Hello", c.display_name.as_ref().unwrap());
+                assert_eq!("Hello", c.display_name.unwrap());
             }
             _ => panic!("Expected ControllersList, got {:?}", m),
         };

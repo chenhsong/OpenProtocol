@@ -62,7 +62,7 @@ fn process_message<'a>(json: &'a str, constants: &'a Constants<'a>) -> Option<OP
                     Some(OP_Message::OperatorInfo {
                         controller_id: controller_id,
                         operator_id: NonZeroU32::new((*level + 1) as u32),
-                        name: name.into(),
+                        name: name,
                         password: password,
                         level: *level,
                         options: Default::default(),
@@ -74,7 +74,7 @@ fn process_message<'a>(json: &'a str, constants: &'a Constants<'a>) -> Option<OP
                     Some(OP_Message::OperatorInfo {
                         controller_id: controller_id,
                         operator_id: None,
-                        name: "Not Allowed".into(),
+                        name: "Not Allowed",
                         password: password,
                         level: 0,
                         options: Default::default(),
@@ -164,10 +164,30 @@ fn main() {
         ),
         // Mock job scheduling system
         jobs: vec![
-            JobCard::new("JOB_CARD_1", "ABC-123", 0, 8000),
-            JobCard::new("JOB_CARD_2", "M002", 2000, 10000),
-            JobCard::new("JOB_CARD_3", "MOULD_003", 888, 3333),
-            JobCard::new("JOB_CARD_4", "MOULD_004", 123, 45678),
+            JobCard {
+                job_card_id: "JOB_CARD_1".into(),
+                mold_id: "ABC-123".into(),
+                progress: 0,
+                total: 8000,
+            },
+            JobCard {
+                job_card_id: "JOB_CARD_2".into(),
+                mold_id: "M002".into(),
+                progress: 2000,
+                total: 10000,
+            },
+            JobCard {
+                job_card_id: "JOB_CARD_3".into(),
+                mold_id: "MOULD_003".into(),
+                progress: 888,
+                total: 3333,
+            },
+            JobCard {
+                job_card_id: "JOB_CARD_4".into(),
+                mold_id: "MOULD_004".into(),
+                progress: 123,
+                total: 45678,
+            },
         ],
     };
 
