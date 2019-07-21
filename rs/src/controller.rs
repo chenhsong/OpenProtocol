@@ -110,10 +110,6 @@ pub struct Controller<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(borrow)]
     pub mold_id: Option<Cow<'a, str>>,
-    /// Private field.
-    #[serde(skip_serializing)]
-    #[serde(default)]
-    private: (),
 }
 
 impl<'a> Controller<'a> {
@@ -206,7 +202,6 @@ impl Default for Controller<'_> {
             last_connection_time: None,
             operator: None,
             mold_id: None,
-            private: (),
         }
     }
 }
@@ -241,7 +236,7 @@ mod test {
         c.check().unwrap();
 
         assert_eq!(
-            r#"Controller { controller_id: 1, display_name: None, controller_type: "Unknown", version: "Unknown", model: "Unknown", address: "127.0.0.1:123", geo_location: None, op_mode: Automatic, job_mode: ID02, last_cycle_data: None, variables: None, last_connection_time: None, operator: Some(Operator { operator_id: 123, operator_name: Some("John") }), job_card_id: None, mold_id: None, private: () }"#,
+            r#"Controller { controller_id: 1, display_name: None, controller_type: "Unknown", version: "Unknown", model: "Unknown", address: "127.0.0.1:123", geo_location: None, op_mode: Automatic, job_mode: ID02, last_cycle_data: None, variables: None, last_connection_time: None, operator: Some(Operator { operator_id: 123, operator_name: Some("John") }), job_card_id: None, mold_id: None }"#,
             format!("{:?}", &c));
     }
 

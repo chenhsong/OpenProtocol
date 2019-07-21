@@ -5,13 +5,17 @@ use Message::*;
 
 #[test]
 fn test_serialize() {
-    let m = Message::new_join(
+    let mut m = Message::new_join(
         "hello",
         HashSet::from_iter([Filter::All, Filter::Cycle, Filter::Operators].iter().cloned()),
     );
+    if let Join { options, .. } = &mut m {
+        options.sequence = 999;
+    }
+
     let json = m.to_json_str().unwrap();
     assert_eq!(
-        r#"{"$type":"Join","version":"4.0","password":"hello","language":"EN","filter":"All, Operators","sequence":1}"#,
+        r#"{"$type":"Join","version":"4.0","password":"hello","language":"EN","filter":"All, Operators","sequence":999}"#,
         json
     );
 }

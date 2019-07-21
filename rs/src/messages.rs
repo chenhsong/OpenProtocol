@@ -40,31 +40,11 @@ pub struct MessageOptions<'a> {
     #[serde(skip_serializing_if = "is_zero")]
     #[serde(default)]
     pub priority: i32,
-    //
-    /// Private field.
-    #[serde(skip_serializing)]
-    #[serde(default)]
-    private: (),
 }
 
 impl<'a> MessageOptions<'a> {
     pub fn new() -> Self {
         Default::default()
-    }
-
-    pub fn new_with_priority(priority: i32) -> Self {
-        Self {
-            priority: priority,
-            ..Default::default()
-        }
-    }
-
-    pub fn new_with_priority_and_id(priority: i32, id: &'a str) -> Self {
-        Self {
-            id: Some(id.into()),
-            priority: priority,
-            ..Default::default()
-        }
     }
 
     fn check(&self) -> Result<'static, ()> {
@@ -78,7 +58,6 @@ impl Default for MessageOptions<'_> {
             id: None,
             sequence: SEQ.fetch_add(1, Ordering::SeqCst),
             priority: 0,
-            private: (),
         }
     }
 }
@@ -100,7 +79,7 @@ pub struct JobCard<'a> {
     pub total: u32,
 }
 
-impl<'a> JobCard<'a> {
+impl JobCard<'_> {
     fn check(&self) -> Result<'static, ()> {
         check_string_empty(&self.job_card_id, "job_card_id")?;
         check_string_empty(&self.mold_id, "mold_id")?;
@@ -178,10 +157,6 @@ pub enum Message<'a> {
 
         #[serde(flatten)]
         options: MessageOptions<'a>,
-
-        #[serde(skip_serializing)]
-        #[serde(default)]
-        private: (),
     },
     #[serde(rename_all = "camelCase")]
     RequestControllersList {
@@ -197,10 +172,6 @@ pub enum Message<'a> {
 
         #[serde(flatten)]
         options: MessageOptions<'a>,
-
-        #[serde(skip_serializing)]
-        #[serde(default)]
-        private: (),
     },
     #[serde(rename_all = "camelCase")]
     ControllerStatus {
@@ -247,10 +218,6 @@ pub enum Message<'a> {
 
         #[serde(flatten)]
         options: MessageOptions<'a>,
-
-        #[serde(skip_serializing)]
-        #[serde(default)]
-        private: (),
     },
     #[serde(rename_all = "camelCase")]
     CycleData {
@@ -264,10 +231,6 @@ pub enum Message<'a> {
 
         #[serde(flatten)]
         options: MessageOptions<'a>,
-
-        #[serde(skip_serializing)]
-        #[serde(default)]
-        private: (),
     },
     #[serde(rename_all = "camelCase")]
     RequestJobCardsList {
@@ -275,10 +238,6 @@ pub enum Message<'a> {
 
         #[serde(flatten)]
         options: MessageOptions<'a>,
-
-        #[serde(skip_serializing)]
-        #[serde(default)]
-        private: (),
     },
     #[serde(rename_all = "camelCase")]
     JobCardsList {
@@ -315,10 +274,6 @@ pub enum Message<'a> {
 
         #[serde(flatten)]
         options: MessageOptions<'a>,
-
-        #[serde(skip_serializing)]
-        #[serde(default)]
-        private: (),
     },
     #[serde(rename_all = "camelCase")]
     RequestMoldData {
@@ -339,10 +294,6 @@ pub enum Message<'a> {
 
         #[serde(flatten)]
         options: MessageOptions<'a>,
-
-        #[serde(skip_serializing)]
-        #[serde(default)]
-        private: (),
     },
     #[serde(rename_all = "camelCase")]
     ReadMoldData {
@@ -360,10 +311,6 @@ pub enum Message<'a> {
 
         #[serde(flatten)]
         options: MessageOptions<'a>,
-
-        #[serde(skip_serializing)]
-        #[serde(default)]
-        private: (),
     },
     #[serde(rename_all = "camelCase")]
     LoginOperator {
@@ -372,10 +319,6 @@ pub enum Message<'a> {
 
         #[serde(flatten)]
         options: MessageOptions<'a>,
-
-        #[serde(skip_serializing)]
-        #[serde(default)]
-        private: (),
     },
     #[serde(rename_all = "camelCase")]
     OperatorInfo {
@@ -616,7 +559,6 @@ mod test {
                 id: Some("Hello"),
                 sequence: 999,
                 priority: 20,
-                private: (),
             },
         };
 
@@ -654,10 +596,7 @@ mod test {
                 id: None,
                 sequence: 999,
                 priority: -20,
-                private: (),
             },
-
-            private: (),
         };
 
         let serialized = serde_json::to_string(&m).unwrap();
