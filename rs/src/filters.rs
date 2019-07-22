@@ -1,7 +1,12 @@
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::collections::HashSet;
+use std::borrow::Cow;
 use std::str::FromStr;
+use strum::IntoEnumIterator;
 use strum_macros::{AsRefStr, Display, EnumIter, EnumString, IntoStaticStr};
+
+pub trait Filters {
+    fn is_all(&self) -> bool;
+}
 
 /// General authorizations to access the iChen System via Open Protocol.
 ///
@@ -80,9 +85,18 @@ impl Filter {
     }
 }
 
+impl Filters for [Filter] {
+    fn is_all(&self) -> bool {
+        // Either Filter::All or all machine filters are present
+        self.contains(&Filter::All) || Filter::iter().filter(|f| f.is_machine()).all(|f| self.contains(&f))
+    }
+}
+
 // Custom serializer and deserializer
 
-pub fn serialize_to_flatten_array<S>(x: &HashSet<Filter>, s: S) -> Result<S::Ok, S::Error>
+static EMPTY_FILTERS: &[Filter] = &[];
+
+pub fn serialize_to_flatten_array<S>(x: &[Filter], s: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
@@ -119,33 +133,32 @@ where
     s.serialize_str(&fstr)
 }
 
-pub fn deserialize_flattened_array<'de, D>(d: D) -> Result<HashSet<Filter>, D::Error>
+pub fn deserialize_flattened_array<'de, D>(d: D) -> Result<Cow<'de, [Filter]>, D::Error>
 where
     D: Deserializer<'de>,
 {
     let text = String::deserialize(d)?;
 
-    let mut dict: HashSet<Filter> = HashSet::new();
-
     if text == "None" {
-        return Ok(dict);
+        return Ok(EMPTY_FILTERS.into());
     }
 
-    for key in text.split(",") {
-        if let Ok(filter) = Filter::from_str(key.trim()) {
-            dict.insert(filter);
-        }
-    }
+    let mut list: Vec<Filter> = vec![];
 
-    if dict.contains(&Filter::All) {
+    text.split(",")
+        .filter_map(|key| Filter::from_str(key.trim()).ok())
+        .for_each(|f| list.push(f));
+
+    if list.contains(&Filter::All) {
         // Has All, remove details
-        dict.remove(&Filter::Status);
-        dict.remove(&Filter::Cycle);
-        dict.remove(&Filter::Mold);
-        dict.remove(&Filter::Actions);
-        dict.remove(&Filter::Alarms);
-        dict.remove(&Filter::Audit);
+        list.retain(|f| !f.is_machine());
     }
 
-    Ok(dict)
+    list.dedup();
+
+    if list.len() > 0 {
+        Ok(list.into())
+    } else {
+        Ok(EMPTY_FILTERS.into())
+    }
 }

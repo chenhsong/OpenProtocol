@@ -1,14 +1,9 @@
 use ichen_openprotocol::*;
-use std::collections::HashSet;
-use std::iter::FromIterator;
 use Message::*;
 
 #[test]
 fn test_serialize() {
-    let mut m = Message::new_join(
-        "hello",
-        HashSet::from_iter([Filter::All, Filter::Cycle, Filter::Operators].iter().cloned()),
-    );
+    let mut m = Message::new_join("hello", &[Filter::All, Filter::Cycle, Filter::Operators]);
     if let Join { options, .. } = &mut m {
         options.sequence = 999;
     }
@@ -44,6 +39,7 @@ fn test_deserialize() {
         assert!(filter.contains(&Filter::Mold));
         assert!(!filter.contains(&Filter::Alarms));
         assert!(!filter.contains(&Filter::All));
+        assert!(!filter.is_all());
     } else {
         panic!("Wrong type of message deserialized!");
     }

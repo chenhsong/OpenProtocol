@@ -4,7 +4,7 @@ use super::*;
 use chrono::{DateTime, FixedOffset};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::num::NonZeroU32;
 use std::sync::atomic::{AtomicU64, Ordering};
 use Message::*;
@@ -32,10 +32,12 @@ pub struct MessageOptions<'a> {
     /// retrieve the message from persistent storage later.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<&'a str>,
+    //
     /// Ever-increasing message sequence number.
     ///
     /// This number is usually auto-incremented with each message created, starting from 1.
     pub sequence: u64,
+    //
     /// Priority of the message, smaller number is higher priority.  Default = 0.
     #[serde(skip_serializing_if = "is_zero")]
     #[serde(default)]
@@ -73,11 +75,14 @@ pub struct JobCard<'a> {
     /// Unique job ID, which must not be empty or all white-spaces.
     #[serde(borrow)]
     pub job_card_id: Cow<'a, str>,
+    //
     /// ID of the set of mold data to load for this job.
     #[serde(borrow)]
     pub mold_id: Cow<'a, str>,
+    //
     /// Current production progress, which must not be larger than `total`.
     pub progress: u32,
+    //
     /// Total production count ordered.
     pub total: u32,
 }
@@ -119,17 +124,21 @@ pub struct StateValues<'a> {
     #[serde(skip_serializing_if = "OpMode::is_unknown")]
     #[serde(default)]
     pub op_mode: OpMode,
+    //
     /// Current job mode of the controller.
     #[serde(skip_serializing_if = "JobMode::is_unknown")]
     #[serde(default)]
     pub job_mode: JobMode,
+    //
     /// Unique ID of the current logged-in user (if any) on the controller.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub operator_id: Option<NonZeroU32>,
+    //
     /// Current active job ID (if any) on the controller.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(borrow)]
     pub job_card_id: Option<Cow<'a, str>>,
+    //
     /// Unique ID of the set of mold data currently loaded (if any) on the controller.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(borrow)]
@@ -264,7 +273,8 @@ pub enum Message<'a> {
             serialize_with = "serialize_to_flatten_array",
             deserialize_with = "deserialize_flattened_array"
         )]
-        filter: HashSet<Filter>,
+        #[serde(borrow)]
+        filter: Cow<'a, [Filter]>,
 
         #[serde(flatten)]
         options: MessageOptions<'a>,
@@ -396,19 +406,19 @@ impl<'a> Message<'a> {
 
     /// Create a `JOIN` message.
     ///
-    pub fn new_join(password: &'a str, filter: HashSet<Filter>) -> Self {
+    pub fn new_join(password: &'a str, filter: &'a [Filter]) -> Self {
         Self::new_join_with_org(password, filter, None)
     }
 
     /// Create a `JOIN` message with a non-default organization.
     ///
-    pub fn new_join_with_org(password: &'a str, filter: HashSet<Filter>, org: Option<&'a str>) -> Self {
+    pub fn new_join_with_org(password: &'a str, filter: &'a [Filter], org: Option<&'a str>) -> Self {
         Join {
             org_id: org,
             version: PROTOCOL_VERSION,
             password: password,
             language: DEFAULT_LANGUAGE,
-            filter: filter,
+            filter: filter.into(),
             options: Default::default(),
         }
     }

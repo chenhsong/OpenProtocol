@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::io::{stdin, Write};
 use std::iter::FromIterator;
 use std::num::NonZeroU32;
@@ -321,9 +321,7 @@ fn main() {
     // Send a JOIN message
     println!("Sending JOIN message...");
 
-    let filters = HashSet::<Filter>::from_iter([Filter::All, Filter::JobCards, Filter::Operators].iter().map(|f| *f));
-
-    let msg = OP_Message::new_join(password, filters);
+    let msg = OP_Message::new_join(password, &[Filter::All, Filter::JobCards, Filter::Operators]);
 
     match msg.to_json_str() {
         Ok(m) => match tx.send(OwnedMessage::Text(m)) {

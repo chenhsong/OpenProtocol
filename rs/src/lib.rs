@@ -113,5 +113,5 @@ pub type Result<'a, T> = std::result::Result<T, OpenProtocolError<'a>>;
 // Re-exports
 pub use controller::{Controller, GeoLocation, Operator};
 pub use enums::{JobMode, Language, OpMode};
-pub use filters::Filter;
+pub use filters::{Filter, Filters};
 pub use messages::*;
