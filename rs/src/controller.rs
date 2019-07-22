@@ -34,10 +34,11 @@ pub struct GeoLocation {
 }
 
 impl GeoLocation {
-    fn check(&self) -> Result<'static, ()> {
+    /// Validate the data structure.
+    ///
+    pub fn validate(&self) -> Result<'static, ()> {
         check_f64(&self.geo_latitude, "geo_latitude")?;
-        check_f64(&self.geo_longitude, "geo_longitude")?;
-        Ok(())
+        check_f64(&self.geo_longitude, "geo_longitude")
     }
 }
 /// A data structure containing the current known status of a controller.
@@ -113,7 +114,9 @@ pub struct Controller<'a> {
 }
 
 impl<'a> Controller<'a> {
-    pub(crate) fn check(&self) -> Result<'a, ()> {
+    /// Validate the data structure.
+    ///
+    pub fn validate(&self) -> Result<'a, ()> {
         // String fields should not be empty
         check_string_empty(self.controller_type, "controller_type")?;
         check_string_empty(self.version, "version")?;
@@ -123,7 +126,7 @@ impl<'a> Controller<'a> {
 
         // Check Geo-location
         if let Some(geo) = &self.geo_location {
-            geo.check()?;
+            geo.validate()?;
         }
 
         // Check IP address
@@ -223,7 +226,7 @@ mod test {
             }),
             ..Default::default()
         };
-        c.check().unwrap();
+        c.validate().unwrap();
         let serialized = serde_json::to_string(&c).unwrap();
         assert_eq!(
             r#"{"controllerId":1,"controllerType":"Unknown","version":"Unknown","model":"Unknown","IP":"0.0.0.0:1","opMode":"Automatic","jobMode":"ID02","operatorId":123,"operatorName":"John"}"#,
@@ -233,7 +236,7 @@ mod test {
     #[test]
     fn test_controller_deserialize() {
         let c: Controller = serde_json::from_str(r#"{"controllerId":1,"controllerType":"Unknown","version":"Unknown","model":"Unknown","IP":"127.0.0.1:123","opMode":"Automatic","jobMode":"ID02","operatorId":123,"operatorName":"John"}"#).unwrap();
-        c.check().unwrap();
+        c.validate().unwrap();
 
         assert_eq!(
             r#"Controller { controller_id: 1, display_name: None, controller_type: "Unknown", version: "Unknown", model: "Unknown", address: "127.0.0.1:123", geo_location: None, op_mode: Automatic, job_mode: ID02, last_cycle_data: None, variables: None, last_connection_time: None, operator: Some(Operator { operator_id: 123, operator_name: Some("John") }), job_card_id: None, mold_id: None }"#,
@@ -243,7 +246,7 @@ mod test {
     #[test]
     fn test_controller_check() {
         let c: Controller = Default::default();
-        c.check().unwrap();
+        c.validate().unwrap();
     }
 
     #[test]
@@ -255,7 +258,7 @@ mod test {
             }),
             ..Default::default()
         };
-        c.check().unwrap();
+        c.validate().unwrap();
     }
 
     #[test]
@@ -264,17 +267,17 @@ mod test {
 
         // 1.02.003.004:05
         c.address = "1.02.003.004:05";
-        c.check().unwrap();
+        c.validate().unwrap();
         assert_eq!("1.02.003.004:05", c.address);
 
         // COM123
         c.address = "COM123";
-        c.check().unwrap();
+        c.validate().unwrap();
         assert_eq!("COM123", c.address);
 
         // ttyABC
         c.address = "ttyABC";
-        c.check().unwrap();
+        c.validate().unwrap();
         assert_eq!("ttyABC", c.address);
     }
 }

@@ -47,8 +47,11 @@ impl<'a> MessageOptions<'a> {
         Default::default()
     }
 
-    fn check(&self) -> Result<'static, ()> {
-        check_optional_str_empty(&self.id, "id")
+    /// Validate the data structure.
+    ///
+    pub fn validate(&self) -> Result<'static, ()> {
+        check_optional_str_empty(&self.id, "id")?;
+        Ok(())
     }
 }
 
@@ -80,7 +83,9 @@ pub struct JobCard<'a> {
 }
 
 impl JobCard<'_> {
-    fn check(&self) -> Result<'static, ()> {
+    /// Validate the data structure.
+    ///
+    pub fn validate(&self) -> Result<'static, ()> {
         check_string_empty(&self.job_card_id, "job_card_id")?;
         check_string_empty(&self.mold_id, "mold_id")?;
         if self.progress > self.total {
@@ -132,10 +137,11 @@ pub struct StateValues<'a> {
 }
 
 impl StateValues<'_> {
-    fn check(&self) -> Result<'static, ()> {
+    /// Validate the data structure.
+    ///
+    pub fn validate(&self) -> Result<'static, ()> {
         check_optional_str_empty(&self.job_card_id, "job_card_id")?;
-        check_optional_str_empty(&self.mold_id, "mold_id")?;
-        Ok(())
+        check_optional_str_empty(&self.mold_id, "mold_id")
     }
 }
 
@@ -352,10 +358,9 @@ impl<'a> Message<'a> {
     ///
     pub fn parse_from_json_str(json: &'a str) -> Result<'a, Self> {
         match serde_json::from_str::<Message>(json) {
-            Ok(m) => {
-                m.check()?;
-                Ok(m)
-            }
+            // Do validation check if successfully parsed
+            Ok(m) => m.validate().map(|_| m),
+            // Otherwise return error
             Err(err) => Err(OpenProtocolError::JsonError(err)),
         }
     }
@@ -376,12 +381,9 @@ impl<'a> Message<'a> {
     ///   its total production count (`total`) field.
     ///
     pub fn to_json_str(&self) -> Result<'_, String> {
-        self.check()?;
+        self.validate()?;
 
-        match serde_json::to_string(self) {
-            Ok(text) => Ok(text),
-            Err(err) => Err(OpenProtocolError::JsonError(err)),
-        }
+        serde_json::to_string(self).map_err(|err| OpenProtocolError::JsonError(err))
     }
 
     /// Create an `ALIVE` message.
@@ -411,19 +413,21 @@ impl<'a> Message<'a> {
         }
     }
 
-    fn check(&self) -> Result<'a, ()> {
+    /// Validate the data structure.
+    ///
+    pub fn validate(&self) -> Result<'a, ()> {
         match self {
             Alive { options, .. }
             | ControllerAction { options, .. }
             | RequestControllersList { options, .. }
             | RequestJobCardsList { options, .. }
             | JoinResponse { options, .. }
-            | RequestMoldData { options, .. } => options.check(),
+            | RequestMoldData { options, .. } => options.validate(),
             ControllersList { options, data, .. } => {
-                for c in data.iter() {
-                    c.1.check()?;
+                for c in data {
+                    c.1.validate()?;
                 }
-                options.check()
+                options.validate()
             }
             ControllerStatus {
                 options,
@@ -442,7 +446,7 @@ impl<'a> Message<'a> {
                 check_optional_str_whitespace(operator_name, "operator_name")?;
                 check_optional_str_whitespace(job_card_id, "job_card_id")?;
                 check_optional_str_whitespace(mold_id, "mold_id")?;
-                state.check()?;
+                state.validate()?;
 
                 if let Some(kv) = alarm {
                     check_string_empty(kv.key, "alarm.key")?;
@@ -456,26 +460,26 @@ impl<'a> Message<'a> {
                     check_f64(&kv.value, "variable.value")?;
                 }
                 if let Some(c) = controller {
-                    c.check()?;
+                    c.validate()?;
                 }
 
-                options.check()
+                options.validate()
             }
             CycleData {
                 options, data, state, ..
             } => {
-                for d in data.iter() {
+                for d in data {
                     check_f64(d.1, d.0)?;
                 }
                 check_optional_str_empty(&state.job_card_id, "job_card_id")?;
                 check_optional_str_empty(&state.mold_id, "mold_id")?;
-                options.check()
+                options.validate()
             }
             JobCardsList { options, data, .. } => {
-                for jc in data.iter() {
-                    jc.1.check()?;
+                for jc in data {
+                    jc.1.validate()?;
                 }
-                options.check()
+                options.validate()
             }
             Join {
                 options,
@@ -495,32 +499,32 @@ impl<'a> Message<'a> {
                         description: "Language cannot be Unknown.".into(),
                     });
                 }
-                options.check()
+                options.validate()
             }
             MoldData {
                 options, data, state, ..
             } => {
-                for d in data.iter() {
+                for d in data {
                     check_f64(d.1, d.0)?;
                 }
                 check_optional_str_empty(&state.job_card_id, "job_card_id")?;
                 check_optional_str_empty(&state.mold_id, "mold_id")?;
-                options.check()
+                options.validate()
             }
             ReadMoldData { options, field, .. } => {
                 check_string_empty(field, "field")?;
-                options.check()
+                options.validate()
             }
             MoldDataValue {
                 options, field, value, ..
             } => {
                 check_string_empty(field, "field")?;
                 check_f64(&value, "value")?;
-                options.check()
+                options.validate()
             }
             LoginOperator { options, password, .. } => {
                 check_string_empty(&password, "password")?;
-                options.check()
+                options.validate()
             }
             OperatorInfo {
                 options,
@@ -540,7 +544,7 @@ impl<'a> Message<'a> {
                         .into(),
                     ));
                 }
-                options.check()
+                options.validate()
             }
         }
     }
@@ -607,7 +611,7 @@ mod test {
         );
 
         let m2: Message = serde_json::from_str(&serialized).unwrap();
-        m2.check().unwrap();
+        m2.validate().unwrap();
 
         assert_eq!(m, m2);
     }
@@ -617,16 +621,15 @@ mod test {
         let json = r#"{"$type":"ControllersList","data":{"12345":{"controllerId":12345,"displayName":"Hello","controllerType":"Ai12","version":"1.0.0","model":"JM128-Ai","IP":"192.168.5.1","opMode":"Manual","jobMode":"ID11","lastCycleData":{"Z_QDGODCNT":8567,"Z_QDCYCTIM":979,"Z_QDINJTIM":5450,"Z_QDPLSTIM":7156,"Z_QDINJENDPOS":8449,"Z_QDPLSENDPOS":2212,"Z_QDFLAG":8988,"Z_QDPRDCNT":65500,"Z_QDCOLTIM":4435,"Z_QDMLDOPNTIM":652,"Z_QDMLDCLSTIM":2908,"Z_QDVPPOS":4732,"Z_QDMLDOPNENDPOS":6677,"Z_QDMAXINJSPD":7133,"Z_QDMAXPLSRPM":641,"Z_QDNOZTEMP":6693,"Z_QDTEMPZ01":9964,"Z_QDTEMPZ02":7579,"Z_QDTEMPZ03":4035,"Z_QDTEMPZ04":5510,"Z_QDTEMPZ05":8460,"Z_QDTEMPZ06":9882,"Z_QDBCKPRS":2753,"Z_QDHLDTIM":9936},"lastConnectionTime":"2016-03-06T23:11:27.1442177+08:00"},"22334":{"controllerId":22334,"displayName":"World","controllerType":1,"version":"1.0.0","model":"JM128-Ai","IP":"192.168.5.2","opMode":"SemiAutomatic","jobMode":"ID12","lastCycleData":{"Z_QDGODCNT":6031,"Z_QDCYCTIM":7526,"Z_QDINJTIM":4896,"Z_QDPLSTIM":5196,"Z_QDINJENDPOS":1250,"Z_QDPLSENDPOS":8753,"Z_QDFLAG":3314,"Z_QDPRDCNT":65500,"Z_QDCOLTIM":3435,"Z_QDMLDOPNTIM":7854,"Z_QDMLDCLSTIM":4582,"Z_QDVPPOS":7504,"Z_QDMLDOPNENDPOS":7341,"Z_QDMAXINJSPD":7322,"Z_QDMAXPLSRPM":6024,"Z_QDNOZTEMP":3406,"Z_QDTEMPZ01":3067,"Z_QDTEMPZ02":9421,"Z_QDTEMPZ03":2080,"Z_QDTEMPZ04":8845,"Z_QDTEMPZ05":4478,"Z_QDTEMPZ06":3126,"Z_QDBCKPRS":2807,"Z_QDHLDTIM":3928},"lastConnectionTime":"2016-03-06T23:11:27.149218+08:00"}},"sequence":68568}"#;
 
         let m: Message = serde_json::from_str(&json).unwrap();
-        m.check().unwrap();
+        m.validate().unwrap();
 
-        match m {
-            ControllersList { data, .. } => {
-                assert_eq!(2, data.len());
-                let c = data.get(&NonZeroU32::new(12345).unwrap()).unwrap();
-                assert_eq!("Hello", c.display_name.unwrap());
-            }
-            _ => panic!("Expected ControllersList, got {:?}", m),
-        };
+        if let ControllersList { data, .. } = m {
+            assert_eq!(2, data.len());
+            let c = data.get(&NonZeroU32::new(12345).unwrap()).unwrap();
+            assert_eq!("Hello", c.display_name.unwrap());
+        } else {
+            panic!("Expected ControllersList, got {:?}", m);
+        }
     }
 
     #[test]
@@ -634,22 +637,22 @@ mod test {
         let json = r#"{"$type":"CycleData","timestamp":"2016-02-26T01:12:23+08:00","opMode":"Automatic","jobMode":"ID02","controllerId":123,"data":{"Z_QDGODCNT":123,"Z_QDCYCTIM":12.33,"Z_QDINJTIM":3,"Z_QDPLSTIM":4.4,"Z_QDINJENDPOS":30.1,"Z_QDPLSENDPOS":20.3,"Z_QDFLAG":1,"Z_QDPRDCNT":500,"Z_QDCOLTIM":12.12,"Z_QDMLDOPNTIM":2.1,"Z_QDMLDCLSTIM":1.3,"Z_QDVPPOS":12.11,"Z_QDMLDOPNENDPOS":130.1,"Z_QDMAXINJSPD":213.12,"Z_QDMAXPLSRPM":551,"Z_QDNOZTEMP":256,"Z_QDTEMPZ01":251,"Z_QDTEMPZ02":252,"Z_QDTEMPZ03":253,"Z_QDTEMPZ04":254,"Z_QDTEMPZ05":255,"Z_QDTEMPZ06":256,"Z_QDBCKPRS":54,"Z_QDHLDTIM":2.3,"Z_QDCPT01":231,"Z_QDCPT02":232,"Z_QDCPT03":233,"Z_QDCPT04":234,"Z_QDCPT05":235,"Z_QDCPT06":236,"Z_QDCPT07":237,"Z_QDCPT08":238,"Z_QDCPT09":239,"Z_QDCPT10":240,"Z_QDCPT11":241,"Z_QDCPT12":242,"Z_QDCPT13":243,"Z_QDCPT14":244,"Z_QDCPT15":245,"Z_QDCPT16":246,"Z_QDCPT17":247,"Z_QDCPT18":248,"Z_QDCPT19":249,"Z_QDCPT20":250,"Z_QDCPT21":251,"Z_QDCPT22":252,"Z_QDCPT23":253,"Z_QDCPT24":254,"Z_QDCPT25":255,"Z_QDCPT26":256,"Z_QDCPT27":257,"Z_QDCPT28":258,"Z_QDCPT29":259,"Z_QDCPT30":260,"Z_QDCPT31":261,"Z_QDCPT32":262,"Z_QDCPT33":263,"Z_QDCPT34":264,"Z_QDCPT35":265,"Z_QDCPT36":266,"Z_QDCPT37":267,"Z_QDCPT38":268,"Z_QDCPT39":269,"Z_QDCPT40":270},"sequence":1}"#;
 
         let m: Message = serde_json::from_str(&json).unwrap();
-        m.check().unwrap();
+        m.validate().unwrap();
 
-        match m {
-            CycleData {
-                options,
-                controller_id,
-                data,
-                ..
-            } => {
-                assert_eq!(0, options.priority);
-                assert_eq!(123, controller_id.get());
-                assert_eq!(64, data.len());
-                assert_eq!(243.0, *data.get("Z_QDCPT13").unwrap());
-            }
-            _ => panic!("Expected CycleData, got {:?}", m),
-        };
+        if let CycleData {
+            options,
+            controller_id,
+            data,
+            ..
+        } = m
+        {
+            assert_eq!(0, options.priority);
+            assert_eq!(123, controller_id.get());
+            assert_eq!(64, data.len());
+            assert_eq!(243.0, *data.get("Z_QDCPT13").unwrap());
+        } else {
+            panic!("Expected CycleData, got {:?}", m);
+        }
     }
 
     #[test]
@@ -657,28 +660,28 @@ mod test {
         let json = r#"{"$type":"ControllerStatus","controllerId":123,"displayName":"Testing","opMode":"Automatic","jobMode":"ID05","jobCardId":"XYZ","moldId":"Mold-123","state":{"opMode":"Automatic","jobMode":"ID05","jobCardId":"XYZ","moldId":"Mold-123"},"controller":{"controllerId":123,"displayName":"Testing","controllerType":"Ai02","version":"2.2","model":"JM138Ai","IP":"192.168.1.1:12345","geoLatitude":123.0,"geoLongitude":-21.0,"opMode":"Automatic","jobMode":"ID05","jobCardId":"XYZ","lastCycleData":{"INJ":5,"CLAMP":400},"moldId":"Mold-123"},"sequence":1,"priority":50}"#;
 
         let m: Message = serde_json::from_str(&json).unwrap();
-        m.check().unwrap();
+        m.validate().unwrap();
 
-        match m {
-            ControllerStatus {
-                options,
-                controller_id,
-                display_name,
-                controller,
-                ..
-            } => {
-                assert_eq!(50, options.priority);
-                assert_eq!(1, options.sequence);
-                assert_eq!(123, controller_id.get());
-                assert_eq!("Testing", display_name.unwrap());
-                let c = controller.unwrap();
-                assert_eq!("JM138Ai", c.model);
-                let d = c.last_cycle_data.unwrap();
-                assert!(c.operator.is_none());
-                assert_eq!(2, d.len());
-                assert_eq!(5.0, *d.get("INJ").unwrap());
-            }
-            _ => panic!("Expected CycleData, got {:?}", m),
-        };
+        if let ControllerStatus {
+            options,
+            controller_id,
+            display_name,
+            controller,
+            ..
+        } = m
+        {
+            assert_eq!(50, options.priority);
+            assert_eq!(1, options.sequence);
+            assert_eq!(123, controller_id.get());
+            assert_eq!("Testing", display_name.unwrap());
+            let c = controller.unwrap();
+            assert_eq!("JM138Ai", c.model);
+            let d = c.last_cycle_data.unwrap();
+            assert!(c.operator.is_none());
+            assert_eq!(2, d.len());
+            assert_eq!(5.0, *d.get("INJ").unwrap());
+        } else {
+            panic!("Expected ControllerStatus, got {:?}", m);
+        }
     }
 }

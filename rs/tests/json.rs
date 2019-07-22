@@ -27,24 +27,24 @@ fn test_deserialize() {
     )
     .unwrap();
 
-    match m {
-        Join {
-            version,
-            password,
-            filter,
-            options,
-            ..
-        } => {
-            assert_eq!("1.0.0", version);
-            assert_eq!("hello", password);
-            assert_eq!(42, options.sequence);
-            assert_eq!(10, options.priority);
-            assert_eq!(2, filter.len());
-            assert!(filter.contains(&Filter::Cycle));
-            assert!(filter.contains(&Filter::Mold));
-            assert!(!filter.contains(&Filter::Alarms));
-            assert!(!filter.contains(&Filter::All));
-        }
-        _ => panic!("Wrong type of message deserialized!"),
+    if let Join {
+        version,
+        password,
+        filter,
+        options,
+        ..
+    } = m
+    {
+        assert_eq!("1.0.0", version);
+        assert_eq!("hello", password);
+        assert_eq!(42, options.sequence);
+        assert_eq!(10, options.priority);
+        assert_eq!(2, filter.len());
+        assert!(filter.contains(&Filter::Cycle));
+        assert!(filter.contains(&Filter::Mold));
+        assert!(!filter.contains(&Filter::Alarms));
+        assert!(!filter.contains(&Filter::All));
+    } else {
+        panic!("Wrong type of message deserialized!");
     }
 }
