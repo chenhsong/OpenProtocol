@@ -497,11 +497,13 @@ impl<'a> Message<'a> {
                 version,
                 password,
                 language,
+                filter,
                 ..
             } => {
                 check_optional_str_empty(org_id, "org_id")?;
                 check_string_empty(version, "version")?;
                 check_string_empty(password, "password")?;
+                // Check for invalid language
                 if *language == Language::Unknown {
                     return Err(OpenProtocolError::InvalidField {
                         field: "language".into(),
@@ -509,6 +511,15 @@ impl<'a> Message<'a> {
                         description: "Language cannot be Unknown.".into(),
                     });
                 }
+                // Check filters list for duplications
+                let mut list: Vec<Filter> = filter.iter().cloned().collect();
+                list.dedup();
+                if filter.len() != list.len() {
+                    return Err(OpenProtocolError::ConstraintViolated(
+                        "filter list contains duplications.".into(),
+                    ));
+                }
+
                 options.validate()
             }
             MoldData {
