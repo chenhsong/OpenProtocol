@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::error::Error;
-use std::net::Ipv4Addr;
+use std::net::IpAddr;
 use std::num::NonZeroU32;
 use std::str::FromStr;
 
@@ -18,6 +18,7 @@ use std::str::FromStr;
 pub struct Operator<'a> {
     /// Unique user ID, which cannot be zero.
     pub operator_id: NonZeroU32,
+    //
     /// Name of the user.
     pub operator_name: Option<&'a str>,
 }
@@ -29,6 +30,7 @@ pub struct Operator<'a> {
 pub struct GeoLocation {
     /// Latitude
     pub geo_latitude: f64,
+    //
     /// Longitude
     pub geo_longitude: f64,
 }
@@ -41,6 +43,7 @@ impl GeoLocation {
         check_f64(&self.geo_longitude, "geo_longitude")
     }
 }
+
 /// A data structure containing the current known status of a controller.
 ///
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -91,9 +94,11 @@ pub struct Controller<'a> {
     /// Last set of cycle data (if any) received from the controller.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub last_cycle_data: Option<HashMap<&'a str, f64>>,
+    //
     /// Last-known states (if any) of controller variables.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub variables: Option<HashMap<&'a str, f64>>,
+    //
     /// Time of last connection.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub last_connection_time: Option<DateTime<FixedOffset>>,
@@ -107,6 +112,7 @@ pub struct Controller<'a> {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(borrow)]
     pub job_card_id: Option<Cow<'a, str>>,
+    //
     /// ID of the set of mold data currently loaded (if any) on the controller.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(borrow)]
@@ -152,24 +158,35 @@ impl<'a> Controller<'a> {
             // Check IP address validity
             let (address, port) = self.address.split_at(self.address.find(':').unwrap());
 
-            if let Err(err) = Ipv4Addr::from_str(address) {
-                return Err(OpenProtocolError::InvalidField {
-                    field: "ip[address]".into(),
-                    value: address.into(),
-                    description: format!("{} ({})", address, err.description()).into(),
-                });
+            let unspecified: bool;
+
+            match IpAddr::from_str(address) {
+                Ok(addr) => unspecified = addr.is_unspecified(),
+                Err(err) => {
+                    return Err(OpenProtocolError::InvalidField {
+                        field: "ip[address]".into(),
+                        value: address.into(),
+                        description: format!("{} ({})", address, err.description()).into(),
+                    })
+                }
             }
 
-            // Check port
+            // Allow port 0 on unspecified addresses only
             let port = &port[1..];
 
             match u16::from_str(port) {
                 Ok(n) => {
-                    if n <= 0 {
+                    if n <= 0 && !unspecified {
                         return Err(OpenProtocolError::InvalidField {
                             field: "ip[port]".into(),
                             value: port.into(),
                             description: "IP port cannot be zero.".into(),
+                        });
+                    } else if n > 0 && unspecified {
+                        return Err(OpenProtocolError::InvalidField {
+                            field: "ip[port]".into(),
+                            value: port.into(),
+                            description: "Null IP must have zero port number.".into(),
                         });
                     }
                 }
@@ -195,7 +212,7 @@ impl Default for Controller<'_> {
             controller_type: "Unknown",
             version: "Unknown",
             model: "Unknown",
-            address: "0.0.0.0:1",
+            address: "0.0.0.0:0",
             geo_location: None,
             op_mode: OpMode::Unknown,
             job_mode: JobMode::Unknown,
@@ -220,10 +237,7 @@ mod test {
         let c = Controller {
             op_mode: OpMode::Automatic,
             job_mode: JobMode::ID02,
-            operator: Some(Operator {
-                operator_id: NonZeroU32::new(123).unwrap(),
-                operator_name: Some("John"),
-            }),
+            operator: Some(Operator { operator_id: NonZeroU32::new(123).unwrap(), operator_name: Some("John") }),
             ..Default::default()
         };
         c.validate().unwrap();
@@ -252,10 +266,7 @@ mod test {
     #[test]
     fn test_controller_check_operator() {
         let c = Controller {
-            operator: Some(Operator {
-                operator_id: NonZeroU32::new(123).unwrap(),
-                operator_name: Some("John"),
-            }),
+            operator: Some(Operator { operator_id: NonZeroU32::new(123).unwrap(), operator_name: Some("John") }),
             ..Default::default()
         };
         c.validate().unwrap();
@@ -268,16 +279,25 @@ mod test {
         // 1.02.003.004:05
         c.address = "1.02.003.004:05";
         c.validate().unwrap();
-        assert_eq!("1.02.003.004:05", c.address);
+
+        // 1.02.003.004:0 - should fail
+        c.address = "1.02.003.004:0";
+        assert!(c.validate().is_err());
+
+        // 0.0.0.0:0
+        c.address = "0.0.0.0:0";
+        c.validate().unwrap();
+
+        // 0.0.0.0:123 - should fail
+        c.address = "0.0.0.0:123";
+        assert!(c.validate().is_err());
 
         // COM123
         c.address = "COM123";
         c.validate().unwrap();
-        assert_eq!("COM123", c.address);
 
         // ttyABC
         c.address = "ttyABC";
         c.validate().unwrap();
-        assert_eq!("ttyABC", c.address);
     }
 }
