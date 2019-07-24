@@ -56,11 +56,13 @@ pub enum Filter {
 
 impl Filter {
     /// Returns true if Filter::All.
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_all(&self) -> bool {
         *self == Filter::All
     }
 
     /// Returns true if machine-related filter flags.
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_machine(&self) -> bool {
         match self {
             Filter::Status | Filter::Cycle | Filter::Mold | Filter::Actions | Filter::Alarms | Filter::Audit => true,
@@ -69,6 +71,7 @@ impl Filter {
     }
 
     /// Returns true if MIS/MES-related filter flags.
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_mis(&self) -> bool {
         match self {
             Filter::JobCards | Filter::Operators => true,
@@ -77,6 +80,7 @@ impl Filter {
     }
 
     /// Returns true if interface of an industrial bus (e.g. OPC UA).
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_bus(&self) -> bool {
         match self {
             Filter::OPCUA => true,
@@ -102,35 +106,14 @@ where
 {
     // Streamline filters
     let has_all = x.contains(&Filter::All);
-    let mut fstr = String::with_capacity(64);
-
-    for f in x.iter() {
-        match f {
-            Filter::Status | Filter::Cycle | Filter::Mold | Filter::Actions | Filter::Alarms | Filter::Audit => {
-                // Skip these if Filter::All exists
-                if !has_all {
-                    if fstr.len() > 0 {
-                        fstr.push_str(", ");
-                    }
-
-                    fstr.push_str(f.as_ref());
-                }
-            }
-            _ => {
-                if fstr.len() > 0 {
-                    fstr.push_str(", ");
-                }
-
-                fstr.push_str(f.as_ref());
-            }
-        }
-    }
+    let fstr: Vec<&str> = x.iter().filter(|f| !has_all || !f.is_machine()).map(|f| f.as_ref()).collect();
+    let fstr = fstr.join(", ");
 
     if fstr.is_empty() {
-        fstr.push_str("None");
+        s.serialize_str("None")
+    } else {
+        s.serialize_str(&fstr)
     }
-
-    s.serialize_str(&fstr)
 }
 
 pub fn deserialize_flattened_array<'de, D>(d: D) -> Result<Cow<'de, [Filter]>, D::Error>
@@ -138,16 +121,13 @@ where
     D: Deserializer<'de>,
 {
     let text = String::deserialize(d)?;
+    let text = text.trim();
 
     if text == "None" {
         return Ok(EMPTY_FILTERS.into());
     }
 
-    let mut list: Vec<Filter> = vec![];
-
-    text.split(",")
-        .filter_map(|key| Filter::from_str(key.trim()).ok())
-        .for_each(|f| list.push(f));
+    let mut list: Vec<Filter> = text.split(',').filter_map(|key| Filter::from_str(key.trim()).ok()).collect();
 
     if list.contains(&Filter::All) {
         // Has All, remove details
@@ -156,9 +136,9 @@ where
 
     list.dedup();
 
-    if list.len() > 0 {
-        Ok(list.into())
-    } else {
+    if list.is_empty() {
         Ok(EMPTY_FILTERS.into())
+    } else {
+        Ok(list.into())
     }
 }

@@ -23,6 +23,28 @@ pub struct Operator<'a> {
     pub operator_name: Option<&'a str>,
 }
 
+impl<'a> Operator<'a> {
+    /// Create an `Opereator` with just an ID and no name.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `id` is zero.
+    ///
+    pub fn new(id: u32) -> Self {
+        Self { operator_id: NonZeroU32::new(id).unwrap(), operator_name: None }
+    }
+
+    /// Create an `Opereator` with name.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `id` is zero.
+    ///
+    pub fn new_with_name(id: u32, name: &'a str) -> Self {
+        Self { operator_name: Some(name), ..Self::new(id) }
+    }
+}
+
 /// A data structure containing a single physical geo-location.
 ///
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -36,11 +58,15 @@ pub struct GeoLocation {
 }
 
 impl GeoLocation {
+    pub fn new(latitude: f64, longitude: f64) -> Self {
+        GeoLocation { geo_latitude: latitude, geo_longitude: longitude }
+    }
+
     /// Validate the data structure.
     ///
     pub fn validate(&self) -> Result<'static, ()> {
-        check_f64(&self.geo_latitude, "geo_latitude")?;
-        check_f64(&self.geo_longitude, "geo_longitude")
+        check_f64(self.geo_latitude, "geo_latitude")?;
+        check_f64(self.geo_longitude, "geo_longitude")
     }
 }
 
@@ -53,8 +79,7 @@ pub struct Controller<'a> {
     pub controller_id: NonZeroU32,
     //
     /// User-specified human-friendly name for the machine.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<&'a str>,
+    pub display_name: &'a str,
     //
     /// Controller type.
     ///
@@ -124,9 +149,10 @@ impl<'a> Controller<'a> {
     ///
     pub fn validate(&self) -> Result<'a, ()> {
         // String fields should not be empty
-        check_string_empty(self.controller_type, "controller_type")?;
-        check_string_empty(self.version, "version")?;
-        check_string_empty(self.model, "version")?;
+        check_str_empty(self.controller_type, "controller_type")?;
+        check_str_empty(self.display_name, "display_name")?;
+        check_str_empty(self.version, "version")?;
+        check_str_empty(self.model, "version")?;
         check_optional_str_empty(&self.job_card_id, "job_card_id")?;
         check_optional_str_empty(&self.mold_id, "mold_id")?;
 
@@ -136,7 +162,7 @@ impl<'a> Controller<'a> {
         }
 
         // Check IP address
-        check_string_empty(self.address, "address")?;
+        check_str_empty(self.address, "address")?;
 
         lazy_static! {
             static ref IP_REGEX: Regex = Regex::new(r#"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,5}$"#).unwrap();
@@ -145,14 +171,12 @@ impl<'a> Controller<'a> {
         }
 
         if !IP_REGEX.is_match(self.address) {
-            if !TTY_REGEX.is_match(self.address) {
-                if !COM_REGEX.is_match(self.address) {
-                    return Err(OpenProtocolError::InvalidField {
-                        field: "ip".into(),
-                        value: self.address.into(),
-                        description: "".into(),
-                    });
-                }
+            if !TTY_REGEX.is_match(self.address) && !COM_REGEX.is_match(self.address) {
+                return Err(OpenProtocolError::InvalidField {
+                    field: "ip".into(),
+                    value: self.address.into(),
+                    description: "".into(),
+                });
             }
         } else {
             // Check IP address validity
@@ -176,7 +200,7 @@ impl<'a> Controller<'a> {
 
             match u16::from_str(port) {
                 Ok(n) => {
-                    if n <= 0 && !unspecified {
+                    if n == 0 && !unspecified {
                         return Err(OpenProtocolError::InvalidField {
                             field: "ip[port]".into(),
                             value: port.into(),
@@ -208,7 +232,7 @@ impl Default for Controller<'_> {
     fn default() -> Self {
         Controller {
             controller_id: NonZeroU32::new(1).unwrap(),
-            display_name: None,
+            display_name: "Unknown",
             controller_type: "Unknown",
             version: "Unknown",
             model: "Unknown",
@@ -237,7 +261,7 @@ mod test {
         let c = Controller {
             op_mode: OpMode::Automatic,
             job_mode: JobMode::ID02,
-            operator: Some(Operator { operator_id: NonZeroU32::new(123).unwrap(), operator_name: Some("John") }),
+            operator: Some(Operator::new_with_name(123, "John")),
             ..Default::default()
         };
         c.validate().unwrap();
@@ -249,11 +273,11 @@ mod test {
 
     #[test]
     fn test_controller_deserialize() {
-        let c: Controller = serde_json::from_str(r#"{"controllerId":1,"controllerType":"Unknown","version":"Unknown","model":"Unknown","IP":"127.0.0.1:123","opMode":"Automatic","jobMode":"ID02","operatorId":123,"operatorName":"John"}"#).unwrap();
+        let c: Controller = serde_json::from_str(r#"{"controllerId":1,"displayName":"Hello","controllerType":"Unknown","version":"Unknown","model":"Unknown","IP":"127.0.0.1:123","opMode":"Automatic","jobMode":"ID02","operatorId":123,"operatorName":"John"}"#).unwrap();
         c.validate().unwrap();
 
         assert_eq!(
-            r#"Controller { controller_id: 1, display_name: None, controller_type: "Unknown", version: "Unknown", model: "Unknown", address: "127.0.0.1:123", geo_location: None, op_mode: Automatic, job_mode: ID02, last_cycle_data: None, variables: None, last_connection_time: None, operator: Some(Operator { operator_id: 123, operator_name: Some("John") }), job_card_id: None, mold_id: None }"#,
+            r#"Controller { controller_id: 1, display_name: "Hello", controller_type: "Unknown", version: "Unknown", model: "Unknown", address: "127.0.0.1:123", geo_location: None, op_mode: Automatic, job_mode: ID02, last_cycle_data: None, variables: None, last_connection_time: None, operator: Some(Operator { operator_id: 123, operator_name: Some("John") }), job_card_id: None, mold_id: None }"#,
             format!("{:?}", &c));
     }
 

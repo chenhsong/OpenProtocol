@@ -30,6 +30,7 @@ pub enum Language {
 
 impl Language {
     /// Returns true if Language::Unknown.
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_unknown(&self) -> bool {
         *self == Language::Unknown
     }
@@ -67,16 +68,19 @@ pub enum OpMode {
 
 impl OpMode {
     /// Returns true if OpMode::Unknown.
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_unknown(&self) -> bool {
         *self == OpMode::Unknown
     }
 
     /// Returns true if OpMode::Offline.
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_offline(&self) -> bool {
         *self == OpMode::Offline
     }
 
     /// All variants other than OpMode::Unknown and OpMode::Offline means on-line.
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_online(&self) -> bool {
         match self {
             OpMode::Unknown | OpMode::Offline => false,
@@ -85,6 +89,7 @@ impl OpMode {
     }
 
     /// A machine is producing if it is in either Automatic or Semi-Automatic mode.
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_producing(&self) -> bool {
         match self {
             OpMode::SemiAutomatic | OpMode::Automatic => true,
@@ -134,16 +139,19 @@ pub enum JobMode {
 
 impl JobMode {
     /// Returns true if JobMode::Unknown.
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_unknown(&self) -> bool {
         *self == JobMode::Unknown
     }
 
     /// Returns true if JobMode::Offline.
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_offline(&self) -> bool {
         *self == JobMode::Offline
     }
 
     /// All variants other than JobMode::Unknown and JobMode::Offline means on-line.
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_online(&self) -> bool {
         match self {
             JobMode::Unknown | JobMode::Offline => false,

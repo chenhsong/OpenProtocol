@@ -22,14 +22,7 @@ fn test_deserialize() {
     )
     .unwrap();
 
-    if let Join {
-        version,
-        password,
-        filter,
-        options,
-        ..
-    } = m
-    {
+    if let Join { version, password, filter, options, .. } = m {
         assert_eq!("1.0.0", version);
         assert_eq!("hello", password);
         assert_eq!(42, options.sequence);

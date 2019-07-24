@@ -9,17 +9,8 @@ use std::num::NonZeroU32;
 use std::sync::atomic::{AtomicU64, Ordering};
 use Message::*;
 
-// Auto-increment global counter for message sequences
+// Auto-incrementing global counter for message sequences
 static SEQ: AtomicU64 = AtomicU64::new(1);
-
-// Current protocol version
-const PROTOCOL_VERSION: &str = "4.0";
-
-// Default language to use
-const DEFAULT_LANGUAGE: Language = Language::EN;
-
-// Maximum operator level
-const MAX_OPERATOR_LEVEL: u8 = 10;
 
 /// Common options of an Open Protocol message.
 ///
@@ -49,6 +40,10 @@ impl<'a> MessageOptions<'a> {
         Default::default()
     }
 
+    pub fn new_with_priority(priority: i32) -> Self {
+        Self { priority, ..Self::new() }
+    }
+
     /// Validate the data structure.
     ///
     pub fn validate(&self) -> Result<'static, ()> {
@@ -59,11 +54,7 @@ impl<'a> MessageOptions<'a> {
 
 impl Default for MessageOptions<'_> {
     fn default() -> Self {
-        Self {
-            id: None,
-            sequence: SEQ.fetch_add(1, Ordering::SeqCst),
-            priority: 0,
-        }
+        Self { id: None, sequence: SEQ.fetch_add(1, Ordering::SeqCst), priority: 0 }
     }
 }
 
@@ -87,19 +78,19 @@ pub struct JobCard<'a> {
     pub total: u32,
 }
 
-impl JobCard<'_> {
+impl<'a> JobCard<'a> {
+    pub fn new(id: &'a str, mold: &'a str, progress: u32, total: u32) -> Self {
+        Self { job_card_id: id.into(), mold_id: mold.into(), progress, total }
+    }
+
     /// Validate the data structure.
     ///
     pub fn validate(&self) -> Result<'static, ()> {
-        check_string_empty(&self.job_card_id, "job_card_id")?;
-        check_string_empty(&self.mold_id, "mold_id")?;
+        check_str_empty(&self.job_card_id, "job_card_id")?;
+        check_str_empty(&self.mold_id, "mold_id")?;
         if self.progress > self.total {
             return Err(OpenProtocolError::ConstraintViolated(
-                format!(
-                    "JobCard progress ({}) must not be larger than total ({}).",
-                    self.progress, self.total
-                )
-                .into(),
+                format!("JobCard progress ({}) must not be larger than total ({}).", self.progress, self.total).into(),
             ));
         }
         Ok(())
@@ -113,6 +104,12 @@ impl JobCard<'_> {
 pub struct KeyValuePair<K, V> {
     pub key: K,
     pub value: V,
+}
+
+impl<K, V> KeyValuePair<K, V> {
+    pub fn new(key: K, value: V) -> Self {
+        Self { key, value }
+    }
 }
 
 /// A data structure containing a snapshot of the current known states of the controller.
@@ -145,7 +142,33 @@ pub struct StateValues<'a> {
     pub mold_id: Option<Cow<'a, str>>,
 }
 
-impl StateValues<'_> {
+impl<'a> StateValues<'a> {
+    /// Create a new `StateValues` wth no operator ID, job card ID and mold ID.
+    pub fn new(op: OpMode, job: JobMode) -> Self {
+        Self { op_mode: op, job_mode: job, operator_id: None, job_card_id: None, mold_id: None }
+    }
+
+    /// Create a new `StateValues` with all fields set.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `operator` is `Some(0)`.
+    ///
+    pub fn new_with_all(
+        op: OpMode,
+        job: JobMode,
+        operator: Option<u32>,
+        job_card: Option<&'a str>,
+        mold: Option<&'a str>,
+    ) -> Self {
+        Self {
+            operator_id: operator.map(|o| NonZeroU32::new(o).unwrap()),
+            job_card_id: job_card.map(|j| j.into()),
+            mold_id: mold.map(|m| m.into()),
+            ..Self::new(op, job)
+        }
+    }
+
     /// Validate the data structure.
     ///
     pub fn validate(&self) -> Result<'static, ()> {
@@ -154,203 +177,362 @@ impl StateValues<'_> {
     }
 }
 
+impl Default for StateValues<'_> {
+    fn default() -> Self {
+        Self {
+            op_mode: OpMode::Unknown,
+            job_mode: JobMode::Unknown,
+            operator_id: None,
+            job_card_id: None,
+            mold_id: None,
+        }
+    }
+}
+
 /// All Open Protocol message types.
+///
+/// See [this document](https://github.com/chenhsong/OpenProtocol/blob/master/cs/doc/messages_reference.md) for details.
 ///
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "$type")]
 pub enum Message<'a> {
     #[serde(rename_all = "camelCase")]
+    /// The `ALIVE` message, sent periodically as the keep-alive mechanism.
     Alive {
+        /// Message configuration options.
         #[serde(flatten)]
         options: MessageOptions<'a>,
     },
+    /// The `CNTRLER_ACTION` message, sent by the server whenever the current *action* of a controller changes.
     #[serde(rename_all = "camelCase")]
     ControllerAction {
+        /// Unique ID of the controller.
         controller_id: NonZeroU32,
+        /// Unique action code.
+        ///
+        /// See [here](https://github.com/chenhsong/OpenProtocol/blob/master/doc/actions.md) for details.
         action_id: i32,
+        //
+        /// Time-stamp of the event.
         timestamp: DateTime<FixedOffset>,
-
+        //
+        /// Message configuration options.
         #[serde(flatten)]
         options: MessageOptions<'a>,
     },
+    /// The `REQ_CNTRLER_LIST` message, sent to the server to request a list of controllers (i.e. machines)
+    /// within the user's organization.
     #[serde(rename_all = "camelCase")]
     RequestControllersList {
+        /// Unique ID of the controller to request.
+        ///
+        /// If omitted, all controllers of the user's organization will be returned.
         #[serde(skip_serializing_if = "Option::is_none")]
         controller_id: Option<NonZeroU32>,
-
+        //
+        /// Message configuration options.
         #[serde(flatten)]
         options: MessageOptions<'a>,
     },
+    /// The `RESP_CNTRLER_LIST` message, sent by the server in response to a `RequestControllersList` message.
     #[serde(rename_all = "camelCase")]
     ControllersList {
-        data: HashMap<NonZeroU32, Controller<'a>>,
-
+        /// List of controllers requested by a previous `RequestControllersList` message.
+        ///
+        /// Each controller data structure contains the last-known values of the controller's state.
+        data: HashMap<&'a str, Controller<'a>>,
+        //
+        /// Message configuration options.
         #[serde(flatten)]
         options: MessageOptions<'a>,
     },
+    /// The `UPD_CNTRLER` message, sent by the server whenever the status of a connected controller changes.
+    ///
+    /// Only the changed fields will be set, with other fields/properties being set to `None` as they are not relevant.
     #[serde(rename_all = "camelCase")]
     ControllerStatus {
+        /// Unique ID of the controller.
         controller_id: NonZeroU32,
-
+        //
+        /// Human-friendly name for display (or `None` if not relevant).
+        #[allow(clippy::option_option)]
         #[serde(skip_serializing_if = "Option::is_none")]
         display_name: Option<&'a str>,
+        //
+        /// If true, the controller has disconnected from the iChen® Server.
         #[serde(skip_serializing_if = "Option::is_none")]
         is_connected: Option<bool>,
-
+        //
+        /// Current operation mode of the controller (or `None` if not relevant).
         #[serde(skip_serializing_if = "Option::is_none")]
         op_mode: Option<OpMode>,
+        //
+        /// Current job mode of the controller (or `None` if not relevant).
         #[serde(skip_serializing_if = "Option::is_none")]
         job_mode: Option<JobMode>,
-
+        //
+        /// State of an alarm (if any) on the controller (or `None` if not relevant).
+        ///
+        /// See [here](https://github.com/chenhsong/OpenProtocol/blob/master/doc/alarms.md) for valid alarm codes.
         #[serde(skip_serializing_if = "Option::is_none")]
         alarm: Option<KeyValuePair<&'a str, bool>>,
+        //
+        /// Change of a setting (if any) on the controller for audit trail purpose (or `None` if not relevant).
         #[serde(skip_serializing_if = "Option::is_none")]
         audit: Option<KeyValuePair<&'a str, f64>>,
+        //
+        /// Change of a variable (if any) on the controller (or `None` if not relevant).
         #[serde(skip_serializing_if = "Option::is_none")]
         variable: Option<KeyValuePair<&'a str, f64>>,
-
+        //
+        /// Unique ID of the current logged-on user, `Some(None)` if a user has logged out (or `None` if not relevant).
+        #[allow(clippy::option_option)]
         #[serde(skip_serializing_if = "Option::is_none")]
-        operator_id: Option<u32>,
+        operator_id: Option<Option<NonZeroU32>>,
+        //
+        /// Name of the current logged-on user, `Some(None)` if the current user has no name (or `None` if not relevant).
+        #[allow(clippy::option_option)]
+        #[serde(deserialize_with = "deserialize_null_to_none")]
         #[serde(skip_serializing_if = "Option::is_none")]
-        #[serde(deserialize_with = "deserialize_null_to_empty_str")]
         #[serde(default)]
-        operator_name: Option<&'a str>,
+        operator_name: Option<Option<&'a str>>,
+        //
+        /// Unique ID of the current job card loaded, `Some(None)` if no job card is currently loaded (or `None` if not relevant).
+        #[allow(clippy::option_option)]
+        #[serde(deserialize_with = "deserialize_null_to_cow_none")]
         #[serde(skip_serializing_if = "Option::is_none")]
-        #[serde(deserialize_with = "deserialize_null_to_empty_cowstr")]
         #[serde(default)]
         #[serde(borrow)]
-        job_card_id: Option<Cow<'a, str>>,
+        job_card_id: Option<Option<Cow<'a, str>>>,
+        //
+        /// Unique ID of the current mold data set loaded, `Some(None)` if no mold data set is currently loaded (or `None` if not relevant).
+        #[allow(clippy::option_option)]
+        #[serde(deserialize_with = "deserialize_null_to_cow_none")]
         #[serde(skip_serializing_if = "Option::is_none")]
-        #[serde(deserialize_with = "deserialize_null_to_empty_cowstr")]
         #[serde(default)]
         #[serde(borrow)]
-        mold_id: Option<Cow<'a, str>>,
-
+        mold_id: Option<Option<Cow<'a, str>>>,
+        //
+        /// Snapshot of the current known states of the controller.
         state: StateValues<'a>,
-
+        //
+        /// A `Controller` data structure containing the last-known state of the controller.
+        ///
+        /// This field is only sent once by the server as soon as a new controller has connected into the network.
+        /// All subsequent messages have this field set to `None`.
+        ///
+        /// If this field is not `None`, then all other info fields should be `None`.
         #[serde(skip_serializing_if = "Option::is_none")]
         controller: Option<Box<Controller<'a>>>,
-
+        //
+        /// Message configuration options.
         #[serde(flatten)]
         options: MessageOptions<'a>,
     },
+    /// The `CYCLE_DATA` message, sent by the server at the end of each machine cycle.
     #[serde(rename_all = "camelCase")]
     CycleData {
+        /// Unique ID of the controller.
         controller_id: NonZeroU32,
+        //
+        /// A data dictionary containing a set of cycle data.Alive
+        ///
+        /// See [here](https://github.com/chenhsong/OpenProtocol/blob/master/doc/cycledata.md) for examples.
         data: HashMap<&'a str, f64>,
-
+        //
+        /// Time-stamp of the event.
         timestamp: DateTime<FixedOffset>,
-
+        //
+        /// Snapshot of the current known states of the controller.
         #[serde(flatten)]
         state: StateValues<'a>,
-
+        //
+        /// Message configuration options.
         #[serde(flatten)]
         options: MessageOptions<'a>,
     },
+    /// The `REQ_JOBCARDS_LIST` message, sent by the server when a connected controller requests a list of job cards.
     #[serde(rename_all = "camelCase")]
     RequestJobCardsList {
+        /// Unique ID of the controller.
         controller_id: NonZeroU32,
-
+        //
+        /// Message configuration options.
         #[serde(flatten)]
         options: MessageOptions<'a>,
     },
+    /// The `RESP_JOBSLIST` message, sent to the server in response to a `RequestJobCardsList` message.
     #[serde(rename_all = "camelCase")]
     JobCardsList {
+        /// Unique ID of the controller.
         controller_id: NonZeroU32,
+        //
+        /// A data dictionary containing a set of `JobCard` data structures.
         data: HashMap<&'a str, JobCard<'a>>,
-
+        //
+        /// Message configuration options.
         #[serde(flatten)]
         options: MessageOptions<'a>,
     },
+    /// The `JOIN` message, sent to log onto the server.
     #[serde(rename_all = "camelCase")]
     Join {
+        /// Organization ID (if any).
         #[serde(skip_serializing_if = "Option::is_none")]
         org_id: Option<&'a str>,
+        //
+        /// The maximum protocol version supported, in the format `x.x.x.x`.
+        ///
+        /// The current protocol version implemnted is in the constant `PROTOCOL_VERSION`.
         version: &'a str,
+        //
+        /// Password to log onto the server.
         password: &'a str,
+        //
+        /// Language encoding.
         language: Language,
-        #[serde(
-            serialize_with = "serialize_to_flatten_array",
-            deserialize_with = "deserialize_flattened_array"
-        )]
+        //
+        /// A collection of `Filter` values containing what type(s) of messages to receive.
+        #[serde(serialize_with = "serialize_to_flatten_array")]
+        #[serde(deserialize_with = "deserialize_flattened_array")]
         #[serde(borrow)]
         filter: Cow<'a, [Filter]>,
-
+        //
+        /// Message configuration options.
         #[serde(flatten)]
         options: MessageOptions<'a>,
     },
+    /// The `RESP_JOIN` message, sent by the Server in response to a `Join` message.
     #[serde(rename_all = "camelCase")]
     JoinResponse {
+        /// Result code, >= 100 indicates success.
         result: u32,
         #[serde(skip_serializing_if = "Option::is_none")]
+        //
+        /// The allowed access level for this client.
         level: Option<u32>,
+        //
+        /// A message (mostly likely an error message in case of failure), if any.
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(borrow)]
         message: Option<Cow<'a, str>>,
-
+        //
+        /// Message configuration options.
         #[serde(flatten)]
         options: MessageOptions<'a>,
     },
+    /// The `REQ_MOLD` message, sent to the server to request the set of mold settings data of a controller.
     #[serde(rename_all = "camelCase")]
     RequestMoldData {
+        /// Unique ID of the controller.
         controller_id: NonZeroU32,
-
+        //
+        /// Message configuration options.
         #[serde(flatten)]
         options: MessageOptions<'a>,
     },
+    /// The `RESP_MOLD` message, sent by the server in response to a `RequestMoldData` message
+    /// or a `ReadMoldData` message with `field` set to `None` (meaning read all).
     #[serde(rename_all = "camelCase")]
     MoldData {
+        /// Unique ID of the controller.
         controller_id: NonZeroU32,
+        //
+        /// A data dictionary containing a set of mold settings.
         data: HashMap<&'a str, f64>,
-
+        //
+        /// Time-stamp of the event.
         timestamp: DateTime<FixedOffset>,
-
+        //
+        /// Snapshot of the current known states of the controller.
         #[serde(flatten)]
         state: StateValues<'a>,
-
+        //
+        /// Message configuration options.
         #[serde(flatten)]
         options: MessageOptions<'a>,
     },
+    /// The `READ_MOLD_DATA` message, sent to the server to read the current value of a particular mold setting.
+    ///
+    /// The server keeps a cache of the states of all mold settings for each controller.
+    /// The value returned is based on the server cache.
+    /// No command is sent to controller to poll the latest value.
     #[serde(rename_all = "camelCase")]
     ReadMoldData {
+        /// Unique ID of the controller.
         controller_id: NonZeroU32,
-        field: &'a str,
-
+        //
+        /// Name of the mold setting to read, `None` for all.
+        field: Option<&'a str>,
+        //
+        /// Message configuration options.
         #[serde(flatten)]
         options: MessageOptions<'a>,
     },
+    /// The `RESP_MOLD_DATA_VALUE` message, sent by the server in response to a `ReadMoldData` message.
     #[serde(rename_all = "camelCase")]
     MoldDataValue {
+        /// Unique ID of the controller.
         controller_id: NonZeroU32,
+        //
+        /// Name of the mold setting to read.
         field: &'a str,
+        //
+        /// Current cached value of the mold setting.
         value: f64,
-
+        //
+        /// Message configuration options.
         #[serde(flatten)]
         options: MessageOptions<'a>,
     },
+    /// The `REQ_PWD_LEVEL` message, sent by server when a connected controller attempts to authenticate and authorize a user password.
     #[serde(rename_all = "camelCase")]
     LoginOperator {
+        /// Unique ID of the controller.
         controller_id: NonZeroU32,
+        //
+        /// User password.
         password: &'a str,
-
+        //
+        /// Message configuration options.
         #[serde(flatten)]
         options: MessageOptions<'a>,
     },
+    /// The `RESP_PWD_LEVEL` message, sent to the server in response to a `LoginOperator` message.
     #[serde(rename_all = "camelCase")]
     OperatorInfo {
+        /// Unique ID of the controller.
         controller_id: NonZeroU32,
+        //
+        /// Unique ID of the authenticated user.
         #[serde(skip_serializing_if = "Option::is_none")]
         operator_id: Option<NonZeroU32>,
+        //
+        /// Name of the user.
         name: &'a str,
+        //
+        /// User password.
         password: &'a str,
+        //
+        /// Allowed access level for the user (0-10).
         level: u8,
-
+        //
+        /// Message configuration options.
         #[serde(flatten)]
         options: MessageOptions<'a>,
     },
 }
 
 impl<'a> Message<'a> {
+    /// Current protocol version: 4.0.
+    pub const PROTOCOL_VERSION: &'static str = "4.0";
+
+    /// Default language to use: `Language::EN`.
+    pub const DEFAULT_LANGUAGE: Language = Language::EN;
+
+    /// Maximum operator level: 10.
+    pub const MAX_OPERATOR_LEVEL: u8 = 10;
+
     /// Parse a JSON string into a `Message`.
     ///
     /// # Errors
@@ -393,31 +575,29 @@ impl<'a> Message<'a> {
     pub fn to_json_str(&self) -> Result<'_, String> {
         self.validate()?;
 
-        serde_json::to_string(self).map_err(|err| OpenProtocolError::JsonError(err))
+        serde_json::to_string(self).map_err(OpenProtocolError::JsonError)
     }
 
     /// Create an `ALIVE` message.
     ///
     pub fn new_alive() -> Self {
-        Alive {
-            options: Default::default(),
-        }
+        Alive { options: Default::default() }
     }
 
-    /// Create a `JOIN` message.
+    /// Create a `JOIN` message with default language and protocol version.
     ///
     pub fn new_join(password: &'a str, filter: &'a [Filter]) -> Self {
         Self::new_join_with_org(password, filter, None)
     }
 
-    /// Create a `JOIN` message with a non-default organization.
+    /// Create a `JOIN` message with non-default organization.
     ///
     pub fn new_join_with_org(password: &'a str, filter: &'a [Filter], org: Option<&'a str>) -> Self {
         Join {
             org_id: org,
-            version: PROTOCOL_VERSION,
-            password: password,
-            language: DEFAULT_LANGUAGE,
+            version: Self::PROTOCOL_VERSION,
+            password,
+            language: Self::DEFAULT_LANGUAGE,
             filter: filter.into(),
             options: Default::default(),
         }
@@ -453,21 +633,27 @@ impl<'a> Message<'a> {
                 ..
             } => {
                 check_optional_str_empty(display_name, "display_name")?;
-                check_optional_str_whitespace(operator_name, "operator_name")?;
-                check_optional_str_whitespace(job_card_id, "job_card_id")?;
-                check_optional_str_whitespace(mold_id, "mold_id")?;
+                if let Some(x) = operator_name {
+                    check_optional_str_whitespace(x, "operator_name")?;
+                }
+                if let Some(x) = job_card_id {
+                    check_optional_str_whitespace(x, "job_card_id")?;
+                }
+                if let Some(x) = mold_id {
+                    check_optional_str_whitespace(x, "mold_id")?;
+                }
                 state.validate()?;
 
                 if let Some(kv) = alarm {
-                    check_string_empty(kv.key, "alarm.key")?;
+                    check_str_empty(kv.key, "alarm.key")?;
                 }
                 if let Some(kv) = audit {
-                    check_string_empty(kv.key, "audit.key")?;
-                    check_f64(&kv.value, "audit.value")?;
+                    check_str_empty(kv.key, "audit.key")?;
+                    check_f64(kv.value, "audit.value")?;
                 }
                 if let Some(kv) = variable {
-                    check_string_empty(kv.key, "variable.key")?;
-                    check_f64(&kv.value, "variable.value")?;
+                    check_str_empty(kv.key, "variable.key")?;
+                    check_f64(kv.value, "variable.value")?;
                 }
                 if let Some(c) = controller {
                     c.validate()?;
@@ -475,11 +661,9 @@ impl<'a> Message<'a> {
 
                 options.validate()
             }
-            CycleData {
-                options, data, state, ..
-            } => {
+            CycleData { options, data, state, .. } => {
                 for d in data {
-                    check_f64(d.1, d.0)?;
+                    check_f64(*d.1, d.0)?;
                 }
                 check_optional_str_empty(&state.job_card_id, "job_card_id")?;
                 check_optional_str_empty(&state.mold_id, "mold_id")?;
@@ -491,18 +675,10 @@ impl<'a> Message<'a> {
                 }
                 options.validate()
             }
-            Join {
-                options,
-                org_id,
-                version,
-                password,
-                language,
-                filter,
-                ..
-            } => {
+            Join { options, org_id, version, password, language, filter, .. } => {
                 check_optional_str_empty(org_id, "org_id")?;
-                check_string_empty(version, "version")?;
-                check_string_empty(password, "password")?;
+                check_str_empty(version, "version")?;
+                check_str_empty(password, "password")?;
                 // Check for invalid language
                 if *language == Language::Unknown {
                     return Err(OpenProtocolError::InvalidField {
@@ -515,54 +691,39 @@ impl<'a> Message<'a> {
                 let mut list: Vec<Filter> = filter.iter().cloned().collect();
                 list.dedup();
                 if filter.len() != list.len() {
-                    return Err(OpenProtocolError::ConstraintViolated(
-                        "filter list contains duplications.".into(),
-                    ));
+                    return Err(OpenProtocolError::ConstraintViolated("filter list contains duplications.".into()));
                 }
 
                 options.validate()
             }
-            MoldData {
-                options, data, state, ..
-            } => {
+            MoldData { options, data, state, .. } => {
                 for d in data {
-                    check_f64(d.1, d.0)?;
+                    check_f64(*d.1, d.0)?;
                 }
                 check_optional_str_empty(&state.job_card_id, "job_card_id")?;
                 check_optional_str_empty(&state.mold_id, "mold_id")?;
                 options.validate()
             }
             ReadMoldData { options, field, .. } => {
-                check_string_empty(field, "field")?;
+                check_optional_str_empty(field, "field")?;
                 options.validate()
             }
-            MoldDataValue {
-                options, field, value, ..
-            } => {
-                check_string_empty(field, "field")?;
-                check_f64(&value, "value")?;
+            MoldDataValue { options, field, value, .. } => {
+                check_str_empty(field, "field")?;
+                check_f64(*value, "value")?;
                 options.validate()
             }
             LoginOperator { options, password, .. } => {
-                check_string_empty(&password, "password")?;
+                check_str_empty(&password, "password")?;
                 options.validate()
             }
-            OperatorInfo {
-                options,
-                name,
-                password,
-                level,
-                ..
-            } => {
-                check_string_empty(name, "name")?;
-                check_string_empty(password, "password")?;
-                if *level > MAX_OPERATOR_LEVEL {
+            OperatorInfo { options, name, password, level, .. } => {
+                check_str_empty(name, "name")?;
+                check_optional_str_whitespace(&Some(*password), "password")?;
+                if *level > Self::MAX_OPERATOR_LEVEL {
                     return Err(OpenProtocolError::ConstraintViolated(
-                        format!(
-                            "Level {} is too high - must be between 0 and {}.",
-                            level, MAX_OPERATOR_LEVEL
-                        )
-                        .into(),
+                        format!("Level {} is too high - must be between 0 and {}.", level, Self::MAX_OPERATOR_LEVEL)
+                            .into(),
                     ));
                 }
                 options.validate()
@@ -579,20 +740,11 @@ mod test {
 
     #[test]
     fn test_alive() {
-        let m = Alive {
-            options: MessageOptions {
-                id: Some("Hello"),
-                sequence: 999,
-                priority: 20,
-            },
-        };
+        let m = Alive { options: MessageOptions { id: Some("Hello"), sequence: 999, priority: 20 } };
 
         let serialized = serde_json::to_string(&m).unwrap();
 
-        assert_eq!(
-            r#"{"$type":"Alive","id":"Hello","sequence":999,"priority":20}"#,
-            serialized
-        );
+        assert_eq!(r#"{"$type":"Alive","id":"Hello","sequence":999,"priority":20}"#, serialized);
     }
 
     #[test]
@@ -617,11 +769,7 @@ mod test {
                 job_mode: JobMode::Offline,
             },
 
-            options: MessageOptions {
-                id: None,
-                sequence: 999,
-                priority: -20,
-            },
+            options: MessageOptions { id: None, sequence: 999, priority: -20 },
         };
 
         let serialized = serde_json::to_string(&m).unwrap();
@@ -646,10 +794,10 @@ mod test {
 
         if let ControllersList { data, .. } = m {
             assert_eq!(2, data.len());
-            let c = data.get(&NonZeroU32::new(12345).unwrap()).unwrap();
-            assert_eq!("Hello", c.display_name.unwrap());
+            let c = data.get("12345").unwrap();
+            assert_eq!("Hello", c.display_name);
         } else {
-            panic!("Expected ControllersList, got {:?}", m);
+            panic!("Expected ControllersList, got {:#?}", m);
         }
     }
 
@@ -660,19 +808,13 @@ mod test {
         let m: Message = serde_json::from_str(&json).unwrap();
         m.validate().unwrap();
 
-        if let CycleData {
-            options,
-            controller_id,
-            data,
-            ..
-        } = m
-        {
+        if let CycleData { options, controller_id, data, .. } = m {
             assert_eq!(0, options.priority);
             assert_eq!(123, controller_id.get());
             assert_eq!(64, data.len());
-            assert_eq!(243.0, *data.get("Z_QDCPT13").unwrap());
+            assert!((*data.get("Z_QDCPT13").unwrap() - 243.0).abs() < std::f64::EPSILON);
         } else {
-            panic!("Expected CycleData, got {:?}", m);
+            panic!("Expected CycleData, got {:#?}", m);
         }
     }
 
@@ -683,26 +825,19 @@ mod test {
         let m: Message = serde_json::from_str(&json).unwrap();
         m.validate().unwrap();
 
-        if let ControllerStatus {
-            options,
-            controller_id,
-            display_name,
-            controller,
-            ..
-        } = m
-        {
+        if let ControllerStatus { options, controller_id, display_name, controller, .. } = m {
             assert_eq!(50, options.priority);
             assert_eq!(1, options.sequence);
             assert_eq!(123, controller_id.get());
-            assert_eq!("Testing", display_name.unwrap());
+            assert_eq!(Some("Testing"), display_name);
             let c = controller.unwrap();
             assert_eq!("JM138Ai", c.model);
             let d = c.last_cycle_data.unwrap();
             assert!(c.operator.is_none());
             assert_eq!(2, d.len());
-            assert_eq!(5.0, *d.get("INJ").unwrap());
+            assert!((*d.get("INJ").unwrap() - 5.0).abs() < std::f64::EPSILON);
         } else {
-            panic!("Expected ControllerStatus, got {:?}", m);
+            panic!("Expected ControllerStatus, got {:#?}", m);
         }
     }
 }

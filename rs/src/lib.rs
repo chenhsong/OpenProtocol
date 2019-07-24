@@ -43,11 +43,7 @@ pub enum OpenProtocolError<'a> {
     /// The value (second parameter) of a field (first parameter) is not valid for that field.
     ///
     /// The strings are `Box`'ed to make the enum small.
-    InvalidField {
-        field: Cow<'a, str>,
-        value: Cow<'a, str>,
-        description: Cow<'a, str>,
-    },
+    InvalidField { field: Cow<'a, str>, value: Cow<'a, str>, description: Cow<'a, str> },
     /// An enfored constraint is broken.
     ///
     /// The string is `Box`'ed to make the enum small.
@@ -84,18 +80,11 @@ impl std::fmt::Display for OpenProtocolError<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         match self {
             OpenProtocolError::JsonError(err) => err.fmt(f),
-            OpenProtocolError::InvalidField {
-                field,
-                value,
-                description,
-            } => {
+            OpenProtocolError::InvalidField { field, value, description } => {
                 if description.is_empty() {
                     f.write_fmt(format_args!("Value [{}] is invalid for the field {}", value, field))
                 } else {
-                    f.write_fmt(format_args!(
-                        "Value [{}] is invalid for the field {}: {}.",
-                        value, field, description
-                    ))
+                    f.write_fmt(format_args!("Value [{}] is invalid for the field {}: {}.", value, field, description))
                 }
             }
             OpenProtocolError::ConstraintViolated(err) => err.fmt(f),

@@ -2,7 +2,7 @@ use super::{OpenProtocolError, Result};
 use serde::{Deserialize, Deserializer};
 use std::borrow::Cow;
 
-pub fn check_string_empty<S: AsRef<str>>(text: S, field: &'static str) -> Result<'static, ()> {
+pub fn check_str_empty<S: AsRef<str>>(text: S, field: &'static str) -> Result<'static, ()> {
     if text.as_ref().trim().is_empty() {
         Err(OpenProtocolError::EmptyField(field.into()))
     } else {
@@ -36,7 +36,7 @@ pub fn check_optional_str_whitespace<S: AsRef<str>>(opt: &Option<S>, field: &'st
     Ok(())
 }
 
-pub fn check_f64<'a>(value: &f64, field: &'a str) -> Result<'a, ()> {
+pub fn check_f64(value: f64, field: &str) -> Result<()> {
     if value.is_nan() {
         Err(OpenProtocolError::InvalidField {
             field: field.into(),
@@ -49,7 +49,7 @@ pub fn check_f64<'a>(value: &f64, field: &'a str) -> Result<'a, ()> {
             value: "Infinity".into(),
             description: "Infinity is not supported.".into(),
         })
-    } else if !value.is_normal() && *value != 0.0 {
+    } else if !value.is_normal() && value != 0.0 {
         Err(OpenProtocolError::InvalidField {
             field: field.into(),
             value: "Sub-normal".into(),
@@ -60,16 +60,18 @@ pub fn check_f64<'a>(value: &f64, field: &'a str) -> Result<'a, ()> {
     }
 }
 
-pub fn deserialize_null_to_empty_str<'de, D>(d: D) -> std::result::Result<Option<&'de str>, D::Error>
+#[allow(clippy::option_option)]
+pub fn deserialize_null_to_none<'de, D>(d: D) -> std::result::Result<Option<Option<&'de str>>, D::Error>
 where
     D: Deserializer<'de>,
 {
-    Deserialize::deserialize(d).map(|x: Option<&str>| Some(x.unwrap_or("")))
+    Deserialize::deserialize(d).map(|x: Option<Option<&str>>| Some(x.unwrap_or(None)))
 }
 
-pub fn deserialize_null_to_empty_cowstr<'de, D>(d: D) -> std::result::Result<Option<Cow<'de, str>>, D::Error>
+#[allow(clippy::option_option)]
+pub fn deserialize_null_to_cow_none<'de, D>(d: D) -> std::result::Result<Option<Option<Cow<'de, str>>>, D::Error>
 where
     D: Deserializer<'de>,
 {
-    Deserialize::deserialize(d).map(|x: Option<&str>| Some(x.unwrap_or("").into()))
+    Deserialize::deserialize(d).map(|x: Option<Option<Cow<'de, str>>>| Some(x.unwrap_or(None)))
 }

@@ -6,7 +6,7 @@ use std::sync::mpsc::channel;
 use std::thread;
 
 use websocket::client::ClientBuilder;
-use websocket::{Message, OwnedMessage};
+use websocket::{CloseData, Message, OwnedMessage};
 
 use ichen_openprotocol::Message as OP_Message;
 use ichen_openprotocol::{Filter, JobCard};
@@ -16,6 +16,43 @@ struct Constants<'a> {
     jobs: Vec<JobCard<'a>>,
 }
 
+// Format common messages nicely for display
+fn display_message(prefix: &str, msg: &OP_Message) {
+    print!("{}", prefix);
+
+    match msg {
+        OP_Message::Alive { options, .. } => println!("Alive({})", options.sequence),
+        OP_Message::RequestControllersList { controller_id: None, options, .. } => {
+            println!("RequestControllersList({})", options.sequence)
+        }
+        OP_Message::RequestControllersList { controller_id, options, .. } => {
+            println!("RequestControllersList({}, {})", controller_id.unwrap(), options.sequence)
+        }
+        OP_Message::RequestJobCardsList { controller_id, options, .. } => {
+            println!("RequestJobCardsList({}, {})", controller_id, options.sequence)
+        }
+        OP_Message::RequestMoldData { controller_id, options, .. } => {
+            println!("RequestMoldData({}, {})", controller_id, options.sequence)
+        }
+        OP_Message::ReadMoldData { controller_id, field: None, options, .. } => {
+            println!("RequestMoldData({}, ALL, {})", controller_id, options.sequence)
+        }
+        OP_Message::ReadMoldData { controller_id, field: Some(fld), options, .. } => {
+            println!("RequestMoldData({}, [{}], {})", controller_id, fld, options.sequence)
+        }
+        OP_Message::ControllerAction { controller_id, action_id, options, .. } => {
+            println!("ControllerAction({}, [{}], {})", controller_id, action_id, options.sequence)
+        }
+        m => {
+            if prefix.is_empty() {
+                println!("{:#?}", m);
+            } else {
+                println!("\n{:#?}", m)
+            }
+        }
+    }
+}
+
 // Act on Open Protocol message and generate response
 fn process_message<'a>(json: &'a str, constants: &'a Constants<'a>) -> Option<OP_Message<'a>> {
     let message;
@@ -23,7 +60,7 @@ fn process_message<'a>(json: &'a str, constants: &'a Constants<'a>) -> Option<OP
     // Parse message
     match OP_Message::parse_from_json_str(json) {
         Ok(m) => {
-            println!(">>> {:?}", m);
+            display_message(">>> ", &m);
             message = m;
         }
         Err(err) => {
@@ -43,27 +80,20 @@ fn process_message<'a>(json: &'a str, constants: &'a Constants<'a>) -> Option<OP
                 None
             } else {
                 // When the JOIN is successful, send RequestControllersList
-                Some(OP_Message::RequestControllersList {
-                    controller_id: None,
-                    options: Default::default(),
-                })
+                Some(OP_Message::RequestControllersList { controller_id: None, options: Default::default() })
             }
         }
         // MIS integration - User login
-        OP_Message::LoginOperator {
-            controller_id,
-            password,
-            ..
-        } => {
+        OP_Message::LoginOperator { controller_id, password, .. } => {
             match constants.users.get(password) {
                 Some((level, name)) => {
                     println!("User found: password={}, access level={}.", password, level);
                     // Return access level
                     Some(OP_Message::OperatorInfo {
-                        controller_id: controller_id,
-                        operator_id: NonZeroU32::new((*level + 1) as u32),
-                        name: name,
-                        password: password,
+                        controller_id,
+                        operator_id: NonZeroU32::new(u32::from(*level + 1)),
+                        name,
+                        password,
                         level: *level,
                         options: Default::default(),
                     })
@@ -72,10 +102,10 @@ fn process_message<'a>(json: &'a str, constants: &'a Constants<'a>) -> Option<OP
                     println!("No user found with password: {}.", password);
                     // Return no access
                     Some(OP_Message::OperatorInfo {
-                        controller_id: controller_id,
+                        controller_id,
                         operator_id: None,
                         name: "Not Allowed",
-                        password: password,
+                        password,
                         level: 0,
                         options: Default::default(),
                     })
@@ -84,12 +114,8 @@ fn process_message<'a>(json: &'a str, constants: &'a Constants<'a>) -> Option<OP
         }
         // MIS integration - Load jobs list
         OP_Message::RequestJobCardsList { controller_id, .. } => Some(OP_Message::JobCardsList {
-            controller_id: controller_id,
-            data: constants
-                .jobs
-                .iter()
-                .map(|jc| (jc.job_card_id.as_ref(), jc.clone()))
-                .collect(),
+            controller_id,
+            data: constants.jobs.iter().map(|jc| (jc.job_card_id.as_ref(), jc.clone())).collect(),
             options: Default::default(),
         }),
         // Other messages - Nothing to process
@@ -164,48 +190,23 @@ fn main() {
         ),
         // Mock job scheduling system
         jobs: vec![
-            JobCard {
-                job_card_id: "JOB_CARD_1".into(),
-                mold_id: "ABC-123".into(),
-                progress: 0,
-                total: 8000,
-            },
-            JobCard {
-                job_card_id: "JOB_CARD_2".into(),
-                mold_id: "M002".into(),
-                progress: 2000,
-                total: 10000,
-            },
-            JobCard {
-                job_card_id: "JOB_CARD_3".into(),
-                mold_id: "MOULD_003".into(),
-                progress: 888,
-                total: 3333,
-            },
-            JobCard {
-                job_card_id: "JOB_CARD_4".into(),
-                mold_id: "MOULD_004".into(),
-                progress: 123,
-                total: 45678,
-            },
+            JobCard::new("JOB_CARD_1", "ABC-123", 0, 8000),
+            JobCard::new("JOB_CARD_2", "M002", 2000, 10000),
+            JobCard::new("JOB_CARD_3", "MOULD_003", 888, 3333),
+            JobCard::new("JOB_CARD_4", "MOULD_004", 123, 45678),
         ],
     };
 
     // Display built-in's
     println!("=================================================");
     println!("Built-in Users for Testing:");
-    constants
-        .users
-        .iter()
-        .for_each(|(u, (a, n))| println!("> Name={}, Password={}, Level={}", n, u, a));
+    constants.users.iter().for_each(|(u, (a, n))| println!("> Name={}, Password={}, Level={}", n, u, a));
     println!("=================================================");
     println!("Built-in Job Cards for Testing:");
-    constants.jobs.iter().for_each(|j| {
-        println!(
-            "> Name={}, Mold={}, Quantity={}/{}",
-            j.job_card_id, j.mold_id, j.progress, j.total
-        )
-    });
+    constants
+        .jobs
+        .iter()
+        .for_each(|j| println!("> Name={}, Mold={}, Quantity={}/{}", j.job_card_id, j.mold_id, j.progress, j.total));
     println!("=================================================");
     println!("Press ENTER to quit...");
 
@@ -221,59 +222,45 @@ fn main() {
             let message = match message {
                 Ok(msg) => msg,
                 Err(err) => {
-                    // Cennot read from channel
-                    println!("Error: {}", err);
-                    println!("Closing WebSocket connection...");
-                    let _ = txx.send(OwnedMessage::Close(None));
+                    println!("Error receiving message: {}", err);
+                    txx.send(OwnedMessage::Close(Some(CloseData::new(1, format!("Error receiving message: {}", err)))))
+                        .expect("Cannot send to channel!");
                     return;
                 }
             };
+
             match message {
-                OwnedMessage::Close(_) => {
+                OwnedMessage::Close(data) => {
                     // Got a close message, so send a close message and return
-                    let _ = txx.send(OwnedMessage::Close(None));
-                    println!("Closing WebSocket connection...");
+                    match data {
+                        Some(d) => println!("WebSocket closed: ({}) {}", d.status_code, d.reason),
+                        None => println!("WebSocket closed."),
+                    }
                     return;
                 }
                 OwnedMessage::Ping(data) => {
-                    match txx.send(OwnedMessage::Pong(data)) {
-                        // Send a pong in response
-                        Ok(()) => (),
-                        Err(err) => {
-                            println!("Error sending Pong in response to Ping: {}", err);
-                            return;
-                        }
-                    }
+                    txx.send(OwnedMessage::Pong(data)).expect("Cannot send to channel!");
                 }
                 OwnedMessage::Text(json) => {
                     // Output JSON received
                     println!("Received ({}): {}", json.len(), json);
 
                     // Process the message
-                    match process_message(&json, &constants) {
-                        // Has a response message...
-                        Some(msg) => match msg.to_json_str() {
+                    if let Some(msg) = process_message(&json, &constants) {
+                        match msg.to_json_str() {
                             // Serialize it to JSON and send it
-                            Ok(resp) => match txx.send(OwnedMessage::Text(resp)) {
-                                Ok(_) => println!("<<< {:?}", msg),
-                                Err(err) => {
-                                    println!("Error sending message: {}", err);
-                                    println!("Closing WebSocket connection...");
-                                    let _ = txx.send(OwnedMessage::Close(None));
-                                    return;
-                                }
-                            },
-                            Err(err) => {
-                                println!("Error serializing message: {}", err);
+                            Ok(resp) => {
+                                txx.send(OwnedMessage::Text(resp)).expect("Cannot send to channel!");
+                                display_message("<<< ", &msg);
                             }
-                        },
-                        _ => (),
+                            Err(err) => println!("Error serializing message: {}", err),
+                        }
                     }
                 }
                 // Output binary data received
                 OwnedMessage::Binary(data) => println!("Received binary data: {} byte(s)", data.len()),
                 // Everything else
-                _ => println!("Received: {:?}", message),
+                _ => println!("Received: {:#?}", message),
             }
         }
     });
@@ -284,34 +271,27 @@ fn main() {
         thread::sleep(std::time::Duration::from_secs(1));
 
         loop {
-            let message = match rx.recv() {
-                Ok(msg) => msg,
-                Err(err) => {
-                    // Cannot read from channel
-                    println!("Error: {}", err);
-                    return;
-                }
-            };
-            match message {
-                OwnedMessage::Close(_) => {
-                    let _ = sender.send_message(&message);
-                    // If it's a close message, just send it and then return.
-                    println!("Closing WebSocket connection...");
-                    return;
-                }
-                _ => (),
-            }
+            let message = rx.recv().expect("Cannot read from channel!");
+
             // Send the message and display it
             match sender.send_message(&message) {
                 Ok(()) => match message {
+                    OwnedMessage::Close(data) => {
+                        // If it's a close message, just send it and then return.
+                        match data {
+                            Some(d) => println!("Closing WebSocket connection: ({}) {}", d.status_code, d.reason),
+                            None => println!("Closing WebSocket connection..."),
+                        }
+                        return;
+                    }
                     OwnedMessage::Text(json) => println!("Sent ({}): {}", json.len(), json),
                     OwnedMessage::Binary(data) => println!("Sent data: {} byte(s)", data.len()),
                     _ => (),
                 },
                 Err(err) => {
                     println!("Error sending message: {}", err);
+                    sender.send_message(&Message::close()).expect("Error sending close message to WebSocket server.");
                     println!("Closing WebSocket connection...");
-                    let _ = sender.send_message(&Message::close());
                     return;
                 }
             }
@@ -337,7 +317,8 @@ fn main() {
     stdin().read_line(&mut input).unwrap();
 
     // Close the connection
-    let _ = tx.send(OwnedMessage::Close(None));
+    tx.send(OwnedMessage::Close(Some(<CloseData>::new(0, "Program termination.".to_string()))))
+        .expect("Cannot send to channel!");
 
     // Exit
 
