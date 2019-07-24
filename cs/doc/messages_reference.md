@@ -422,8 +422,8 @@ OperatorInfoMessage
 
 ### Description
 
-This class implements the `RESP_PWD_LEVEL` message, which is to the
-iChen® 4 Server in response to a `LoginOperator` message.
+This class implements the `RESP_PWD_LEVEL` message, which is sent to the
+iChen® 4 Server in response to a `LoginOperatorMessage` message.
 
 ### Properties
 
@@ -984,7 +984,7 @@ are not relevant.
 |`DisplayName`       |`String` |`displayName`   |`string` |Human-friendly name for display (or `null` if not relevant)|
 |`OpMode`            |[`OpModes`](../../doc/enums.md#opmodes) enum|`opMode`        |`string` |Current operation mode of the controller (or `Unknown`/`null` if not relevant)|
 |`JobMode`           |[`JobModes`](../../doc/enums.md#jobmodes) enum|`jobMode`       |`string` |Current job mode of the controller (or `Unkonwn`/`null` if not relevant)|
-|`JobCardId`         |`String` |`jobCardId`     |`string` |Unique ID of the current job card loaded, empty string if no mold data set is currently loaded (or `null` if not relevant)|
+|`JobCardId`         |`String` |`jobCardId`     |`string` |Unique ID of the current job card loaded, empty string if no job card is currently loaded (or `null` if not relevant)|
 |`IsDisconnected`    |`Boolean`|`isDisconnected`|`boolean`|If true, the controller has disconnected from the iChen® Server|
 |`Alarm`             |`KeyValuePair` `<String,Boolean>` |`alarm`  |`object` |State of an alarm (if any) on the controller (or `null` if not relevant). See [here](../../doc/alarms.md) for valid alarm codes.|
 |`Audit`             |`KeyValuePair` `<String,Double>` |`audit`  |`object` |Change of a setting (if any) on the controller for audit trail purpose (or `null` if not relevant)|
