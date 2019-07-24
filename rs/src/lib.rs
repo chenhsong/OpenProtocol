@@ -16,12 +16,11 @@
 //! especially when deserializing -- the message struct cannot out-live the original JSON text string as
 //! fields are borrowed extensively from the original JSON string.
 //!
-//! Another implication due to extensive usage of borrowed string slices is that strings literals with
+//! Another implication due to extensive usage of borrowed string slices is that string literals with
 //! escape sequences will cause parsing errors because the actual string cannot be simply borrowed from
 //! the original JSON string.  Luckily this is extremely rare for most fields holding names, ID's etc.
-//! For this reason, only certain user-defined text fields (such as `job_card_id`) that may contain
-//! escaped characters (especially the double-quote) and therefore are modeled using `Cow<&str>` instead.
-//!
+//! For this reason, only certain user-defined text fields (such as `job_card_id`) may contain
+//! escaped characters (especially the double-quote); those are therefore modeled using `Cow<&str>` instead.
 
 use lazy_static;
 use std::borrow::Cow;
