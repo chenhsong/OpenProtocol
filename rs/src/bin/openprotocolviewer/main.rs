@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::error::Error;
 use std::io::{stdin, Write};
 use std::iter::FromIterator;
 use std::num::NonZeroU32;
@@ -6,7 +7,7 @@ use std::sync::mpsc::channel;
 use std::thread;
 
 use websocket::client::ClientBuilder;
-use websocket::{CloseData, Message, OwnedMessage};
+use websocket::{CloseData, Message, OwnedMessage, WebSocketError};
 
 use ichen_openprotocol::Message as OP_Message;
 use ichen_openprotocol::{Filter, JobCard};
@@ -25,8 +26,8 @@ fn display_message(prefix: &str, msg: &OP_Message) {
         OP_Message::RequestControllersList { controller_id: None, options, .. } => {
             println!("RequestControllersList({})", options.sequence)
         }
-        OP_Message::RequestControllersList { controller_id, options, .. } => {
-            println!("RequestControllersList({}, {})", controller_id.unwrap(), options.sequence)
+        OP_Message::RequestControllersList { controller_id: Some(id), options, .. } => {
+            println!("RequestControllersList({}, {})", id, options.sequence)
         }
         OP_Message::RequestJobCardsList { controller_id, options, .. } => {
             println!("RequestJobCardsList({}, {})", controller_id, options.sequence)
@@ -129,22 +130,29 @@ fn main() {
 
     // Read URL and password
     print!("WebSocket URL (example: ws://x.x.x.x:port): ");
-    std::io::stdout().flush().unwrap();
+    std::io::stdout().flush().expect("Failed to flush stdout.");
 
     let mut input = String::new();
-    stdin().read_line(&mut input).unwrap();
+    stdin().read_line(&mut input).expect("Failed to read line from stdin.");
 
     let conn = input.trim();
     if conn.is_empty() {
         eprintln!("URL cannot be empty.");
         return;
+    } else if conn.starts_with("wss://") {
+        eprintln!("This program is intended as a simple example for illustration purposes only.");
+        eprintln!("Due to added complexity, the wss: protocol is not supported by this program.");
+        return;
+    } else if !conn.starts_with("ws://") {
+        eprintln!("Invalid WebSocket URL format.  Should be: ws://x.x.x.x:port");
+        return;
     }
 
     print!("Password: ");
-    std::io::stdout().flush().unwrap();
+    std::io::stdout().flush().expect("Failed to flush stdout.");
 
     let mut input = String::new();
-    stdin().read_line(&mut input).unwrap();
+    stdin().read_line(&mut input).expect("Failed to read line from stdin.");
     let password = input.trim();
 
     if password.is_empty() {
@@ -152,7 +160,7 @@ fn main() {
         return;
     }
 
-    // Connect to WebSocket server
+    // Build connection to WebSocket server
     println!("Connecting to iChen Server at {}...", conn);
 
     let mut builder;
@@ -160,17 +168,42 @@ fn main() {
     match ClientBuilder::new(conn) {
         Ok(b) => builder = b,
         Err(err) => {
-            eprintln!("Invalid URL: {}", err.to_string());
+            eprintln!("Invalid URL: {}", err);
             return;
         }
     }
 
     let client;
 
+    // Attempt to connect
     match builder.connect_insecure() {
         Ok(c) => client = c,
         Err(err) => {
-            eprintln!("Connect connet to server: {}", err.to_string());
+            eprintln!("Connect connet to server: {}", &err);
+            eprintln!(
+                "{}",
+                match &err {
+                    // Errors with text string messages
+                    WebSocketError::ProtocolError(e)
+                    | WebSocketError::RequestError(e)
+                    | WebSocketError::ResponseError(e)
+                    | WebSocketError::DataFrameError(e) => e,
+                    // Errors with embedded error types
+                    WebSocketError::IoError(e) => e.description(),
+                    WebSocketError::HttpError(e) => e.description(),
+                    WebSocketError::UrlError(e) => e.description(),
+                    WebSocketError::TlsError(e) => e.description(),
+                    WebSocketError::Utf8Error(e) => e.description(),
+                    WebSocketError::WebSocketUrlError(e) => e.description(),
+                    // Errors with no more information
+                    WebSocketError::StatusCodeError(_)
+                    | WebSocketError::NoDataAvailable
+                    | WebSocketError::TlsHandshakeFailure
+                    | WebSocketError::TlsHandshakeInterruption => {
+                        return;
+                    }
+                }
+            );
             return;
         }
     }
@@ -188,6 +221,7 @@ fn main() {
             .enumerate()
             .map(|(index, value)| (*value, (index as u8, format!("MISUser{}", index)))),
         ),
+        //
         // Mock job scheduling system
         jobs: vec![
             JobCard::new("JOB_CARD_1", "ABC-123", 0, 8000),
@@ -211,7 +245,7 @@ fn main() {
     println!("Press ENTER to quit...");
 
     // Split into channels
-    let (mut receiver, mut sender) = client.split().unwrap();
+    let (mut receiver, mut sender) = client.split().expect("Failed to split client channels.");
 
     let (tx, rx) = channel();
     let txx = tx.clone();
@@ -314,7 +348,7 @@ fn main() {
     // Wait for ENTER to quit
 
     let mut input = String::new();
-    stdin().read_line(&mut input).unwrap();
+    stdin().read_line(&mut input).expect("Failed to read line from stdin.");
 
     // Close the connection
     tx.send(OwnedMessage::Close(Some(<CloseData>::new(0, "Program termination.".to_string()))))
