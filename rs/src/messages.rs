@@ -210,7 +210,7 @@ pub enum Message<'a> {
         controller_id: NonZeroU32,
         /// Unique action code.
         ///
-        /// See [here](https://github.com/chenhsong/OpenProtocol/blob/master/doc/actions.md) for details.
+        /// See [this document](https://github.com/chenhsong/OpenProtocol/blob/master/doc/actions.md) for details.
         action_id: i32,
         //
         /// Time-stamp of the event.
@@ -273,7 +273,7 @@ pub enum Message<'a> {
         //
         /// State of an alarm (if any) on the controller (or `None` if not relevant).
         ///
-        /// See [here](https://github.com/chenhsong/OpenProtocol/blob/master/doc/alarms.md) for valid alarm codes.
+        /// See [this document](https://github.com/chenhsong/OpenProtocol/blob/master/doc/alarms.md) for valid alarm codes.
         #[serde(skip_serializing_if = "Option::is_none")]
         alarm: Option<KeyValuePair<&'a str, bool>>,
         //
@@ -337,7 +337,7 @@ pub enum Message<'a> {
         //
         /// A data dictionary containing a set of cycle data.Alive
         ///
-        /// See [here](https://github.com/chenhsong/OpenProtocol/blob/master/doc/cycledata.md) for examples.
+        /// See [this document](https://github.com/chenhsong/OpenProtocol/blob/master/doc/cycledata.md) for examples.
         data: HashMap<&'a str, f64>,
         //
         /// Time-stamp of the event.

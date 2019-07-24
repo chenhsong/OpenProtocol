@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 /// Supported UI languages for the controller's HMI.
 ///
-/// For details see [here](https://github.com/chenhsong/OpenProtocol/blob/master/doc/enums.md#languages).
+/// For details see [this document](https://github.com/chenhsong/OpenProtocol/blob/master/doc/enums.md#languages).
 ///
 #[derive(Debug, Ord, PartialOrd, PartialEq, Eq, Hash, Serialize, Deserialize, Copy, Clone)]
 pub enum Language {
@@ -44,7 +44,7 @@ impl Default for Language {
 
 /// Operating modes of the controller.
 ///
-/// For details, see [here](https://github.com/chenhsong/OpenProtocol/blob/master/doc/enums.md#opmodes).
+/// For details, see [this document](https://github.com/chenhsong/OpenProtocol/blob/master/doc/enums.md#opmodes).
 ///
 #[derive(Debug, Ord, PartialOrd, PartialEq, Eq, Hash, Serialize, Deserialize, Copy, Clone)]
 pub enum OpMode {
@@ -108,7 +108,7 @@ impl Default for OpMode {
 ///
 /// On some controller models, job modes 1-15 (`ID01` - `ID15`) can be user-defined.
 ///
-/// For details, see [here](https://github.com/chenhsong/OpenProtocol/blob/master/doc/enums.md#jobmodes).
+/// For details, see [this document](https://github.com/chenhsong/OpenProtocol/blob/master/doc/enums.md#jobmodes).
 ///
 #[derive(Debug, Ord, PartialOrd, PartialEq, Eq, Hash, Serialize, Deserialize, Copy, Clone)]
 pub enum JobMode {

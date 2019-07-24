@@ -10,7 +10,7 @@ pub trait Filters {
 
 /// General authorizations to access the iChen System via Open Protocol.
 ///
-/// For details, see [here](https://github.com/chenhsong/OpenProtocol/blob/master/doc/enums.md#filters).
+/// For details, see [this document](https://github.com/chenhsong/OpenProtocol/blob/master/doc/enums.md#filters).
 ///
 #[derive(
     Debug,
