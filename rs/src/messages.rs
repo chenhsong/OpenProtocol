@@ -614,9 +614,7 @@ impl<'a> Message<'a> {
             | JoinResponse { options, .. }
             | RequestMoldData { options, .. } => options.validate(),
             ControllersList { options, data, .. } => {
-                for c in data {
-                    c.1.validate()?;
-                }
+                data.iter().try_for_each(|c| c.1.validate())?;
                 options.validate()
             }
             ControllerStatus {
@@ -662,17 +660,13 @@ impl<'a> Message<'a> {
                 options.validate()
             }
             CycleData { options, data, state, .. } => {
-                for d in data {
-                    check_f64(*d.1, d.0)?;
-                }
+                data.iter().try_for_each(|d| check_f64(*d.1, d.0))?;
                 check_optional_str_empty(&state.job_card_id, "job_card_id")?;
                 check_optional_str_empty(&state.mold_id, "mold_id")?;
                 options.validate()
             }
             JobCardsList { options, data, .. } => {
-                for jc in data {
-                    jc.1.validate()?;
-                }
+                data.iter().try_for_each(|jc| jc.1.validate())?;
                 options.validate()
             }
             Join { options, org_id, version, password, language, filter, .. } => {
@@ -697,9 +691,7 @@ impl<'a> Message<'a> {
                 options.validate()
             }
             MoldData { options, data, state, .. } => {
-                for d in data {
-                    check_f64(*d.1, d.0)?;
-                }
+                data.iter().try_for_each(|d| check_f64(*d.1, d.0))?;
                 check_optional_str_empty(&state.job_card_id, "job_card_id")?;
                 check_optional_str_empty(&state.mold_id, "mold_id")?;
                 options.validate()
