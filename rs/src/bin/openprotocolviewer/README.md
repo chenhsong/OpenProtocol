@@ -18,6 +18,7 @@ The program executable will be under the `target/debug` or `target/release` dire
 Run the executable (e.g. `openprotocolviewer.exe` on Windows) and enter the following information:
 
 **`WebSocket URL`** : URL of the Open Protocol™ interface, usually `ws://MyiChenServerUrl:5788` or `ws://x.x.x.x:5788` (5788 is the default Open Protocol™ interface port).
+`wss:` access to secured WebSocket ports with HTTPS is _not_ supported in this sample.
 
 **`Password`** : A login password to connect to the system.  System default is `chenhsong` for the `admin` user with unlimited admin rights (other than MIS rights).
 To try out the MIS features (e.g. operator login, job cards), first set up a new user account with the appropriate rights, then login with that password.
