@@ -81,9 +81,15 @@ impl std::fmt::Display for OpenProtocolError<'_> {
             OpenProtocolError::JsonError(err) => err.fmt(f),
             OpenProtocolError::InvalidField { field, value, description } => {
                 if description.is_empty() {
-                    f.write_fmt(format_args!("Value [{}] is invalid for the field {}", value, field))
+                    f.write_fmt(format_args!(
+                        "Value [{}] is invalid for the field {}",
+                        value, field
+                    ))
                 } else {
-                    f.write_fmt(format_args!("Value [{}] is invalid for the field {}: {}.", value, field, description))
+                    f.write_fmt(format_args!(
+                        "Value [{}] is invalid for the field {}: {}.",
+                        value, field, description
+                    ))
                 }
             }
             OpenProtocolError::ConstraintViolated(err) => err.fmt(f),

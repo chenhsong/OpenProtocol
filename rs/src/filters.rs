@@ -65,7 +65,12 @@ impl Filter {
     #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_machine(&self) -> bool {
         match self {
-            Filter::Status | Filter::Cycle | Filter::Mold | Filter::Actions | Filter::Alarms | Filter::Audit => true,
+            Filter::Status
+            | Filter::Cycle
+            | Filter::Mold
+            | Filter::Actions
+            | Filter::Alarms
+            | Filter::Audit => true,
             _ => false,
         }
     }
@@ -92,7 +97,8 @@ impl Filter {
 impl Filters for [Filter] {
     fn is_all(&self) -> bool {
         // Either Filter::All or all machine filters are present
-        self.contains(&Filter::All) || Filter::iter().filter(|f| f.is_machine()).all(|f| self.contains(&f))
+        self.contains(&Filter::All)
+            || Filter::iter().filter(|f| f.is_machine()).all(|f| self.contains(&f))
     }
 }
 
@@ -106,7 +112,8 @@ where
 {
     // Streamline filters
     let has_all = x.contains(&Filter::All);
-    let fstr: Vec<&str> = x.iter().filter(|f| !has_all || !f.is_machine()).map(|f| f.as_ref()).collect();
+    let fstr: Vec<&str> =
+        x.iter().filter(|f| !has_all || !f.is_machine()).map(|f| f.as_ref()).collect();
     let fstr = fstr.join(", ");
 
     if fstr.is_empty() {
@@ -127,7 +134,8 @@ where
         return Ok(EMPTY_FILTERS.into());
     }
 
-    let mut list: Vec<Filter> = text.split(',').filter_map(|key| Filter::from_str(key.trim()).ok()).collect();
+    let mut list: Vec<Filter> =
+        text.split(',').filter_map(|key| Filter::from_str(key.trim()).ok()).collect();
 
     if list.contains(&Filter::All) {
         // Has All, remove details

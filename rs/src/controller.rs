@@ -165,7 +165,8 @@ impl<'a> Controller<'a> {
         check_str_empty(self.address, "address")?;
 
         lazy_static! {
-            static ref IP_REGEX: Regex = Regex::new(r#"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,5}$"#).unwrap();
+            static ref IP_REGEX: Regex =
+                Regex::new(r#"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,5}$"#).unwrap();
             static ref TTY_REGEX: Regex = Regex::new(r#"^tty\w+$"#).unwrap();
             static ref COM_REGEX: Regex = Regex::new(r#"^COM(\d+)$"#).unwrap();
         }
@@ -290,7 +291,10 @@ mod test {
     #[test]
     fn test_controller_check_operator() {
         let c = Controller {
-            operator: Some(Operator { operator_id: NonZeroU32::new(123).unwrap(), operator_name: Some("John") }),
+            operator: Some(Operator {
+                operator_id: NonZeroU32::new(123).unwrap(),
+                operator_name: Some("John"),
+            }),
             ..Default::default()
         };
         c.validate().unwrap();

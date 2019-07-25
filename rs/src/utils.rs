@@ -15,7 +15,10 @@ pub fn is_zero(num: &i32) -> bool {
     *num == 0
 }
 
-pub fn check_optional_str_empty<S: AsRef<str>>(opt: &Option<S>, field: &'static str) -> Result<'static, ()> {
+pub fn check_optional_str_empty<S: AsRef<str>>(
+    opt: &Option<S>,
+    field: &'static str,
+) -> Result<'static, ()> {
     if let Some(text) = opt {
         if text.as_ref().trim().is_empty() {
             Err(OpenProtocolError::EmptyField(field.into()))
@@ -27,7 +30,10 @@ pub fn check_optional_str_empty<S: AsRef<str>>(opt: &Option<S>, field: &'static 
     }
 }
 
-pub fn check_optional_str_whitespace<S: AsRef<str>>(opt: &Option<S>, field: &'static str) -> Result<'static, ()> {
+pub fn check_optional_str_whitespace<S: AsRef<str>>(
+    opt: &Option<S>,
+    field: &'static str,
+) -> Result<'static, ()> {
     if let Some(text) = opt {
         if !text.as_ref().is_empty() && text.as_ref().trim().is_empty() {
             return Err(OpenProtocolError::EmptyField(field.into()));
@@ -61,7 +67,9 @@ pub fn check_f64(value: f64, field: &str) -> Result<()> {
 }
 
 #[allow(clippy::option_option)]
-pub fn deserialize_null_to_none<'de, D>(d: D) -> std::result::Result<Option<Option<&'de str>>, D::Error>
+pub fn deserialize_null_to_none<'de, D>(
+    d: D,
+) -> std::result::Result<Option<Option<&'de str>>, D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -69,7 +77,9 @@ where
 }
 
 #[allow(clippy::option_option)]
-pub fn deserialize_null_to_cow_none<'de, D>(d: D) -> std::result::Result<Option<Option<Cow<'de, str>>>, D::Error>
+pub fn deserialize_null_to_cow_none<'de, D>(
+    d: D,
+) -> std::result::Result<Option<Option<Cow<'de, str>>>, D::Error>
 where
     D: Deserializer<'de>,
 {

@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::error::Error;
 use std::io::{stdin, Write};
-use std::iter::FromIterator;
 use std::num::NonZeroU32;
 use std::sync::mpsc::channel;
 use std::thread;
@@ -73,52 +72,58 @@ fn process_message<'a>(json: &'a str, constants: &'a Constants<'a>) -> Option<OP
     match message {
         // Send an ALIVE when received an ALIVE from the server
         OP_Message::Alive { .. } => Some(OP_Message::new_alive()),
+        //
         // Response of the JOIN
-        OP_Message::JoinResponse { result, .. } => {
-            if result < 100 {
-                // Result less than 100 indicates failure
-                eprintln!("Failed to JOIN: error code = {}", result);
-                None
-            } else {
-                // When the JOIN is successful, send RequestControllersList
-                Some(OP_Message::RequestControllersList { controller_id: None, options: Default::default() })
-            }
+        // Result < 100 indicates failure
+        OP_Message::JoinResponse { result, .. } if result < 100 => {
+            eprintln!("Failed to JOIN: error code = {}", result);
+            None
         }
+        // Result >= 100 indicates success
+        // When the JOIN is successful, send RequestControllersList
+        OP_Message::JoinResponse { .. } => Some(OP_Message::RequestControllersList {
+            controller_id: None,
+            options: Default::default(),
+        }),
+        //
         // MIS integration - User login
         OP_Message::LoginOperator { controller_id, password, .. } => {
-            match constants.users.get(password) {
-                Some((level, name)) => {
-                    println!("User found: password={}, access level={}.", password, level);
-                    // Return access level
-                    Some(OP_Message::OperatorInfo {
-                        controller_id,
-                        operator_id: NonZeroU32::new(u32::from(*level + 1)),
-                        name,
-                        password,
-                        level: *level,
-                        options: Default::default(),
-                    })
-                }
-                None => {
-                    println!("No user found with password: {}.", password);
-                    // Return no access
-                    Some(OP_Message::OperatorInfo {
-                        controller_id,
-                        operator_id: None,
-                        name: "Not Allowed",
-                        password,
-                        level: 0,
-                        options: Default::default(),
-                    })
-                }
+            // Find password in built-in list
+            if let Some((level, name)) = constants.users.get(password) {
+                println!("User found: password={}, access level={}.", password, level);
+
+                // Return access level
+                Some(OP_Message::OperatorInfo {
+                    controller_id,
+                    operator_id: NonZeroU32::new(u32::from(*level + 1)),
+                    name,
+                    password,
+                    level: *level,
+                    options: Default::default(),
+                })
+            } else {
+                println!("No user found with password: {}.", password);
+
+                // Return no access
+                Some(OP_Message::OperatorInfo {
+                    controller_id,
+                    operator_id: None,
+                    name: "Not Allowed",
+                    password,
+                    level: 0,
+                    options: Default::default(),
+                })
             }
         }
-        // MIS integration - Load jobs list
+        //
+        // MIS integration
         OP_Message::RequestJobCardsList { controller_id, .. } => Some(OP_Message::JobCardsList {
             controller_id,
+            // Load jobs list
             data: constants.jobs.iter().map(|jc| (jc.job_card_id.as_ref(), jc.clone())).collect(),
             options: Default::default(),
         }),
+        //
         // Other messages - Nothing to process
         _ => None,
     }
@@ -134,8 +139,8 @@ fn main() {
 
     let mut input = String::new();
     stdin().read_line(&mut input).expect("Failed to read line from stdin.");
-
     let conn = input.trim();
+
     if conn.is_empty() {
         eprintln!("URL cannot be empty.");
         return;
@@ -188,6 +193,7 @@ fn main() {
                     | WebSocketError::RequestError(e)
                     | WebSocketError::ResponseError(e)
                     | WebSocketError::DataFrameError(e) => e,
+                    //
                     // Errors with embedded error types
                     WebSocketError::IoError(e) => e.description(),
                     WebSocketError::HttpError(e) => e.description(),
@@ -195,13 +201,12 @@ fn main() {
                     WebSocketError::TlsError(e) => e.description(),
                     WebSocketError::Utf8Error(e) => e.description(),
                     WebSocketError::WebSocketUrlError(e) => e.description(),
+                    //
                     // Errors with no more information
                     WebSocketError::StatusCodeError(_)
                     | WebSocketError::NoDataAvailable
                     | WebSocketError::TlsHandshakeFailure
-                    | WebSocketError::TlsHandshakeInterruption => {
-                        return;
-                    }
+                    | WebSocketError::TlsHandshakeInterruption => return,
                 }
             );
             return;
@@ -212,15 +217,14 @@ fn main() {
 
     let constants = Constants {
         // Mock users database mapping user password --> access level (0-10)
-        users: HashMap::from_iter(
-            [
-                "000000", "111111", "222222", "333333", "444444", "555555", "666666", "777777", "888888", "999999",
-                "123456",
-            ]
-            .iter()
-            .enumerate()
-            .map(|(index, value)| (*value, (index as u8, format!("MISUser{}", index)))),
-        ),
+        users: [
+            "000000", "111111", "222222", "333333", "444444", "555555", "666666", "777777",
+            "888888", "999999", "123456",
+        ]
+        .iter()
+        .enumerate()
+        .map(|(index, value)| (*value, (index as u8, format!("MISUser{}", index))))
+        .collect(),
         //
         // Mock job scheduling system
         jobs: vec![
@@ -234,13 +238,18 @@ fn main() {
     // Display built-in's
     println!("=================================================");
     println!("Built-in Users for Testing:");
-    constants.users.iter().for_each(|(u, (a, n))| println!("> Name={}, Password={}, Level={}", n, u, a));
+    constants
+        .users
+        .iter()
+        .for_each(|(u, (a, n))| println!("> Name={}, Password={}, Level={}", n, u, a));
     println!("=================================================");
     println!("Built-in Job Cards for Testing:");
-    constants
-        .jobs
-        .iter()
-        .for_each(|j| println!("> Name={}, Mold={}, Quantity={}/{}", j.job_card_id, j.mold_id, j.progress, j.total));
+    constants.jobs.iter().for_each(|j| {
+        println!(
+            "> Name={}, Mold={}, Quantity={}/{}",
+            j.job_card_id, j.mold_id, j.progress, j.total
+        )
+    });
     println!("=================================================");
     println!("Press ENTER to quit...");
 
@@ -257,8 +266,11 @@ fn main() {
                 Ok(msg) => msg,
                 Err(err) => {
                     println!("Error receiving message: {}", err);
-                    txx.send(OwnedMessage::Close(Some(CloseData::new(1, format!("Error receiving message: {}", err)))))
-                        .expect("Cannot send to channel!");
+                    txx.send(OwnedMessage::Close(Some(CloseData::new(
+                        1,
+                        format!("Error receiving message: {}", err),
+                    ))))
+                    .unwrap();
                     return;
                 }
             };
@@ -266,15 +278,14 @@ fn main() {
             match message {
                 OwnedMessage::Close(data) => {
                     // Got a close message, so send a close message and return
-                    match data {
-                        Some(d) => println!("WebSocket closed: ({}) {}", d.status_code, d.reason),
-                        None => println!("WebSocket closed."),
+                    if let Some(d) = data {
+                        println!("WebSocket closed: ({}) {}", d.status_code, d.reason);
+                    } else {
+                        println!("WebSocket closed.");
                     }
                     return;
                 }
-                OwnedMessage::Ping(data) => {
-                    txx.send(OwnedMessage::Pong(data)).expect("Cannot send to channel!");
-                }
+                OwnedMessage::Ping(data) => txx.send(OwnedMessage::Pong(data)).unwrap(),
                 OwnedMessage::Text(json) => {
                     // Output JSON received
                     println!("Received ({}): {}", json.len(), json);
@@ -284,7 +295,7 @@ fn main() {
                         match msg.to_json_str() {
                             // Serialize it to JSON and send it
                             Ok(resp) => {
-                                txx.send(OwnedMessage::Text(resp)).expect("Cannot send to channel!");
+                                txx.send(OwnedMessage::Text(resp)).unwrap();
                                 display_message("<<< ", &msg);
                             }
                             Err(err) => println!("Error serializing message: {}", err),
@@ -292,7 +303,9 @@ fn main() {
                     }
                 }
                 // Output binary data received
-                OwnedMessage::Binary(data) => println!("Received binary data: {} byte(s)", data.len()),
+                OwnedMessage::Binary(data) => {
+                    println!("Received binary data: {} byte(s)", data.len())
+                }
                 // Everything else
                 _ => println!("Received: {:#?}", message),
             }
@@ -304,17 +317,19 @@ fn main() {
         // Sleep for 1 sec. before sending anything for the WebSocket connection to stablize
         thread::sleep(std::time::Duration::from_secs(1));
 
-        loop {
-            let message = rx.recv().expect("Cannot read from channel!");
-
+        for message in rx {
             // Send the message and display it
             match sender.send_message(&message) {
                 Ok(()) => match message {
                     OwnedMessage::Close(data) => {
                         // If it's a close message, just send it and then return.
-                        match data {
-                            Some(d) => println!("Closing WebSocket connection: ({}) {}", d.status_code, d.reason),
-                            None => println!("Closing WebSocket connection..."),
+                        if let Some(d) = data {
+                            println!(
+                                "Closing WebSocket connection: ({}) {}",
+                                d.status_code, d.reason
+                            );
+                        } else {
+                            println!("Closing WebSocket connection...");
                         }
                         return;
                     }
@@ -324,7 +339,9 @@ fn main() {
                 },
                 Err(err) => {
                     println!("Error sending message: {}", err);
-                    sender.send_message(&Message::close()).expect("Error sending close message to WebSocket server.");
+                    sender
+                        .send_message(&Message::close())
+                        .expect("Error sending close message to WebSocket server.");
                     println!("Closing WebSocket connection...");
                     return;
                 }
@@ -355,7 +372,6 @@ fn main() {
         .expect("Cannot send to channel!");
 
     // Exit
-
     println!("Waiting for child threads to exit...");
 
     let _ = send_loop.join();

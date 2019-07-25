@@ -90,7 +90,11 @@ impl<'a> JobCard<'a> {
         check_str_empty(&self.mold_id, "mold_id")?;
         if self.progress > self.total {
             return Err(OpenProtocolError::ConstraintViolated(
-                format!("JobCard progress ({}) must not be larger than total ({}).", self.progress, self.total).into(),
+                format!(
+                    "JobCard progress ({}) must not be larger than total ({}).",
+                    self.progress, self.total
+                )
+                .into(),
             ));
         }
         Ok(())
@@ -592,7 +596,11 @@ impl<'a> Message<'a> {
 
     /// Create a `JOIN` message with non-default organization.
     ///
-    pub fn new_join_with_org(password: &'a str, filter: &'a [Filter], org: Option<&'a str>) -> Self {
+    pub fn new_join_with_org(
+        password: &'a str,
+        filter: &'a [Filter],
+        org: Option<&'a str>,
+    ) -> Self {
         Join {
             org_id: org,
             version: Self::PROTOCOL_VERSION,
@@ -685,7 +693,9 @@ impl<'a> Message<'a> {
                 let mut list: Vec<Filter> = filter.iter().cloned().collect();
                 list.dedup();
                 if filter.len() != list.len() {
-                    return Err(OpenProtocolError::ConstraintViolated("filter list contains duplications.".into()));
+                    return Err(OpenProtocolError::ConstraintViolated(
+                        "filter list contains duplications.".into(),
+                    ));
                 }
 
                 options.validate()
@@ -714,8 +724,12 @@ impl<'a> Message<'a> {
                 check_optional_str_whitespace(&Some(*password), "password")?;
                 if *level > Self::MAX_OPERATOR_LEVEL {
                     return Err(OpenProtocolError::ConstraintViolated(
-                        format!("Level {} is too high - must be between 0 and {}.", level, Self::MAX_OPERATOR_LEVEL)
-                            .into(),
+                        format!(
+                            "Level {} is too high - must be between 0 and {}.",
+                            level,
+                            Self::MAX_OPERATOR_LEVEL
+                        )
+                        .into(),
                     ));
                 }
                 options.validate()
@@ -732,7 +746,8 @@ mod test {
 
     #[test]
     fn test_alive() {
-        let m = Alive { options: MessageOptions { id: Some("Hello"), sequence: 999, priority: 20 } };
+        let m =
+            Alive { options: MessageOptions { id: Some("Hello"), sequence: 999, priority: 20 } };
 
         let serialized = serde_json::to_string(&m).unwrap();
 
