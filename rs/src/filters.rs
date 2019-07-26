@@ -112,9 +112,12 @@ where
 {
     // Streamline filters
     let has_all = x.contains(&Filter::All);
-    let fstr: Vec<&str> =
-        x.iter().filter(|f| !has_all || !f.is_machine()).map(|f| f.as_ref()).collect();
-    let fstr = fstr.join(", ");
+    let fstr = x
+        .iter()
+        .filter(|f| !has_all || !f.is_machine())
+        .map(|f| f.as_ref())
+        .collect::<Vec<&str>>()
+        .join(", ");
 
     if fstr.is_empty() {
         s.serialize_str("None")

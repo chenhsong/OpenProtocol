@@ -43,6 +43,12 @@ impl<'a> Operator<'a> {
     pub fn new_with_name(id: u32, name: &'a str) -> Self {
         Self { operator_name: Some(name), ..Self::new(id) }
     }
+
+    /// Validate the data structure.
+    ///
+    pub fn validate(&self) -> Result<'static, ()> {
+        check_optional_str_empty(&self.operator_name, "operator_name")
+    }
 }
 
 /// A data structure containing a single physical geo-location.
@@ -159,6 +165,11 @@ impl<'a> Controller<'a> {
         // Check Geo-location
         if let Some(geo) = &self.geo_location {
             geo.validate()?;
+        }
+
+        // Check Operator
+        if let Some(op) = &self.operator {
+            op.validate()?;
         }
 
         // Check IP address
