@@ -3,7 +3,7 @@ use Message::*;
 
 #[test]
 fn test_serialize() {
-    let mut m = Message::new_join("hello", &[Filter::All, Filter::Cycle, Filter::Operators]);
+    let mut m = Message::new_join("hello", Filters::All + Filters::Cycle + Filters::Operators);
     if let Join { options, .. } = &mut m {
         options.sequence = 999;
     }
@@ -27,12 +27,10 @@ fn test_deserialize() {
         assert_eq!("hello", password);
         assert_eq!(42, options.sequence);
         assert_eq!(10, options.priority);
-        assert_eq!(2, filter.len());
-        assert!(filter.has(Filter::Cycle));
-        assert!(filter.has(Filter::Mold));
-        assert!(!filter.has(Filter::Alarms));
-        assert!(!filter.has(Filter::All));
-        assert!(!filter.is_all());
+        assert!(filter.contains(Filters::Cycle));
+        assert!(filter.contains(Filters::Mold));
+        assert!(!filter.contains(Filters::Alarms));
+        assert!(!filter.contains(Filters::All));
     } else {
         panic!("Wrong type of message deserialized!");
     }

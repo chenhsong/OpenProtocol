@@ -279,7 +279,7 @@ mod test {
         c.validate().unwrap();
         let serialized = serde_json::to_string(&c).unwrap();
         assert_eq!(
-            r#"{"controllerId":1,"controllerType":"Unknown","version":"Unknown","model":"Unknown","IP":"0.0.0.0:1","opMode":"Automatic","jobMode":"ID02","operatorId":123,"operatorName":"John"}"#,
+            r#"{"controllerId":1,"displayName":"Unknown","controllerType":"Unknown","version":"Unknown","model":"Unknown","IP":"0.0.0.0:0","opMode":"Automatic","jobMode":"ID02","operatorId":123,"operatorName":"John"}"#,
             serialized);
     }
 

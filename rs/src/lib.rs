@@ -39,6 +39,6 @@ pub type Result<'a, T> = std::result::Result<T, OpenProtocolError<'a>>;
 // Re-exports
 pub use controller::{Controller, GeoLocation, Operator};
 pub use error::OpenProtocolError;
-pub use filters::{Filter, Filters};
+pub use filters::Filters;
 pub use messages::*;
 pub use types::{JobMode, Language, OpMode};

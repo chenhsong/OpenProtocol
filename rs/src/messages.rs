@@ -399,8 +399,7 @@ pub enum Message<'a> {
         /// A collection of `Filter` values containing what type(s) of messages to receive.
         #[serde(serialize_with = "serialize_to_flatten_array")]
         #[serde(deserialize_with = "deserialize_flattened_array")]
-        #[serde(borrow)]
-        filter: Cow<'a, [Filter]>,
+        filter: Filters,
         //
         /// Message configuration options.
         #[serde(flatten)]
@@ -590,23 +589,19 @@ impl<'a> Message<'a> {
 
     /// Create a `JOIN` message with default language and protocol version.
     ///
-    pub fn new_join(password: &'a str, filter: &'a [Filter]) -> Self {
+    pub fn new_join(password: &'a str, filter: Filters) -> Self {
         Self::new_join_with_org(password, filter, None)
     }
 
     /// Create a `JOIN` message with non-default organization.
     ///
-    pub fn new_join_with_org(
-        password: &'a str,
-        filter: &'a [Filter],
-        org: Option<&'a str>,
-    ) -> Self {
+    pub fn new_join_with_org(password: &'a str, filter: Filters, org: Option<&'a str>) -> Self {
         Join {
             org_id: org,
             version: Self::PROTOCOL_VERSION,
             password,
             language: Self::DEFAULT_LANGUAGE,
-            filter: filter.into(),
+            filter,
             options: Default::default(),
         }
     }
@@ -677,7 +672,7 @@ impl<'a> Message<'a> {
                 data.iter().try_for_each(|jc| jc.1.validate())?;
                 options.validate()
             }
-            Join { options, org_id, version, password, language, filter, .. } => {
+            Join { options, org_id, version, password, language, .. } => {
                 check_optional_str_empty(org_id, "org_id")?;
                 check_str_empty(version, "version")?;
                 check_str_empty(password, "password")?;
@@ -689,15 +684,6 @@ impl<'a> Message<'a> {
                         description: "Language cannot be Unknown.".into(),
                     });
                 }
-                // Check filters list for duplications
-                let mut list: Vec<Filter> = filter.iter().cloned().collect();
-                list.dedup();
-                if filter.len() != list.len() {
-                    return Err(OpenProtocolError::ConstraintViolated(
-                        "filter list contains duplications.".into(),
-                    ));
-                }
-
                 options.validate()
             }
             MoldData { options, data, state, .. } => {
@@ -794,7 +780,7 @@ mod test {
 
     #[test]
     fn test_controllers_list() {
-        let json = r#"{"$type":"ControllersList","data":{"12345":{"controllerId":12345,"displayName":"Hello","controllerType":"Ai12","version":"1.0.0","model":"JM128-Ai","IP":"192.168.5.1","opMode":"Manual","jobMode":"ID11","lastCycleData":{"Z_QDGODCNT":8567,"Z_QDCYCTIM":979,"Z_QDINJTIM":5450,"Z_QDPLSTIM":7156,"Z_QDINJENDPOS":8449,"Z_QDPLSENDPOS":2212,"Z_QDFLAG":8988,"Z_QDPRDCNT":65500,"Z_QDCOLTIM":4435,"Z_QDMLDOPNTIM":652,"Z_QDMLDCLSTIM":2908,"Z_QDVPPOS":4732,"Z_QDMLDOPNENDPOS":6677,"Z_QDMAXINJSPD":7133,"Z_QDMAXPLSRPM":641,"Z_QDNOZTEMP":6693,"Z_QDTEMPZ01":9964,"Z_QDTEMPZ02":7579,"Z_QDTEMPZ03":4035,"Z_QDTEMPZ04":5510,"Z_QDTEMPZ05":8460,"Z_QDTEMPZ06":9882,"Z_QDBCKPRS":2753,"Z_QDHLDTIM":9936},"lastConnectionTime":"2016-03-06T23:11:27.1442177+08:00"},"22334":{"controllerId":22334,"displayName":"World","controllerType":1,"version":"1.0.0","model":"JM128-Ai","IP":"192.168.5.2","opMode":"SemiAutomatic","jobMode":"ID12","lastCycleData":{"Z_QDGODCNT":6031,"Z_QDCYCTIM":7526,"Z_QDINJTIM":4896,"Z_QDPLSTIM":5196,"Z_QDINJENDPOS":1250,"Z_QDPLSENDPOS":8753,"Z_QDFLAG":3314,"Z_QDPRDCNT":65500,"Z_QDCOLTIM":3435,"Z_QDMLDOPNTIM":7854,"Z_QDMLDCLSTIM":4582,"Z_QDVPPOS":7504,"Z_QDMLDOPNENDPOS":7341,"Z_QDMAXINJSPD":7322,"Z_QDMAXPLSRPM":6024,"Z_QDNOZTEMP":3406,"Z_QDTEMPZ01":3067,"Z_QDTEMPZ02":9421,"Z_QDTEMPZ03":2080,"Z_QDTEMPZ04":8845,"Z_QDTEMPZ05":4478,"Z_QDTEMPZ06":3126,"Z_QDBCKPRS":2807,"Z_QDHLDTIM":3928},"lastConnectionTime":"2016-03-06T23:11:27.149218+08:00"}},"sequence":68568}"#;
+        let json = r#"{"$type":"ControllersList","data":{"12345":{"controllerId":12345,"displayName":"Hello","controllerType":"Ai12","version":"1.0.0","model":"JM128-Ai","IP":"192.168.5.1:123","opMode":"Manual","jobMode":"ID11","lastCycleData":{"Z_QDGODCNT":8567,"Z_QDCYCTIM":979,"Z_QDINJTIM":5450,"Z_QDPLSTIM":7156,"Z_QDINJENDPOS":8449,"Z_QDPLSENDPOS":2212,"Z_QDFLAG":8988,"Z_QDPRDCNT":65500,"Z_QDCOLTIM":4435,"Z_QDMLDOPNTIM":652,"Z_QDMLDCLSTIM":2908,"Z_QDVPPOS":4732,"Z_QDMLDOPNENDPOS":6677,"Z_QDMAXINJSPD":7133,"Z_QDMAXPLSRPM":641,"Z_QDNOZTEMP":6693,"Z_QDTEMPZ01":9964,"Z_QDTEMPZ02":7579,"Z_QDTEMPZ03":4035,"Z_QDTEMPZ04":5510,"Z_QDTEMPZ05":8460,"Z_QDTEMPZ06":9882,"Z_QDBCKPRS":2753,"Z_QDHLDTIM":9936},"lastConnectionTime":"2016-03-06T23:11:27.1442177+08:00"},"22334":{"controllerId":22334,"displayName":"World","controllerType":"Ai01","version":"1.0.0","model":"JM128-Ai","IP":"192.168.5.2:234","opMode":"SemiAutomatic","jobMode":"ID12","lastCycleData":{"Z_QDGODCNT":6031,"Z_QDCYCTIM":7526,"Z_QDINJTIM":4896,"Z_QDPLSTIM":5196,"Z_QDINJENDPOS":1250,"Z_QDPLSENDPOS":8753,"Z_QDFLAG":3314,"Z_QDPRDCNT":65500,"Z_QDCOLTIM":3435,"Z_QDMLDOPNTIM":7854,"Z_QDMLDCLSTIM":4582,"Z_QDVPPOS":7504,"Z_QDMLDOPNENDPOS":7341,"Z_QDMAXINJSPD":7322,"Z_QDMAXPLSRPM":6024,"Z_QDNOZTEMP":3406,"Z_QDTEMPZ01":3067,"Z_QDTEMPZ02":9421,"Z_QDTEMPZ03":2080,"Z_QDTEMPZ04":8845,"Z_QDTEMPZ05":4478,"Z_QDTEMPZ06":3126,"Z_QDBCKPRS":2807,"Z_QDHLDTIM":3928},"lastConnectionTime":"2016-03-06T23:11:27.149218+08:00"}},"sequence":68568}"#;
 
         let m: Message = serde_json::from_str(&json).unwrap();
         m.validate().unwrap();
