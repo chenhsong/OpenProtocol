@@ -1,11 +1,18 @@
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::borrow::Cow;
+use std::collections::HashSet;
 use std::str::FromStr;
-use strum::IntoEnumIterator;
 use strum_macros::{AsRefStr, Display, EnumIter, EnumString, IntoStaticStr};
 
 pub trait Filters {
+    /// Does the collection of `Filter` values contain administrator rights?
     fn is_all(&self) -> bool;
+
+    /// Does the collection of `Filter` values contain the specified filter?
+    fn has(&self, filter: Filter) -> bool;
+
+    /// Normalize the collection of `Filter` values to remove duplications.
+    fn normalize(&mut self);
 }
 
 /// General authorizations to access the iChen System via Open Protocol.
@@ -42,7 +49,9 @@ pub enum Filter {
     Alarms,
     /// Controller audit messages.
     Audit,
-    /// `All` = `Status` + `Cycle` + `Mold` + `Actions` + `Alarms` + `Audit`
+    /// Administrator rights.
+    ///
+    /// `All` implies `Status` + `Cycle` + `Mold` + `Actions` + `Alarms` + `Audit`
     All,
     //
     /// MIS/MES integration: Job scheduling messages.
@@ -55,7 +64,7 @@ pub enum Filter {
 }
 
 impl Filter {
-    /// Returns true if Filter::All.
+    /// Returns true if `Filter::All`.
     #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_all(&self) -> bool {
         *self == Filter::All
@@ -64,6 +73,20 @@ impl Filter {
     /// Returns true if machine-related filter flags.
     #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_machine(&self) -> bool {
+        match self {
+            Filter::Status
+            | Filter::Cycle
+            | Filter::Mold
+            | Filter::Actions
+            | Filter::Alarms
+            | Filter::Audit => true,
+            _ => false,
+        }
+    }
+
+    /// Returns true if the filter flags is covered by `Filter::All`.
+    #[allow(clippy::trivially_copy_pass_by_ref)]
+    pub fn is_part_of_all(&self) -> bool {
         match self {
             Filter::Status
             | Filter::Cycle
@@ -96,9 +119,53 @@ impl Filter {
 
 impl Filters for [Filter] {
     fn is_all(&self) -> bool {
-        // Either Filter::All or all machine filters are present
+        // If Filter::All is present
+        self.has(Filter::All)
+    }
+
+    fn has(&self, filter: Filter) -> bool {
+        self.contains(&filter)
+    }
+
+    fn normalize(&mut self) {
+        panic!("[Filter].normalize() is not supported.");
+    }
+}
+
+impl Filters for Vec<Filter> {
+    fn is_all(&self) -> bool {
+        (self as &[Filter]).is_all()
+    }
+
+    fn has(&self, filter: Filter) -> bool {
+        (self as &[Filter]).has(filter)
+    }
+
+    fn normalize(&mut self) {
+        if self.contains(&Filter::All) {
+            // Has All, remove any filter that is covered by all
+            self.retain(|f| !f.is_part_of_all());
+        }
+
+        // Remove duplications
+        self.dedup();
+    }
+}
+
+impl<S: std::hash::BuildHasher> Filters for HashSet<Filter, S> {
+    fn is_all(&self) -> bool {
         self.contains(&Filter::All)
-            || Filter::iter().filter(|f| f.is_machine()).all(|f| self.contains(&f))
+    }
+
+    fn has(&self, filter: Filter) -> bool {
+        self.contains(&filter)
+    }
+
+    fn normalize(&mut self) {
+        if self.is_all() {
+            // Has All, remove any filter that is covered by all
+            self.retain(|f| !f.is_part_of_all());
+        }
     }
 }
 
@@ -140,12 +207,7 @@ where
     let mut list: Vec<Filter> =
         text.split(',').filter_map(|key| Filter::from_str(key.trim()).ok()).collect();
 
-    if list.contains(&Filter::All) {
-        // Has All, remove details
-        list.retain(|f| !f.is_machine());
-    }
-
-    list.dedup();
+    list.normalize();
 
     if list.is_empty() {
         Ok(EMPTY_FILTERS.into())

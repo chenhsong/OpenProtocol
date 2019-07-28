@@ -28,10 +28,10 @@ fn test_deserialize() {
         assert_eq!(42, options.sequence);
         assert_eq!(10, options.priority);
         assert_eq!(2, filter.len());
-        assert!(filter.contains(&Filter::Cycle));
-        assert!(filter.contains(&Filter::Mold));
-        assert!(!filter.contains(&Filter::Alarms));
-        assert!(!filter.contains(&Filter::All));
+        assert!(filter.has(Filter::Cycle));
+        assert!(filter.has(Filter::Mold));
+        assert!(!filter.has(Filter::Alarms));
+        assert!(!filter.has(Filter::All));
         assert!(!filter.is_all());
     } else {
         panic!("Wrong type of message deserialized!");
