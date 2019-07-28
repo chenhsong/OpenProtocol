@@ -4,10 +4,9 @@ use std::borrow::Cow;
 
 pub fn check_str_empty<S: AsRef<str>>(text: S, field: &'static str) -> Result<'static, ()> {
     if text.as_ref().trim().is_empty() {
-        Err(OpenProtocolError::EmptyField(field.into()))
-    } else {
-        Ok(())
+        return Err(OpenProtocolError::EmptyField(field.into()));
     }
+    Ok(())
 }
 
 #[allow(clippy::trivially_copy_pass_by_ref)]
@@ -19,14 +18,11 @@ pub fn check_optional_str_empty<S: AsRef<str>>(
     opt: &Option<S>,
     field: &'static str,
 ) -> Result<'static, ()> {
-    if let Some(text) = opt {
-        if text.as_ref().trim().is_empty() {
+    match opt {
+        Some(text) if text.as_ref().trim().is_empty() => {
             Err(OpenProtocolError::EmptyField(field.into()))
-        } else {
-            Ok(())
         }
-    } else {
-        Ok(())
+        _ => Ok(()),
     }
 }
 
@@ -34,12 +30,12 @@ pub fn check_optional_str_whitespace<S: AsRef<str>>(
     opt: &Option<S>,
     field: &'static str,
 ) -> Result<'static, ()> {
-    if let Some(text) = opt {
-        if !text.as_ref().is_empty() && text.as_ref().trim().is_empty() {
-            return Err(OpenProtocolError::EmptyField(field.into()));
+    match opt {
+        Some(text) if !text.as_ref().is_empty() && text.as_ref().trim().is_empty() => {
+            Err(OpenProtocolError::EmptyField(field.into()))
         }
+        _ => Ok(()),
     }
-    Ok(())
 }
 
 pub fn check_f64(value: f64, field: &str) -> Result<()> {
@@ -47,19 +43,19 @@ pub fn check_f64(value: f64, field: &str) -> Result<()> {
         Err(OpenProtocolError::InvalidField {
             field: field.into(),
             value: "NaN".into(),
-            description: "NaN is not supported.".into(),
+            description: "NaN is not a supported value.".into(),
         })
     } else if value.is_infinite() {
         Err(OpenProtocolError::InvalidField {
             field: field.into(),
             value: "Infinity".into(),
-            description: "Infinity is not supported.".into(),
+            description: "Infinity is not a supported value.".into(),
         })
     } else if !value.is_normal() && value != 0.0 {
         Err(OpenProtocolError::InvalidField {
             field: field.into(),
             value: "Sub-normal".into(),
-            description: "Sub-normal numbers are not supported.".into(),
+            description: "Sub-normal number is not a supported value.".into(),
         })
     } else {
         Ok(())
