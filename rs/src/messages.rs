@@ -244,7 +244,11 @@ pub enum Message<'a> {
         /// List of controllers requested by a previous `RequestControllersList` message.
         ///
         /// Each controller data structure contains the last-known values of the controller's state.
-        data: HashMap<&'a str, Controller<'a>>,
+        //
+        // Custom deserialization of string into integer key.
+        // No need for custom serialization because simple number to string is fine.
+        #[serde(deserialize_with = "deserialize_hashmap_with_u32_key")]
+        data: HashMap<NonZeroU32, Controller<'a>>,
         //
         /// Message configuration options.
         #[serde(flatten)]
@@ -785,9 +789,9 @@ mod test {
         let m: Message = serde_json::from_str(&json).unwrap();
         m.validate().unwrap();
 
-        if let ControllersList { data, .. } = m {
+        if let ControllersList { data, .. } = &m {
             assert_eq!(2, data.len());
-            let c = data.get("12345").unwrap();
+            let c = data.get(&NonZeroU32::new(12345).unwrap()).unwrap();
             assert_eq!("Hello", c.display_name);
         } else {
             panic!("Expected ControllersList, got {:#?}", m);
