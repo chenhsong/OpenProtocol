@@ -22,8 +22,6 @@
 //! For this reason, only certain user-defined text fields (such as `job_card_id`) may contain
 //! escaped characters (especially the double-quote); those are therefore modeled using `Cow<&str>` instead.
 
-use lazy_static;
-
 // Modules
 mod controller;
 mod error;

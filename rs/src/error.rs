@@ -11,7 +11,7 @@ pub enum OpenProtocolError<'a> {
     ///
     /// The strings are `Box`'ed to make the enum small.
     InvalidField { field: Cow<'a, str>, value: Cow<'a, str>, description: Cow<'a, str> },
-    /// An enfored constraint is broken.
+    /// An enforced constraint is broken.
     ///
     /// The string is `Box`'ed to make the enum small.
     ConstraintViolated(Cow<'a, str>),

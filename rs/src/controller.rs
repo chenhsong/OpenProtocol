@@ -24,7 +24,7 @@ pub struct Operator<'a> {
 }
 
 impl<'a> Operator<'a> {
-    /// Create an `Opereator` with just an ID and no name.
+    /// Create an `Operator` with just an ID and no name.
     ///
     /// # Panics
     ///
@@ -34,7 +34,7 @@ impl<'a> Operator<'a> {
         Self { operator_id: NonZeroU32::new(id).unwrap(), operator_name: None }
     }
 
-    /// Create an `Opereator` with name.
+    /// Create an `Operator` with name.
     ///
     /// # Panics
     ///
