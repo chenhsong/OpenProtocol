@@ -39,10 +39,14 @@ use std::num::NonZeroU32;
 use std::sync::mpsc::channel;
 use std::thread;
 
+// This program uses the `websocket` crate for connection.
 use websocket::client::ClientBuilder;
-use websocket::{CloseData, Message, OwnedMessage, WebSocketError};
+use websocket::{CloseData, OwnedMessage, WebSocketError};
 
-use ichen_openprotocol::Message as OP_Message;
+// Pull in the `ichen_openprotocol` namaespace.
+// Beware that `ichen_openprotocol::Message` will conflict with `websocket::Message`
+// so you'll need to alias on of them if you pull both into scope.
+use ichen_openprotocol::Message;
 use ichen_openprotocol::{Filters, JobCard};
 
 struct Constants<'a> {
@@ -51,30 +55,30 @@ struct Constants<'a> {
 }
 
 // Format common messages nicely for display
-fn display_message(prefix: &str, msg: &OP_Message) {
+fn display_message(prefix: &str, msg: &Message) {
     print!("{}", prefix);
 
     match msg {
-        OP_Message::Alive { options, .. } => println!("Alive({})", options.sequence),
-        OP_Message::RequestControllersList { controller_id: None, options, .. } => {
+        Message::Alive { options, .. } => println!("Alive({})", options.sequence),
+        Message::RequestControllersList { controller_id: None, options, .. } => {
             println!("RequestControllersList({})", options.sequence)
         }
-        OP_Message::RequestControllersList { controller_id: Some(id), options, .. } => {
+        Message::RequestControllersList { controller_id: Some(id), options, .. } => {
             println!("RequestControllersList({}, {})", id, options.sequence)
         }
-        OP_Message::RequestJobCardsList { controller_id, options, .. } => {
+        Message::RequestJobCardsList { controller_id, options, .. } => {
             println!("RequestJobCardsList({}, {})", controller_id, options.sequence)
         }
-        OP_Message::RequestMoldData { controller_id, options, .. } => {
+        Message::RequestMoldData { controller_id, options, .. } => {
             println!("RequestMoldData({}, {})", controller_id, options.sequence)
         }
-        OP_Message::ReadMoldData { controller_id, field: None, options, .. } => {
+        Message::ReadMoldData { controller_id, field: None, options, .. } => {
             println!("RequestMoldData({}, ALL, {})", controller_id, options.sequence)
         }
-        OP_Message::ReadMoldData { controller_id, field: Some(fld), options, .. } => {
+        Message::ReadMoldData { controller_id, field: Some(fld), options, .. } => {
             println!("RequestMoldData({}, [{}], {})", controller_id, fld, options.sequence)
         }
-        OP_Message::ControllerAction { controller_id, action_id, options, .. } => {
+        Message::ControllerAction { controller_id, action_id, options, .. } => {
             println!("ControllerAction({}, [{}], {})", controller_id, action_id, options.sequence)
         }
         m => {
@@ -88,11 +92,15 @@ fn display_message(prefix: &str, msg: &OP_Message) {
 }
 
 // Act on Open Protocol message and generate response
-fn process_message<'a>(json: &'a str, constants: &'a Constants<'a>) -> Option<OP_Message<'a>> {
+//
+// This function takes a JSON string as input, parse it into an Open Protocol message,
+// acts on it, and returns a reply message (if any) to send to the server.
+//
+fn process_message<'a>(json: &'a str, builtin: &'a Constants<'a>) -> Option<Message<'a>> {
     let message;
 
     // Parse message
-    match OP_Message::parse_from_json_str(json) {
+    match Message::parse_from_json_str(json) {
         Ok(m) => {
             display_message(">>> ", &m);
             message = m;
@@ -104,30 +112,30 @@ fn process_message<'a>(json: &'a str, constants: &'a Constants<'a>) -> Option<OP
     }
 
     match message {
-        // Send an ALIVE when received an ALIVE from the server
-        OP_Message::Alive { .. } => Some(OP_Message::new_alive()),
+        // Send an `ALIVE` when received an `ALIVE` from the server
+        Message::Alive { .. } => Some(Message::new_alive()),
         //
-        // Response of the JOIN
+        // Response of the `JOIN`
         // Result < 100 indicates failure
-        OP_Message::JoinResponse { result, .. } if result < 100 => {
+        Message::JoinResponse { result, .. } if result < 100 => {
             eprintln!("Failed to JOIN: error code = {}", result);
             None
         }
         // Result >= 100 indicates success
-        // When the JOIN is successful, send RequestControllersList
-        OP_Message::JoinResponse { .. } => Some(OP_Message::RequestControllersList {
+        // When the `JOIN` is successful, send `RequestControllersList`
+        Message::JoinResponse { .. } => Some(Message::RequestControllersList {
             controller_id: None,
             options: Default::default(),
         }),
         //
-        // MIS integration - User login
-        OP_Message::LoginOperator { controller_id, password, .. } => {
+        // MIS/MES integration - User login
+        Message::LoginOperator { controller_id, password, .. } => {
             // Find password in built-in list
-            if let Some((level, name)) = constants.users.get(password) {
-                println!("User found: password={}, access level={}.", password, level);
+            if let Some((level, name)) = builtin.users.get(password) {
+                println!("User found: password=[{}], access level={}.", password, level);
 
                 // Return access level
-                Some(OP_Message::OperatorInfo {
+                Some(Message::OperatorInfo {
                     controller_id,
                     operator_id: NonZeroU32::new(u32::from(*level + 1)),
                     name,
@@ -136,10 +144,10 @@ fn process_message<'a>(json: &'a str, constants: &'a Constants<'a>) -> Option<OP
                     options: Default::default(),
                 })
             } else {
-                println!("No user found with password: {}.", password);
+                println!("No user found with password: [{}].", password);
 
                 // Return no access
-                Some(OP_Message::OperatorInfo {
+                Some(Message::OperatorInfo {
                     controller_id,
                     operator_id: None,
                     name: "Not Allowed",
@@ -150,11 +158,11 @@ fn process_message<'a>(json: &'a str, constants: &'a Constants<'a>) -> Option<OP
             }
         }
         //
-        // MIS integration
-        OP_Message::RequestJobCardsList { controller_id, .. } => Some(OP_Message::JobCardsList {
+        // MIS/MES integration - request list of jobs
+        Message::RequestJobCardsList { controller_id, .. } => Some(Message::JobCardsList {
             controller_id,
             // Load jobs list
-            data: constants.jobs.iter().map(|jc| (jc.job_card_id.as_ref(), jc.clone())).collect(),
+            data: builtin.jobs.iter().map(|jc| (jc.job_card_id.as_ref(), jc.clone())).collect(),
             options: Default::default(),
         }),
         //
@@ -202,10 +210,10 @@ fn main() {
     // Build connection to WebSocket server
     println!("Connecting to iChen Server at {}...", conn);
 
-    let mut builder;
+    let mut ws_builder;
 
     match ClientBuilder::new(conn) {
-        Ok(b) => builder = b,
+        Ok(b) => ws_builder = b,
         Err(err) => {
             eprintln!("Invalid URL: {}", err);
             return;
@@ -215,10 +223,10 @@ fn main() {
     let client;
 
     // Attempt to connect
-    match builder.connect_insecure() {
+    match ws_builder.connect_insecure() {
         Ok(c) => client = c,
         Err(err) => {
-            eprintln!("Connect connet to server: {}", &err);
+            eprintln!("Connect connect to server: {}", &err);
             eprintln!(
                 "{}",
                 match &err {
@@ -249,7 +257,8 @@ fn main() {
 
     println!("Connection to iChen Server established.");
 
-    let constants = Constants {
+    // Built-in database of users and jobs
+    let builtin = Constants {
         // Mock users database mapping user password --> access level (0-10)
         users: [
             "000000", "111111", "222222", "333333", "444444", "555555", "666666", "777777",
@@ -272,13 +281,13 @@ fn main() {
     // Display built-in's
     println!("=================================================");
     println!("Built-in Users for Testing:");
-    constants
+    builtin
         .users
         .iter()
         .for_each(|(u, (a, n))| println!("> Name={}, Password={}, Level={}", n, u, a));
     println!("=================================================");
     println!("Built-in Job Cards for Testing:");
-    constants.jobs.iter().for_each(|j| {
+    builtin.jobs.iter().for_each(|j| {
         println!(
             "> Name={}, Mold={}, Quantity={}/{}",
             j.job_card_id, j.mold_id, j.progress, j.total
@@ -287,9 +296,10 @@ fn main() {
     println!("=================================================");
     println!("Press ENTER to quit...");
 
-    // Split into channels
+    // Split WebSocket into sender and receiver
     let (mut receiver, mut sender) = client.split().expect("Failed to split client channels.");
 
+    // Create a channel for communications between the send and receive loops
     let (tx, rx) = channel();
     let txx = tx.clone();
 
@@ -299,7 +309,9 @@ fn main() {
             let message = match message {
                 Ok(msg) => msg,
                 Err(err) => {
-                    println!("Error receiving message: {}", err);
+                    // Error when receiving message from the WebSocket
+                    // Log the error, send Close command and terminate the receive loop
+                    eprintln!("Error receiving message: {}", err);
                     txx.send(OwnedMessage::Close(Some(CloseData::new(
                         1,
                         format!("Error receiving message: {}", err),
@@ -311,7 +323,7 @@ fn main() {
 
             match message {
                 OwnedMessage::Close(data) => {
-                    // Got a close message, so send a close message and return
+                    // Got a Close command, so send a Close command back and terminate the receive loop
                     if let Some(d) = data {
                         println!("WebSocket closed: ({}) {}", d.status_code, d.reason);
                     } else {
@@ -321,23 +333,23 @@ fn main() {
                 }
                 OwnedMessage::Ping(data) => txx.send(OwnedMessage::Pong(data)).unwrap(),
                 OwnedMessage::Text(json) => {
-                    // Output JSON received
+                    // Display received text to screen
                     println!("Received ({}): {}", json.len(), json);
 
-                    // Process the message
-                    if let Some(msg) = process_message(&json, &constants) {
+                    // Process the message, get reply message (if any)
+                    if let Some(msg) = process_message(&json, &builtin) {
                         match msg.to_json_str() {
-                            // Serialize it to JSON and send it
+                            // Serialize reply message to JSON and send it to the send loop
                             Ok(resp) => {
                                 txx.send(OwnedMessage::Text(resp)).unwrap();
                                 display_message("<<< ", &msg);
                             }
-                            Err(err) => println!("Error serializing message: {}", err),
+                            Err(err) => eprintln!("Error serializing message: {}", err),
                         }
                     }
                 }
-                // Output binary data received
                 OwnedMessage::Binary(data) => {
+                    // Display info if binary data received
                     println!("Received binary data: {} byte(s)", data.len())
                 }
                 // Everything else
@@ -348,15 +360,15 @@ fn main() {
 
     // Send loop
     let send_loop = thread::spawn(move || {
-        // Sleep for 1 sec. before sending anything for the WebSocket connection to stablize
+        // Sleep for 1 sec. before sending anything for the WebSocket connection to stabilize
         thread::sleep(std::time::Duration::from_secs(1));
 
         for message in rx {
-            // Send the message and display it
+            // Send the message and display it to screen
             match sender.send_message(&message) {
                 Ok(()) => match message {
                     OwnedMessage::Close(data) => {
-                        // If it's a close message, just send it and then return.
+                        // If it's a Close command, just send it and then terminate the send loop
                         if let Some(d) = data {
                             println!(
                                 "Closing WebSocket connection: ({}) {}",
@@ -372,10 +384,10 @@ fn main() {
                     _ => (),
                 },
                 Err(err) => {
-                    println!("Error sending message: {}", err);
-                    sender
-                        .send_message(&Message::close())
-                        .expect("Error sending close message to WebSocket server.");
+                    // Error when sending message to the WebSocket
+                    // Log the error, send Close command and terminate the send loop
+                    eprintln!("Error sending message: {}", err);
+                    sender.send_message(&websocket::Message::close()).unwrap();
                     println!("Closing WebSocket connection...");
                     return;
                 }
@@ -383,10 +395,25 @@ fn main() {
         }
     });
 
-    // Send a JOIN message
     println!("Sending JOIN message...");
 
-    let msg = OP_Message::new_join(password, Filters::All + Filters::JobCards + Filters::Operators);
+    // Send a `JOIN` message with these filters: `All`, `JobCards` and `Operators`
+    //
+    // `All` is administrator rights.  You typically do not need such rights to connect to the server.
+    // However, since `All` already includes _all_ the machine-related filters, it is sometimes used as
+    // an alternate format to specify them all (for lazy people).
+    //
+    // Filter flags are specified with either `|` (OR operator) or `+` (PLUS operator).
+    // Either way is fine as they are equivalent.
+    // Using the OR operator is a common style for C-family languages like C, C++, C# and Java.
+    // Using the PLUS operator makes the code intention more clear.
+    //
+    // For example, this filter expression can also be written as:
+    //
+    //     Filters::Status | Filters::Cycle | Filters::Mold | Filters::Actions | Filters::Alarms |
+    //     Filters::Audit | Filters::JobCards | Filters::Operators
+    //
+    let msg = Message::new_join(password, Filters::All + Filters::JobCards + Filters::Operators);
 
     match msg.to_json_str() {
         Ok(m) => match tx.send(OwnedMessage::Text(m)) {
@@ -396,8 +423,8 @@ fn main() {
         Err(err) => eprintln!("Error in JOIN message: {}", err),
     }
 
-    // Wait for ENTER to quit
-
+    // After sending the `JOIN` message, everything else should occur automatically in the background.
+    // So just wait for an ENTER key to quit...
     let mut input = String::new();
     stdin().read_line(&mut input).expect("Failed to read line from stdin.");
 
