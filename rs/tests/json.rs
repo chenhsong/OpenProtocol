@@ -3,7 +3,10 @@ use Message::*;
 
 #[test]
 fn test_serialize() {
-    let mut m = Message::new_join("hello", Filters::All + Filters::Cycle + Filters::Operators);
+    let mut m = Message::new_join(
+        "hello",
+        Filters::Status + Filters::All + Filters::Cycle + Filters::Operators,
+    );
     if let Join { options, .. } = &mut m {
         options.sequence = 999;
     }
@@ -18,7 +21,7 @@ fn test_serialize() {
 #[test]
 fn test_deserialize() {
     let m = Message::parse_from_json_str(
-        r#"{"$type":"Join","version":"1.0.0","password":"hello","filters":"Cycle, Mold","sequence":42,"priority":10}"#,
+        r#"{"$type":"Join","version":"1.0.0","password":"hello","language":"EN","filter":"Mold, Cycle","sequence":42,"priority":10}"#,
     )
     .unwrap();
 
@@ -27,10 +30,10 @@ fn test_deserialize() {
         assert_eq!("hello", password);
         assert_eq!(42, options.sequence);
         assert_eq!(10, options.priority);
-        assert!(filter.contains(Filters::Cycle));
-        assert!(filter.contains(Filters::Mold));
-        assert!(!filter.contains(Filters::Alarms));
-        assert!(!filter.contains(Filters::All));
+        assert!(filter.has(Filters::Cycle));
+        assert!(filter.has(Filters::Mold));
+        assert!(!filter.has(Filters::Alarms));
+        assert!(!filter.has(Filters::All));
     } else {
         panic!("Wrong type of message deserialized!");
     }
