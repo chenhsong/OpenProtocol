@@ -2,6 +2,7 @@
 
 use bitflags::*;
 use serde::{Deserialize, Deserializer, Serializer};
+use std::str::FromStr;
 
 bitflags! {
     /// General authorizations to access the iChen System via Open Protocol.
@@ -40,6 +41,43 @@ bitflags! {
 }
 
 static ALL: &str = "Status, Cycle, Mold, Actions, Alarms, Audit, All";
+
+impl Filters {
+    /// Is a particular set of filters set?
+    pub fn has(self, other: Self) -> bool {
+        self.contains(other)
+    }
+}
+
+impl FromStr for Filters {
+    type Err = ();
+
+    fn from_str(text: &str) -> Result<Self, Self::Err> {
+        let text = text.trim();
+        if text == "None" || text.is_empty() {
+            return Ok(Filters::None);
+        }
+
+        let filters = text
+            .split(',')
+            .map(|t| match t.trim() {
+                "Status" => Filters::Status,
+                "Cycle" => Filters::Cycle,
+                "Mold" => Filters::Mold,
+                "Actions" => Filters::Actions,
+                "Alarms" => Filters::Alarms,
+                "Audit" => Filters::Audit,
+                "All" => Filters::All,
+                "JobCards" => Filters::JobCards,
+                "Operators" => Filters::Operators,
+                "OPCUA" => Filters::OPCUA,
+                _ => Filters::None,
+            })
+            .fold(Filters::None, |f, x| f | x);
+
+        Ok(filters)
+    }
+}
 
 impl std::ops::Add for Filters {
     type Output = Self;
@@ -89,12 +127,7 @@ where
     D: Deserializer<'de>,
 {
     let text = String::deserialize(d)?;
-    let text = text.trim();
-    if text == "None" {
-        return Ok(Filters::None);
-    }
-
-    Ok(Filters::None)
+    Ok(Filters::from_str(&text).unwrap())
 }
 
 #[cfg(test)]
