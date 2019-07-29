@@ -3,11 +3,11 @@ name = "ichen-openprotocol"
 description = "iChen Open Protocol access library."
 keywords = ["ChenHsong", "iChen", "OpenProtocol"]
 categories = ["api-bindings"]
-version = "0.2.0"
+version = "0.3.0"
 edition = "2018"
 authors = ["Chen Hsong"]
 homepage = "https://chenhsong.github.io/iChen/"
-repository = "https://github.com/chenhsong/OpenProtocol"
+repository = "https://github.com/chenhsong/OpenProtocol/tree/master/rs"
 readme = "README.md"
 license = "MIT"
 
