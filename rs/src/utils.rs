@@ -1,7 +1,9 @@
-use super::{Controller, OpenProtocolError, Result};
+use super::{OpenProtocolError, Result};
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
-use std::num::NonZeroU32;
+use std::fmt::Display;
+use std::hash::Hash;
+use std::str::FromStr;
 
 pub fn check_str_empty<S: AsRef<str>>(text: S, field: &'static str) -> Result<'static, ()> {
     if text.as_ref().trim().is_empty() {
@@ -74,23 +76,24 @@ where
     Deserialize::deserialize(d).map(Some)
 }
 
-pub fn deserialize_hashmap_with_u32_key<'de, D>(
-    d: D,
-) -> std::result::Result<HashMap<NonZeroU32, Controller<'de>>, D::Error>
+pub fn deserialize_hashmap<'de, D, K, T>(d: D) -> std::result::Result<HashMap<K, T>, D::Error>
 where
     D: Deserializer<'de>,
+    K: FromStr + Eq + Hash,
+    T: Deserialize<'de>,
 {
-    fn deserialize_string_to_u32<'de, D>(d: D) -> std::result::Result<NonZeroU32, D::Error>
+    fn deserialize_string_key<'de, D, S>(d: D) -> std::result::Result<S, D::Error>
     where
         D: Deserializer<'de>,
+        S: FromStr,
     {
         let s: String = Deserialize::deserialize(d).map_err(serde::de::Error::custom)?;
-        s.parse::<NonZeroU32>().map_err(serde::de::Error::custom)
+        s.parse::<S>().map_err(|_| serde::de::Error::custom(format!("Invalid key: {}", s)))
     }
 
     #[derive(Deserialize, Hash, Eq, PartialEq)]
-    struct Wrapper(#[serde(deserialize_with = "deserialize_string_to_u32")] NonZeroU32);
+    struct Wrapper<S: FromStr>(#[serde(deserialize_with = "deserialize_string_key")] S);
 
-    let dict: HashMap<Wrapper, Controller<'de>> = Deserialize::deserialize(d)?;
+    let dict: HashMap<Wrapper<K>, T> = Deserialize::deserialize(d)?;
     Ok(dict.into_iter().map(|(Wrapper(k), v)| (k, v)).collect())
 }

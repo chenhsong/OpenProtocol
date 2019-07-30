@@ -247,7 +247,7 @@ pub enum Message<'a> {
         //
         // Custom deserialization of string into integer key.
         // No need for custom serialization because simple number to string is fine.
-        #[serde(deserialize_with = "deserialize_hashmap_with_u32_key")]
+        #[serde(deserialize_with = "deserialize_hashmap")]
         data: HashMap<NonZeroU32, Controller<'a>>,
         //
         /// Message configuration options.
@@ -758,13 +758,13 @@ mod test {
 
             timestamp: DateTime::parse_from_rfc3339("2019-02-26T02:03:04+08:00").unwrap(),
 
-            state: StateValues {
-                job_card_id: Some("Hello World!".into()),
-                mold_id: None,
-                operator_id: Some(NonZeroU32::new(42).unwrap()),
-                op_mode: OpMode::SemiAutomatic,
-                job_mode: JobMode::Offline,
-            },
+            state: StateValues::new_with_all(
+                OpMode::SemiAutomatic,
+                JobMode::Offline,
+                Some(42),
+                Some("Hello World!"),
+                None,
+            ),
 
             options: MessageOptions { id: None, sequence: 999, priority: -20 },
         };
