@@ -300,14 +300,14 @@ pub enum Message<'a> {
         //
         /// Name of the current logged-on user, `Some(None)` if the current user has no name (or `None` if not relevant).
         #[allow(clippy::option_option)]
-        #[serde(deserialize_with = "deserialize_null_to_none")]
+        #[serde(deserialize_with = "deserialize_null_to_some_none")]
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(default)]
         operator_name: Option<Option<&'a str>>,
         //
         /// Unique ID of the current job card loaded, `Some(None)` if no job card is currently loaded (or `None` if not relevant).
         #[allow(clippy::option_option)]
-        #[serde(deserialize_with = "deserialize_null_to_cow_none")]
+        #[serde(deserialize_with = "deserialize_null_to_some_none")]
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(default)]
         #[serde(borrow)]
@@ -315,7 +315,7 @@ pub enum Message<'a> {
         //
         /// Unique ID of the current mold data set loaded, `Some(None)` if no mold data set is currently loaded (or `None` if not relevant).
         #[allow(clippy::option_option)]
-        #[serde(deserialize_with = "deserialize_null_to_cow_none")]
+        #[serde(deserialize_with = "deserialize_null_to_some_none")]
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(default)]
         #[serde(borrow)]

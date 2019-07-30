@@ -1,6 +1,5 @@
 use super::{Controller, OpenProtocolError, Result};
 use serde::{Deserialize, Deserializer};
-use std::borrow::Cow;
 use std::collections::HashMap;
 use std::num::NonZeroU32;
 
@@ -65,21 +64,12 @@ pub fn check_f64(value: f64, field: &str) -> Result<()> {
 }
 
 #[allow(clippy::option_option)]
-pub fn deserialize_null_to_none<'de, D>(
+pub fn deserialize_null_to_some_none<'de, D, T>(
     d: D,
-) -> std::result::Result<Option<Option<&'de str>>, D::Error>
+) -> std::result::Result<Option<Option<T>>, D::Error>
 where
     D: Deserializer<'de>,
-{
-    Deserialize::deserialize(d).map(Some)
-}
-
-#[allow(clippy::option_option)]
-pub fn deserialize_null_to_cow_none<'de, D>(
-    d: D,
-) -> std::result::Result<Option<Option<Cow<'de, str>>>, D::Error>
-where
-    D: Deserializer<'de>,
+    T: Deserialize<'de>,
 {
     Deserialize::deserialize(d).map(Some)
 }
