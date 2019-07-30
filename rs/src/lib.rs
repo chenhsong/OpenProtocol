@@ -1,4 +1,4 @@
-//! Rust access library to read/write iChen<sup>®</sup> 4 Open Protocol<sup>™</sup> messages.
+//! Rust access library to read/write iChen® 4 Open Protocol™ messages.
 //!
 //! Details on the protocol can be found [here](https://github.com/chenhsong/OpenProtocol/blob/master/cs/doc/messages_reference.md).
 //!

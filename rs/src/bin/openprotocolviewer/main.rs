@@ -43,7 +43,7 @@ use std::thread;
 use websocket::client::ClientBuilder;
 use websocket::{CloseData, OwnedMessage, WebSocketError};
 
-// Pull in the `ichen_openprotocol` namaespace.
+// Pull in the `ichen_openprotocol` namespace.
 // Beware that `ichen_openprotocol::Message` will conflict with `websocket::Message`
 // so you'll need to alias on of them if you pull both into scope.
 use ichen_openprotocol::Message;
