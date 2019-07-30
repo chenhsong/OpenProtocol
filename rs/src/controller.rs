@@ -269,7 +269,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_controller_serialize() {
+    fn test_controller_to_json() {
         let c = Controller {
             op_mode: OpMode::Automatic,
             job_mode: JobMode::ID02,
@@ -284,7 +284,7 @@ mod test {
     }
 
     #[test]
-    fn test_controller_deserialize() {
+    fn test_controller_from_json() {
         let c: Controller = serde_json::from_str(r#"{"controllerId":1,"displayName":"Hello","controllerType":"Unknown","version":"Unknown","model":"Unknown","IP":"127.0.0.1:123","opMode":"Automatic","jobMode":"ID02","operatorId":123,"operatorName":"John"}"#).unwrap();
         c.validate().unwrap();
 
@@ -294,25 +294,20 @@ mod test {
     }
 
     #[test]
-    fn test_controller_check() {
+    fn test_controller_validate() {
         let c: Controller = Default::default();
         c.validate().unwrap();
     }
 
     #[test]
-    fn test_controller_check_operator() {
-        let c = Controller {
-            operator: Some(Operator {
-                operator_id: NonZeroU32::new(123).unwrap(),
-                operator_name: Some("John"),
-            }),
-            ..Default::default()
-        };
-        c.validate().unwrap();
+    fn test_operator_validate() {
+        Operator { operator_id: NonZeroU32::new(123).unwrap(), operator_name: Some("John") }
+            .validate()
+            .unwrap();
     }
 
     #[test]
-    fn test_controller_check_ip() {
+    fn test_controller_validate_address() {
         let mut c: Controller = Default::default();
 
         // 1.02.003.004:05
