@@ -71,7 +71,7 @@ pub fn deserialize_null_to_none<'de, D>(
 where
     D: Deserializer<'de>,
 {
-    Deserialize::deserialize(d).map(|x: Option<Option<&str>>| Some(x.unwrap_or(None)))
+    Deserialize::deserialize(d).map(Some)
 }
 
 #[allow(clippy::option_option)]
@@ -81,15 +81,7 @@ pub fn deserialize_null_to_cow_none<'de, D>(
 where
     D: Deserializer<'de>,
 {
-    Deserialize::deserialize(d).map(|x: Option<Option<Cow<'de, str>>>| Some(x.unwrap_or(None)))
-}
-
-pub fn deserialize_string_to_u32<'de, D>(d: D) -> std::result::Result<NonZeroU32, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let s: String = Deserialize::deserialize(d).map_err(serde::de::Error::custom)?;
-    s.parse::<NonZeroU32>().map_err(serde::de::Error::custom)
+    Deserialize::deserialize(d).map(Some)
 }
 
 pub fn deserialize_hashmap_with_u32_key<'de, D>(
@@ -98,6 +90,14 @@ pub fn deserialize_hashmap_with_u32_key<'de, D>(
 where
     D: Deserializer<'de>,
 {
+    fn deserialize_string_to_u32<'de, D>(d: D) -> std::result::Result<NonZeroU32, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s: String = Deserialize::deserialize(d).map_err(serde::de::Error::custom)?;
+        s.parse::<NonZeroU32>().map_err(serde::de::Error::custom)
+    }
+
     #[derive(Deserialize, Hash, Eq, PartialEq)]
     struct Wrapper(#[serde(deserialize_with = "deserialize_string_to_u32")] NonZeroU32);
 
