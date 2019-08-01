@@ -297,7 +297,7 @@ fn main() {
     println!("Press ENTER to quit...");
 
     // Split WebSocket into sender and receiver
-    let (mut receiver, mut sender) = client.split().expect("Failed to split client channels.");
+    let (mut receiver, mut sender) = client.split().expect("Failed to split WebSocket channel.");
 
     // Create a channel for communications between the send and receive loops
     let (tx, rx) = channel();

@@ -10,7 +10,7 @@ Open Protocol™ messages to and from the server are displayed to the standard o
 This program also acts as a user authentication and job cards provider to test out
 the operator login and job card features.
 
-How to Use
+How to Run
 ----------
 
 Build the project. This will automatically build all example programs as well.
@@ -31,5 +31,7 @@ To try out the MIS/MES features (e.g. operator login, job cards), first set up a
 user account with the appropriate rights, then login with that password.
 Otherwise, the user authentication and job cards provider will not work.
 
-_Warning: If you do not enter a password of a user account that has the appropriate
-access rights, you'll fail to see all Open Protocol™ messages._
+_Warning: If you enter a password to a user account that does not have enough access
+rights, you will fail to receive all Open Protocol™ messages. The iChen® Server will
+silently discard any message that the password does not have rights to. You will not
+even know that messages are missing._
