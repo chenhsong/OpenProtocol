@@ -1,4 +1,8 @@
+use derive_more::*;
 use serde::{Deserialize, Serialize};
+use std::cmp::{Ordering, PartialEq, PartialOrd};
+use std::fmt::Debug;
+use std::num::NonZeroU32;
 
 /// Supported UI languages for the controller's HMI.
 ///
@@ -163,5 +167,60 @@ impl JobMode {
 impl Default for JobMode {
     fn default() -> Self {
         JobMode::Unknown
+    }
+}
+
+/// A numeric ID number that cannot be zero or negative.
+///
+#[derive(
+    Display,
+    Copy,
+    Clone,
+    Ord,
+    PartialOrd,
+    Eq,
+    PartialEq,
+    Hash,
+    From,
+    Into,
+    FromStr,
+    Serialize,
+    Deserialize,
+)]
+pub struct ID(NonZeroU32);
+
+impl Debug for ID {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        Debug::fmt(&self.0, f)
+    }
+}
+
+impl From<u32> for ID {
+    fn from(num: u32) -> Self {
+        Self(NonZeroU32::new(num).unwrap())
+    }
+}
+
+impl PartialEq<u32> for ID {
+    fn eq(&self, other: &u32) -> bool {
+        self.0.get() == *other
+    }
+}
+
+impl PartialEq<ID> for u32 {
+    fn eq(&self, other: &ID) -> bool {
+        other.0.get() == *self
+    }
+}
+
+impl PartialOrd<u32> for ID {
+    fn partial_cmp(&self, other: &u32) -> Option<Ordering> {
+        PartialOrd::partial_cmp(&self.0.get(), other)
+    }
+}
+
+impl PartialOrd<ID> for u32 {
+    fn partial_cmp(&self, other: &ID) -> Option<Ordering> {
+        PartialOrd::partial_cmp(self, &other.0.get())
     }
 }

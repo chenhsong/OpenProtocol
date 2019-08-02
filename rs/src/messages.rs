@@ -5,7 +5,6 @@ use chrono::{DateTime, FixedOffset};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::collections::HashMap;
-use std::num::NonZeroU32;
 use std::sync::atomic::{AtomicU64, Ordering};
 use Message::*;
 
@@ -133,7 +132,7 @@ pub struct StateValues<'a> {
     //
     /// Unique ID of the current logged-in user (if any) on the controller.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub operator_id: Option<NonZeroU32>,
+    pub operator_id: Option<ID>,
     //
     /// Current active job ID (if any) on the controller.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -166,7 +165,7 @@ impl<'a> StateValues<'a> {
         mold: Option<&'a str>,
     ) -> Self {
         Self {
-            operator_id: operator.map(|o| NonZeroU32::new(o).unwrap()),
+            operator_id: operator.map(|o| o.into()),
             job_card_id: job_card.map(|j| j.into()),
             mold_id: mold.map(|m| m.into()),
             ..Self::new(op, job)
@@ -211,7 +210,7 @@ pub enum Message<'a> {
     #[serde(rename_all = "camelCase")]
     ControllerAction {
         /// Unique ID of the controller.
-        controller_id: NonZeroU32,
+        controller_id: ID,
         /// Unique action code.
         ///
         /// See [this document](https://github.com/chenhsong/OpenProtocol/blob/master/doc/actions.md) for details.
@@ -232,7 +231,7 @@ pub enum Message<'a> {
         ///
         /// If omitted, all controllers of the user's organization will be returned.
         #[serde(skip_serializing_if = "Option::is_none")]
-        controller_id: Option<NonZeroU32>,
+        controller_id: Option<ID>,
         //
         /// Message configuration options.
         #[serde(flatten)]
@@ -246,9 +245,9 @@ pub enum Message<'a> {
         /// Each controller data structure contains the last-known values of the controller's state.
         //
         // Custom deserialization of string into integer key.
-        // No need for custom serialization because simple number to string is fine.
+        // No need for custom serialization because ID to string is fine.
         #[serde(deserialize_with = "deserialize_hashmap")]
-        data: HashMap<NonZeroU32, Controller<'a>>,
+        data: HashMap<ID, Controller<'a>>,
         //
         /// Message configuration options.
         #[serde(flatten)]
@@ -260,7 +259,7 @@ pub enum Message<'a> {
     #[serde(rename_all = "camelCase")]
     ControllerStatus {
         /// Unique ID of the controller.
-        controller_id: NonZeroU32,
+        controller_id: ID,
         //
         /// Human-friendly name for display (or `None` if not relevant).
         #[allow(clippy::option_option)]
@@ -296,7 +295,7 @@ pub enum Message<'a> {
         /// Unique ID of the current logged-on user, `Some(None)` if a user has logged out (or `None` if not relevant).
         #[allow(clippy::option_option)]
         #[serde(skip_serializing_if = "Option::is_none")]
-        operator_id: Option<Option<NonZeroU32>>,
+        operator_id: Option<Option<ID>>,
         //
         /// Name of the current logged-on user, `Some(None)` if the current user has no name (or `None` if not relevant).
         #[allow(clippy::option_option)]
@@ -341,7 +340,7 @@ pub enum Message<'a> {
     #[serde(rename_all = "camelCase")]
     CycleData {
         /// Unique ID of the controller.
-        controller_id: NonZeroU32,
+        controller_id: ID,
         //
         /// A data dictionary containing a set of cycle data.Alive
         ///
@@ -363,7 +362,7 @@ pub enum Message<'a> {
     #[serde(rename_all = "camelCase")]
     RequestJobCardsList {
         /// Unique ID of the controller.
-        controller_id: NonZeroU32,
+        controller_id: ID,
         //
         /// Message configuration options.
         #[serde(flatten)]
@@ -373,7 +372,7 @@ pub enum Message<'a> {
     #[serde(rename_all = "camelCase")]
     JobCardsList {
         /// Unique ID of the controller.
-        controller_id: NonZeroU32,
+        controller_id: ID,
         //
         /// A data dictionary containing a set of `JobCard` data structures.
         data: HashMap<&'a str, JobCard<'a>>,
@@ -432,7 +431,7 @@ pub enum Message<'a> {
     #[serde(rename_all = "camelCase")]
     RequestMoldData {
         /// Unique ID of the controller.
-        controller_id: NonZeroU32,
+        controller_id: ID,
         //
         /// Message configuration options.
         #[serde(flatten)]
@@ -443,7 +442,7 @@ pub enum Message<'a> {
     #[serde(rename_all = "camelCase")]
     MoldData {
         /// Unique ID of the controller.
-        controller_id: NonZeroU32,
+        controller_id: ID,
         //
         /// A data dictionary containing a set of mold settings.
         data: HashMap<&'a str, f64>,
@@ -467,7 +466,7 @@ pub enum Message<'a> {
     #[serde(rename_all = "camelCase")]
     ReadMoldData {
         /// Unique ID of the controller.
-        controller_id: NonZeroU32,
+        controller_id: ID,
         //
         /// Name of the mold setting to read, `None` for all.
         field: Option<&'a str>,
@@ -480,7 +479,7 @@ pub enum Message<'a> {
     #[serde(rename_all = "camelCase")]
     MoldDataValue {
         /// Unique ID of the controller.
-        controller_id: NonZeroU32,
+        controller_id: ID,
         //
         /// Name of the mold setting to read.
         field: &'a str,
@@ -496,7 +495,7 @@ pub enum Message<'a> {
     #[serde(rename_all = "camelCase")]
     LoginOperator {
         /// Unique ID of the controller.
-        controller_id: NonZeroU32,
+        controller_id: ID,
         //
         /// User password.
         password: &'a str,
@@ -509,11 +508,11 @@ pub enum Message<'a> {
     #[serde(rename_all = "camelCase")]
     OperatorInfo {
         /// Unique ID of the controller.
-        controller_id: NonZeroU32,
+        controller_id: ID,
         //
         /// Unique ID of the authenticated user.
         #[serde(skip_serializing_if = "Option::is_none")]
-        operator_id: Option<NonZeroU32>,
+        operator_id: Option<ID>,
         //
         /// Name of the user.
         name: &'a str,
@@ -759,7 +758,7 @@ mod test {
         map.insert("foo", 0.0);
 
         let m = MoldData {
-            controller_id: NonZeroU32::new(123).unwrap(),
+            controller_id: 123.into(),
             data: map,
 
             timestamp: DateTime::parse_from_rfc3339("2019-02-26T02:03:04+08:00").unwrap(),
@@ -797,7 +796,7 @@ mod test {
 
         if let ControllersList { data, .. } = &m {
             assert_eq!(2, data.len());
-            let c = data.get(&NonZeroU32::new(12345).unwrap()).unwrap();
+            let c = data.get(&12345.into()).unwrap();
             assert_eq!("Hello", c.display_name);
         } else {
             panic!("Expected ControllersList, got {:#?}", m);
@@ -813,7 +812,7 @@ mod test {
 
         if let CycleData { options, controller_id, data, .. } = m {
             assert_eq!(0, options.priority);
-            assert_eq!(123, controller_id.get());
+            assert_eq!(123, controller_id);
             assert_eq!(64, data.len());
             assert!((*data.get("Z_QDCPT13").unwrap() - 243.0).abs() < std::f64::EPSILON);
         } else {
@@ -831,7 +830,7 @@ mod test {
         if let ControllerStatus { options, controller_id, display_name, controller, .. } = m {
             assert_eq!(50, options.priority);
             assert_eq!(1, options.sequence);
-            assert_eq!(123, controller_id.get());
+            assert_eq!(123, controller_id);
             assert_eq!(Some("Testing"), display_name);
             let c = controller.unwrap();
             assert_eq!("JM138Ai", c.model);
@@ -847,14 +846,14 @@ mod test {
     #[test]
     fn test_controller_status_to_json() {
         let status = ControllerStatus {
-            controller_id: NonZeroU32::new(12345).unwrap(),
+            controller_id: 12345.into(),
             display_name: None,
             is_connected: None,
             op_mode: None,
             job_mode: None,
             job_card_id: None,
             mold_id: Some(None),
-            operator_id: Some(Some(NonZeroU32::new(123).unwrap())),
+            operator_id: Some(Some(123.into())),
             operator_name: Some(None),
             variable: None,
             audit: None,

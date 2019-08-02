@@ -39,4 +39,4 @@ pub use controller::{Controller, GeoLocation, Operator};
 pub use error::OpenProtocolError;
 pub use filters::Filters;
 pub use messages::*;
-pub use types::{JobMode, Language, OpMode};
+pub use types::{ID, JobMode, Language, OpMode};

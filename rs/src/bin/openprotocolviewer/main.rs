@@ -35,7 +35,6 @@
 use std::collections::HashMap;
 use std::error::Error;
 use std::io::{stdin, Write};
-use std::num::NonZeroU32;
 use std::sync::mpsc::channel;
 use std::thread;
 
@@ -137,7 +136,7 @@ fn process_message<'a>(json: &'a str, builtin: &'a Constants<'a>) -> Option<Mess
                 // Return access level
                 Some(Message::OperatorInfo {
                     controller_id,
-                    operator_id: NonZeroU32::new(u32::from(*level + 1)),
+                    operator_id: Some((u32::from(*level) + 1).into()),
                     name,
                     password,
                     level: *level,

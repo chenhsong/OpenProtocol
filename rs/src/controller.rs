@@ -8,7 +8,6 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::error::Error;
 use std::net::IpAddr;
-use std::num::NonZeroU32;
 use std::str::FromStr;
 
 /// A data structure containing information on a single user on the system.
@@ -17,7 +16,7 @@ use std::str::FromStr;
 #[serde(rename_all = "camelCase")]
 pub struct Operator<'a> {
     /// Unique user ID, which cannot be zero.
-    pub operator_id: NonZeroU32,
+    pub operator_id: ID,
     //
     /// Name of the user.
     pub operator_name: Option<&'a str>,
@@ -25,22 +24,12 @@ pub struct Operator<'a> {
 
 impl<'a> Operator<'a> {
     /// Create an `Operator` with just an ID and no name.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `id` is zero.
-    ///
-    pub fn new(id: u32) -> Self {
-        Self { operator_id: NonZeroU32::new(id).unwrap(), operator_name: None }
+    pub fn new(id: ID) -> Self {
+        Self { operator_id: id, operator_name: None }
     }
 
     /// Create an `Operator` with name.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `id` is zero.
-    ///
-    pub fn new_with_name(id: u32, name: &'a str) -> Self {
+    pub fn new_with_name(id: ID, name: &'a str) -> Self {
         Self { operator_name: Some(name), ..Self::new(id) }
     }
 
@@ -82,7 +71,7 @@ impl GeoLocation {
 #[serde(rename_all = "camelCase")]
 pub struct Controller<'a> {
     /// Unique ID of the controller, which cannot be zero.
-    pub controller_id: NonZeroU32,
+    pub controller_id: ID,
     //
     /// User-specified human-friendly name for the machine.
     pub display_name: &'a str,
@@ -245,7 +234,7 @@ impl<'a> Controller<'a> {
 impl Default for Controller<'_> {
     fn default() -> Self {
         Controller {
-            controller_id: NonZeroU32::new(1).unwrap(),
+            controller_id: 1.into(),
             display_name: "Unknown",
             controller_type: "Unknown",
             version: "Unknown",
@@ -275,7 +264,7 @@ mod test {
         let c = Controller {
             op_mode: OpMode::Automatic,
             job_mode: JobMode::ID02,
-            operator: Some(Operator::new_with_name(123, "John")),
+            operator: Some(Operator::new_with_name(123.into(), "John")),
             ..Default::default()
         };
         c.validate().unwrap();
@@ -291,7 +280,7 @@ mod test {
         c.validate().unwrap();
 
         assert_eq!(
-            r#"Controller { controller_id: 1, display_name: "Hello", controller_type: "Unknown", version: "Unknown", model: "Unknown", address: "127.0.0.1:123", geo_location: None, op_mode: Automatic, job_mode: ID02, last_cycle_data: None, variables: None, last_connection_time: None, operator: Some(Operator { operator_id: 123, operator_name: Some("John") }), job_card_id: None, mold_id: None }"#,
+            r#"Controller { controller_id: 1, display_name: "Hello", controller_type: "Unknown", version: "Unknown", model: "Unknown", address: "127.0.0.1:123", geo_location: None, op_mode: Automatic, job_mode: ID02, last_cycle_data: {}, variables: {}, last_connection_time: None, operator: Some(Operator { operator_id: 123, operator_name: Some("John") }), job_card_id: None, mold_id: None }"#,
             format!("{:?}", &c));
     }
 
@@ -303,9 +292,7 @@ mod test {
 
     #[test]
     fn test_operator_validate() {
-        Operator { operator_id: NonZeroU32::new(123).unwrap(), operator_name: Some("John") }
-            .validate()
-            .unwrap();
+        Operator { operator_id: 123.into(), operator_name: Some("John") }.validate().unwrap();
     }
 
     #[test]
