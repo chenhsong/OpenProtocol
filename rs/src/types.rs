@@ -189,6 +189,18 @@ impl Default for JobMode {
 )]
 pub struct ID(NonZeroU32);
 
+impl ID {
+    /// Create a new ID value.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `num` is zero.
+    ///
+    pub fn new(num: u32) -> Self {
+        Self(NonZeroU32::new(num).unwrap())
+    }
+}
+
 impl Debug for ID {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         Debug::fmt(&self.0, f)
