@@ -123,12 +123,14 @@ pub struct Controller<'a> {
     pub job_mode: JobMode,
     //
     /// Last set of cycle data (if any) received from the controller.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub last_cycle_data: Option<HashMap<&'a str, f64>>,
+    #[serde(skip_serializing_if = "HashMap::is_empty")]
+    #[serde(default)]
+    pub last_cycle_data: HashMap<&'a str, f64>,
     //
     /// Last-known states (if any) of controller variables.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub variables: Option<HashMap<&'a str, f64>>,
+    #[serde(skip_serializing_if = "HashMap::is_empty")]
+    #[serde(default)]
+    pub variables: HashMap<&'a str, f64>,
     //
     /// Time of last connection.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -253,8 +255,8 @@ impl Default for Controller<'_> {
             op_mode: OpMode::Unknown,
             job_mode: JobMode::Unknown,
             job_card_id: None,
-            last_cycle_data: None,
-            variables: None,
+            last_cycle_data: Default::default(),
+            variables: Default::default(),
             last_connection_time: None,
             operator: None,
             mold_id: None,

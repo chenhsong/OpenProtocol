@@ -4,16 +4,16 @@ use std::collections::HashMap;
 use std::hash::Hash;
 use std::str::FromStr;
 
+#[allow(clippy::trivially_copy_pass_by_ref)]
+pub fn is_zero(num: &i32) -> bool {
+    *num == 0
+}
+
 pub fn check_str_empty<S: AsRef<str>>(text: S, field: &'static str) -> Result<'static, ()> {
     if text.as_ref().trim().is_empty() {
         return Err(OpenProtocolError::EmptyField(field.into()));
     }
     Ok(())
-}
-
-#[allow(clippy::trivially_copy_pass_by_ref)]
-pub fn is_zero(num: &i32) -> bool {
-    *num == 0
 }
 
 pub fn check_optional_str_empty<S: AsRef<str>>(

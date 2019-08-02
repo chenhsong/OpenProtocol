@@ -391,7 +391,7 @@ pub enum Message<'a> {
         //
         /// The maximum protocol version supported, in the format `x.x.x.x`.
         ///
-        /// The current protocol version implemnted is in the constant `PROTOCOL_VERSION`.
+        /// The current protocol version implemented is in the constant `PROTOCOL_VERSION`.
         version: &'a str,
         //
         /// Password to log onto the server.
@@ -673,6 +673,9 @@ impl<'a> Message<'a> {
                 options.validate()
             }
             JobCardsList { options, data, .. } => {
+                if data.is_empty() {
+                    return Err(OpenProtocolError::EmptyField("data".into()));
+                }
                 data.iter().try_for_each(|jc| jc.1.validate())?;
                 options.validate()
             }
@@ -691,6 +694,9 @@ impl<'a> Message<'a> {
                 options.validate()
             }
             MoldData { options, data, state, .. } => {
+                if data.is_empty() {
+                    return Err(OpenProtocolError::EmptyField("data".into()));
+                }
                 data.iter().try_for_each(|d| check_f64(*d.1, d.0))?;
                 check_optional_str_empty(&state.job_card_id, "job_card_id")?;
                 check_optional_str_empty(&state.mold_id, "mold_id")?;
@@ -829,7 +835,7 @@ mod test {
             assert_eq!(Some("Testing"), display_name);
             let c = controller.unwrap();
             assert_eq!("JM138Ai", c.model);
-            let d = c.last_cycle_data.unwrap();
+            let d = c.last_cycle_data;
             assert!(c.operator.is_none());
             assert_eq!(2, d.len());
             assert!((*d.get("INJ").unwrap() - 5.0).abs() < std::f64::EPSILON);
