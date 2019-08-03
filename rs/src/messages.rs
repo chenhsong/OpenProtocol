@@ -115,6 +115,21 @@ impl<K, V> KeyValuePair<K, V> {
     }
 }
 
+impl<K: AsRef<str>> KeyValuePair<K, bool> {
+    pub fn validate(&self) -> Result<'static, ()> {
+        check_str_empty(&self.key, "key")?;
+        Ok(())
+    }
+}
+
+impl<K: AsRef<str>> KeyValuePair<K, f64> {
+    pub fn validate(&self) -> Result<'static, ()> {
+        check_str_empty(&self.key, "key")?;
+        check_f64(self.value, "value")?;
+        Ok(())
+    }
+}
+
 /// A data structure containing a snapshot of the current known states of the controller.
 ///
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -649,15 +664,13 @@ impl<'a> Message<'a> {
                 state.validate()?;
 
                 if let Some(kv) = alarm {
-                    check_str_empty(kv.key, "alarm.key")?;
+                    kv.validate()?;
                 }
                 if let Some(kv) = audit {
-                    check_str_empty(kv.key, "audit.key")?;
-                    check_f64(kv.value, "audit.value")?;
+                    kv.validate()?;
                 }
                 if let Some(kv) = variable {
-                    check_str_empty(kv.key, "variable.key")?;
-                    check_f64(kv.value, "variable.value")?;
+                    kv.validate()?;
                 }
                 if let Some(c) = controller {
                     c.validate()?;
