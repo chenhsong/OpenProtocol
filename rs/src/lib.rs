@@ -22,6 +22,9 @@
 //! For this reason, only certain user-defined text fields (such as `job_card_id`) may contain
 //! escaped characters (especially the double-quote); those are therefore modeled using `Cow<&str>` instead.
 
+#![doc(html_logo_url = "https://chenhsong.github.io/iChen/images/ichen_40_logo_small.png")]
+#![doc(html_root_url = "https://docs.rs/ichen-openprotocol")]
+
 // Modules
 mod controller;
 mod error;
@@ -39,4 +42,4 @@ pub use controller::{Controller, GeoLocation, Operator};
 pub use error::OpenProtocolError;
 pub use filters::Filters;
 pub use messages::*;
-pub use types::{ID, JobMode, Language, OpMode};
+pub use types::{JobMode, Language, OpMode, ID};
