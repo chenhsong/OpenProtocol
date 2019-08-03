@@ -1,7 +1,7 @@
 #![allow(non_upper_case_globals)]
 
 use bitflags::*;
-use serde::{Deserialize, Deserializer, Serializer};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::str::FromStr;
 
 bitflags! {
@@ -50,8 +50,11 @@ impl Filters {
 }
 
 impl FromStr for Filters {
-    type Err = ();
+    type Err = String;
 
+    // Notice that `from_str` never fails.
+    // Unmatched tokens will simply be discarded.  If nothing matches, `Filters::None` will be returned.
+    //
     fn from_str(text: &str) -> Result<Self, Self::Err> {
         let text = text.trim();
         if text == "None" || text.is_empty() {
@@ -112,22 +115,23 @@ impl std::fmt::Display for Filters {
     }
 }
 
-// Custom serializer and deserializer
-
-#[allow(clippy::trivially_copy_pass_by_ref)]
-pub fn serialize_to_flatten_array<S>(x: &Filters, s: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    s.serialize_str(&x.to_string())
+impl Serialize for Filters {
+    fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        s.serialize_str(&self.to_string())
+    }
 }
 
-pub fn deserialize_flattened_array<'de, D>(d: D) -> Result<Filters, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let text = String::deserialize(d)?;
-    Ok(Filters::from_str(&text).unwrap())
+impl<'de> Deserialize<'de> for Filters {
+    fn deserialize<D>(d: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = Deserialize::deserialize(d).map_err(serde::de::Error::custom)?;
+        Filters::from_str(s).map_err(serde::de::Error::custom)
+    }
 }
 
 #[cfg(test)]
@@ -138,5 +142,19 @@ mod test {
     fn test_serialize_filters() {
         let f = Filters::All + Filters::Cycle + Filters::OPCUA;
         assert_eq!("All, OPCUA", format!("{}", f));
+    }
+
+    #[test]
+    fn test_deserialize_filters() {
+        let f = Filters::from_str("All, OPCUA").unwrap();
+        assert!(f.has(Filters::All));
+        assert!(f.has(Filters::OPCUA));
+        assert!(!f.has(Filters::Operators));
+        assert!(!f.has(Filters::JobCards));
+        assert!(f.has(Filters::Cycle));
+        assert!(f.has(Filters::Status));
+        assert!(f.has(Filters::Mold));
+        assert!(f.has(Filters::Audit));
+        assert!(f.has(Filters::Alarms));
     }
 }
