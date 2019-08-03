@@ -37,6 +37,9 @@ mod utils;
 ///
 pub type Result<'a, T> = std::result::Result<T, OpenProtocolError<'a>>;
 
+type ValidationResult = Result<'static, ()>;
+type BoundedValidationResult<'a> = Result<'a, ()>;
+
 // Re-exports
 pub use controller::{Controller, GeoLocation, Operator};
 pub use error::OpenProtocolError;

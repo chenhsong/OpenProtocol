@@ -1,5 +1,5 @@
-use self::utils::*;
-use super::*;
+use super::utils::*;
+use super::{JobMode, OpMode, OpenProtocolError, ID, ValidationResult, BoundedValidationResult};
 use chrono::{DateTime, FixedOffset};
 use lazy_static::*;
 use regex::Regex;
@@ -35,7 +35,7 @@ impl<'a> Operator<'a> {
 
     /// Validate the data structure.
     ///
-    pub fn validate(&self) -> Result<'static, ()> {
+    pub fn validate(&self) -> ValidationResult {
         check_optional_str_empty(&self.operator_name, "operator_name")
     }
 }
@@ -59,7 +59,7 @@ impl GeoLocation {
 
     /// Validate the data structure.
     ///
-    pub fn validate(&self) -> Result<'static, ()> {
+    pub fn validate(&self) -> ValidationResult {
         check_f64(self.geo_latitude, "geo_latitude")?;
         check_f64(self.geo_longitude, "geo_longitude")
     }
@@ -144,7 +144,7 @@ pub struct Controller<'a> {
 impl<'a> Controller<'a> {
     /// Validate the data structure.
     ///
-    pub fn validate(&self) -> Result<'a, ()> {
+    pub fn validate(&self) -> BoundedValidationResult<'a> {
         // String fields should not be empty
         check_str_empty(self.controller_type, "controller_type")?;
         check_str_empty(self.display_name, "display_name")?;

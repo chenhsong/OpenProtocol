@@ -1,6 +1,6 @@
-use self::filters::*;
-use self::utils::*;
-use super::*;
+use super::filters::Filters;
+use super::utils::*;
+use super::{Controller, JobMode, Language, OpMode, OpenProtocolError, Result, ValidationResult, ID};
 use chrono::{DateTime, FixedOffset};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -45,7 +45,7 @@ impl<'a> MessageOptions<'a> {
 
     /// Validate the data structure.
     ///
-    pub fn validate(&self) -> Result<'static, ()> {
+    pub fn validate(&self) -> ValidationResult {
         check_optional_str_empty(&self.id, "id")?;
         Ok(())
     }
@@ -84,7 +84,7 @@ impl<'a> JobCard<'a> {
 
     /// Validate the data structure.
     ///
-    pub fn validate(&self) -> Result<'static, ()> {
+    pub fn validate(&self) -> ValidationResult {
         check_str_empty(&self.job_card_id, "job_card_id")?;
         check_str_empty(&self.mold_id, "mold_id")?;
         if self.progress > self.total {
@@ -116,14 +116,14 @@ impl<K, V> KeyValuePair<K, V> {
 }
 
 impl<K: AsRef<str>> KeyValuePair<K, bool> {
-    pub fn validate(&self) -> Result<'static, ()> {
+    pub fn validate(&self) -> ValidationResult {
         check_str_empty(&self.key, "key")?;
         Ok(())
     }
 }
 
 impl<K: AsRef<str>> KeyValuePair<K, f64> {
-    pub fn validate(&self) -> Result<'static, ()> {
+    pub fn validate(&self) -> ValidationResult {
         check_str_empty(&self.key, "key")?;
         check_f64(self.value, "value")?;
         Ok(())
@@ -189,7 +189,7 @@ impl<'a> StateValues<'a> {
 
     /// Validate the data structure.
     ///
-    pub fn validate(&self) -> Result<'static, ()> {
+    pub fn validate(&self) -> ValidationResult {
         check_optional_str_empty(&self.job_card_id, "job_card_id")?;
         check_optional_str_empty(&self.mold_id, "mold_id")
     }
@@ -415,8 +415,6 @@ pub enum Message<'a> {
         language: Language,
         //
         /// A collection of `Filter` values containing what type(s) of messages to receive.
-        #[serde(serialize_with = "serialize_to_flatten_array")]
-        #[serde(deserialize_with = "deserialize_flattened_array")]
         filter: Filters,
         //
         /// Message configuration options.

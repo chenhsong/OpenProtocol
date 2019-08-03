@@ -1,6 +1,7 @@
-use super::{OpenProtocolError, Result};
+use super::{OpenProtocolError, Result, ValidationResult};
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
+use std::fmt::Display;
 use std::hash::Hash;
 use std::str::FromStr;
 
@@ -9,7 +10,7 @@ pub fn is_zero(num: &i32) -> bool {
     *num == 0
 }
 
-pub fn check_str_empty<S: AsRef<str>>(text: S, field: &'static str) -> Result<'static, ()> {
+pub fn check_str_empty<S: AsRef<str>>(text: S, field: &'static str) -> ValidationResult {
     if text.as_ref().trim().is_empty() {
         return Err(OpenProtocolError::EmptyField(field.into()));
     }
@@ -19,7 +20,7 @@ pub fn check_str_empty<S: AsRef<str>>(text: S, field: &'static str) -> Result<'s
 pub fn check_optional_str_empty<S: AsRef<str>>(
     opt: &Option<S>,
     field: &'static str,
-) -> Result<'static, ()> {
+) -> ValidationResult {
     match opt {
         Some(text) if text.as_ref().trim().is_empty() => {
             Err(OpenProtocolError::EmptyField(field.into()))
@@ -31,7 +32,7 @@ pub fn check_optional_str_empty<S: AsRef<str>>(
 pub fn check_optional_str_whitespace<S: AsRef<str>>(
     opt: &Option<S>,
     field: &'static str,
-) -> Result<'static, ()> {
+) -> ValidationResult {
     match opt {
         Some(text) if !text.as_ref().is_empty() && text.as_ref().trim().is_empty() => {
             Err(OpenProtocolError::EmptyField(field.into()))
@@ -79,19 +80,24 @@ pub fn deserialize_hashmap<'de, D, K, T>(d: D) -> std::result::Result<HashMap<K,
 where
     D: Deserializer<'de>,
     K: FromStr + Eq + Hash,
+    K::Err: Display,
     T: Deserialize<'de>,
 {
     fn deserialize_string_key<'de, D, S>(d: D) -> std::result::Result<S, D::Error>
     where
         D: Deserializer<'de>,
         S: FromStr,
+        S::Err: Display,
     {
-        let s: String = Deserialize::deserialize(d).map_err(serde::de::Error::custom)?;
-        s.parse::<S>().map_err(|_| serde::de::Error::custom(format!("Invalid key: {}", s)))
+        let s = Deserialize::deserialize(d).map_err(serde::de::Error::custom)?;
+        S::from_str(s).map_err(serde::de::Error::custom)
     }
 
     #[derive(Deserialize, Hash, Eq, PartialEq)]
-    struct Wrapper<S: FromStr>(#[serde(deserialize_with = "deserialize_string_key")] S);
+    struct Wrapper<S>(#[serde(deserialize_with = "deserialize_string_key")] S)
+    where
+        S: FromStr,
+        S::Err: Display;
 
     let dict: HashMap<Wrapper<K>, T> = Deserialize::deserialize(d)?;
     Ok(dict.into_iter().map(|(Wrapper(k), v)| (k, v)).collect())
