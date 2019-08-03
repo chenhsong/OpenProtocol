@@ -1,6 +1,8 @@
 use super::filters::Filters;
 use super::utils::*;
-use super::{Controller, JobMode, Language, OpMode, OpenProtocolError, Result, ValidationResult, ID};
+use super::{
+    Controller, JobMode, Language, OpMode, ID, OpenProtocolError, Result, ValidationResult, BoundedValidationResult,
+};
 use chrono::{DateTime, FixedOffset};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
@@ -624,7 +626,7 @@ impl<'a> Message<'a> {
 
     /// Validate the data structure.
     ///
-    pub fn validate(&self) -> Result<'a, ()> {
+    pub fn validate(&self) -> BoundedValidationResult<'a> {
         match self {
             Alive { options, .. }
             | ControllerAction { options, .. }

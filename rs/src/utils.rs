@@ -1,4 +1,4 @@
-use super::{OpenProtocolError, Result, ValidationResult};
+use super::{BoundedValidationResult, OpenProtocolError, ValidationResult};
 use serde::{Deserialize, Deserializer};
 use std::collections::HashMap;
 use std::fmt::Display;
@@ -41,7 +41,7 @@ pub fn check_optional_str_whitespace<S: AsRef<str>>(
     }
 }
 
-pub fn check_f64(value: f64, field: &str) -> Result<()> {
+pub fn check_f64(value: f64, field: &str) -> BoundedValidationResult {
     if value.is_nan() {
         Err(OpenProtocolError::InvalidField {
             field: field.into(),

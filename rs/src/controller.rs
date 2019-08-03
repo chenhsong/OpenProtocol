@@ -1,5 +1,5 @@
 use super::utils::*;
-use super::{JobMode, OpMode, OpenProtocolError, ID, ValidationResult, BoundedValidationResult};
+use super::{BoundedValidationResult, JobMode, OpMode, OpenProtocolError, ValidationResult, ID};
 use chrono::{DateTime, FixedOffset};
 use lazy_static::*;
 use regex::Regex;
