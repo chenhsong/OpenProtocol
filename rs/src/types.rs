@@ -213,6 +213,12 @@ impl From<u32> for ID {
     }
 }
 
+impl From<ID> for u32 {
+    fn from(id: ID) -> Self {
+        id.0.get()
+    }
+}
+
 impl PartialEq<u32> for ID {
     fn eq(&self, other: &u32) -> bool {
         self.0.get() == *other

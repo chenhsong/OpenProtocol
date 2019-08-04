@@ -1,7 +1,8 @@
 use super::filters::Filters;
 use super::utils::*;
 use super::{
-    Controller, JobMode, Language, OpMode, ID, OpenProtocolError, Result, ValidationResult, BoundedValidationResult,
+    BoundedValidationResult, Controller, JobMode, Language, OpMode, OpenProtocolError, Result,
+    ValidationResult, ID,
 };
 use chrono::{DateTime, FixedOffset};
 use serde::{Deserialize, Serialize};
@@ -416,7 +417,7 @@ pub enum Message<'a> {
         /// Language encoding.
         language: Language,
         //
-        /// A collection of `Filter` values containing what type(s) of messages to receive.
+        /// A collection of [`Filter`](struct.Filters.html) values containing what type(s) of messages to receive.
         filter: Filters,
         //
         /// Message configuration options.
@@ -558,16 +559,7 @@ impl<'a> Message<'a> {
     ///
     /// # Errors
     ///
-    /// Returns [`Err(OpenProtocolError)`] if there is an error, which may be one of the following:
-    ///
-    /// * `JsonError`: Error during parsing, which may be due to malformed JSON text, missing fields,
-    ///   wrong data types for fields etc.
-    /// * `EmptyField`: A mandatory `String` field is empty (i.e. zero-length) or all white-spaces.
-    /// * `InvalidField`: The value of a field is inappropriate for that field, although there is no syntax error.
-    ///   For example, encountering `NaN` on a numeric field usually yields this error.
-    /// * `ConstraintViolated`: An integrity constraint is violated by the data structure.
-    ///   For example, if current progress (`progress`) field of a `JobCard` structure is larger than
-    ///   its total production count (`total`) field.
+    /// Return `Err([OpenProtocolError](enum.OpenProtocolError.html))` if there is an error.
     ///
     pub fn parse_from_json_str(json: &'a str) -> Result<'a, Self> {
         match serde_json::from_str::<Message>(json) {
@@ -582,16 +574,7 @@ impl<'a> Message<'a> {
     ///
     /// # Errors
     ///
-    /// Returns [`Err(OpenProtocolError)`] if there is an error, which may be one of the following:
-    ///
-    /// * `JsonError`: Error during parsing, which may be due to malformed JSON text, missing fields,
-    ///   wrong data types for fields etc.
-    /// * `EmptyField`: A mandatory `String` field is empty (i.e. zero-length) or all white-spaces.
-    /// * `InvalidField`: The value of a field is inappropriate for that field, although there is no syntax error.
-    ///   For example, encountering `NaN` on a numeric field usually yields this error.
-    /// * `ConstraintViolated`: An integrity constraint is violated by the data structure.
-    ///   For example, if current progress (`progress`) field of a `JobCard` structure is larger than
-    ///   its total production count (`total`) field.
+    /// Return `Err([OpenProtocolError](enum.OpenProtocolError.html))` if there is an error.
     ///
     pub fn to_json_str(&self) -> Result<'_, String> {
         self.validate()?;
