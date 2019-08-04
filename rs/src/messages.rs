@@ -536,7 +536,9 @@ pub enum Message<'a> {
         /// User password.
         password: &'a str,
         //
-        /// Allowed access level for the user (0-10).
+        /// Allowed access level for the user.
+        ///
+        /// Valid values are from 0 to [`Message::MAX_OPERATOR_LEVEL`](enum.Message.html#associatedconstant.MAX_OPERATOR_LEVEL) (usually 10).
         level: u8,
         //
         /// Message configuration options.
@@ -559,7 +561,7 @@ impl<'a> Message<'a> {
     ///
     /// # Errors
     ///
-    /// Return `Err([OpenProtocolError](enum.OpenProtocolError.html))` if there is an error.
+    /// Return `Err(`[`OpenProtocolError`](enum.OpenProtocolError.html)`)` if there is an error.
     ///
     pub fn parse_from_json_str(json: &'a str) -> Result<'a, Self> {
         match serde_json::from_str::<Message>(json) {
@@ -574,7 +576,7 @@ impl<'a> Message<'a> {
     ///
     /// # Errors
     ///
-    /// Return `Err([OpenProtocolError](enum.OpenProtocolError.html))` if there is an error.
+    /// Return `Err(`[`OpenProtocolError`](enum.OpenProtocolError.html)`)` if there is an error.
     ///
     pub fn to_json_str(&self) -> Result<'_, String> {
         self.validate()?;
@@ -589,6 +591,12 @@ impl<'a> Message<'a> {
     }
 
     /// Create a `JOIN` message with default language and protocol version.
+    ///
+    /// The default language is [`Message::DEFAULT_LANGUAGE`](enum.Message.html#associatedconstant.DEFAULT_LANGUAGE)
+    /// (usually `EN`).
+    ///
+    /// The default protocol version is given in
+    /// [`Message::PROTOCOL_VERSION`](enum.Message.html#associatedconstant.PROTOCOL_VERSION).
     ///
     pub fn new_join(password: &'a str, filter: Filters) -> Self {
         Self::new_join_with_org(password, filter, None)

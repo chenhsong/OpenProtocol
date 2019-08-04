@@ -66,10 +66,9 @@ impl FromStr for Filters {
 
     /// Parse a comma-delimited `String` into a `Filters` values.
     ///
-    /// # Notes
-    ///
-    /// Notice that `from_str` never fails.
-    /// Unmatched tokens will simply be discarded.  If nothing matches, `Filters::None` will be returned.
+    /// Notice that `Filters::from_str` never fails.
+    /// Unmatched tokens will simply be discarded.
+    /// If nothing matches, `Filters::None` will be returned.
     ///
     /// # Examples
     ///

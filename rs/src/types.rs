@@ -64,26 +64,24 @@ pub enum OpMode {
     Others,
     /// The controller is off-line.
     ///
-    /// # Note
-    ///
     /// When the controller is off-line, both its operating mode and job mode should be `Offline`.
     Offline,
 }
 
 impl OpMode {
-    /// Returns true if OpMode::Unknown.
+    /// Returns true if `Unknown`.
     #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_unknown(&self) -> bool {
         *self == OpMode::Unknown
     }
 
-    /// Returns true if OpMode::Offline.
+    /// Returns true if `Offline`.
     #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_offline(&self) -> bool {
         *self == OpMode::Offline
     }
 
-    /// All variants other than OpMode::Unknown and OpMode::Offline means on-line.
+    /// All variants other than `Unknown` and `Offline` means on-line.
     #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_online(&self) -> bool {
         match self {
@@ -92,7 +90,7 @@ impl OpMode {
         }
     }
 
-    /// A machine is producing if it is in either Automatic or Semi-Automatic mode.
+    /// A machine is producing if it is in either `Automatic` or `Semi-Automatic` mode.
     #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_producing(&self) -> bool {
         match self {
@@ -135,26 +133,24 @@ pub enum JobMode {
     ID15,
     /// The controller is off-line.
     ///
-    /// # Note
-    ///
     /// When the controller is off-line, both its operating mode and job mode should be `Offline`.
     Offline,
 }
 
 impl JobMode {
-    /// Returns true if JobMode::Unknown.
+    /// Returns true if `Unknown`.
     #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_unknown(&self) -> bool {
         *self == JobMode::Unknown
     }
 
-    /// Returns true if JobMode::Offline.
+    /// Returns true if `Offline`.
     #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_offline(&self) -> bool {
         *self == JobMode::Offline
     }
 
-    /// All variants other than JobMode::Unknown and JobMode::Offline means on-line.
+    /// All variants other than `Unknown` and `Offline` means on-line.
     #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_online(&self) -> bool {
         match self {
@@ -170,7 +166,9 @@ impl Default for JobMode {
     }
 }
 
-/// A numeric ID number that cannot be zero or negative.
+/// A 32-bit numeric ID that cannot be zero or negative.
+///
+/// This type is usually used for specifying a unique identification number.
 ///
 #[derive(
     Display,
@@ -192,12 +190,23 @@ pub struct ID(NonZeroU32);
 impl ID {
     /// Create a new ID value.
     ///
-    /// # Panics
+    /// If `num` is known to be non-zero, you can use `ID::from(num)` which does not require
+    /// unwrapping a `Result`.
     ///
-    /// Panics if `num` is zero.
+    /// # Errors
     ///
-    pub fn new(num: u32) -> Self {
-        Self(NonZeroU32::new(num).unwrap())
+    /// Return `Err(&'static str)` if `num` is zero.
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// use ichen_openprotocol::*;
+    /// let id = ID::new(42).unwrap();
+    /// assert_eq!(42, u32::from(id));
+    /// assert!(ID::new(0).is_err());
+    /// ~~~
+    pub fn new(num: u32) -> std::result::Result<Self, &'static str> {
+        NonZeroU32::new(num).map(ID).ok_or("ID cannot be zero.")
     }
 }
 
@@ -208,6 +217,24 @@ impl Debug for ID {
 }
 
 impl From<u32> for ID {
+    /// Create a new ID from an integer.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `num` is zero.
+    ///
+    /// ~~~should_panic
+    /// use ichen_openprotocol::*;
+    /// let id = ID::from(0);    // This line should panic
+    /// ~~~
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// use ichen_openprotocol::*;
+    /// let id = ID::from(42);
+    /// assert_eq!(42, u32::from(id));
+    /// ~~~
     fn from(num: u32) -> Self {
         Self(NonZeroU32::new(num).unwrap())
     }

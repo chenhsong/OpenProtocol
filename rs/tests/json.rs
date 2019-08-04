@@ -2,7 +2,7 @@ use ichen_openprotocol::*;
 use Message::*;
 
 #[test]
-fn test_serialize() {
+fn integration_test_serialize_to_json() {
     let mut m = Message::new_join(
         "hello",
         Filters::Status + Filters::All + Filters::Cycle + Filters::Operators,
@@ -19,7 +19,7 @@ fn test_serialize() {
 }
 
 #[test]
-fn test_deserialize() {
+fn integration_test_deserialize_from_json() {
     let m = Message::parse_from_json_str(
         r#"{"$type":"Join","version":"1.0.0","password":"hello","language":"EN","filter":"Mold, Cycle","sequence":42,"priority":10}"#,
     )
