@@ -384,7 +384,7 @@ fn main() {
                     // Error when sending message to the WebSocket
                     // Log the error, send Close command and terminate the send loop
                     eprintln!("Error sending message: {}", err);
-                    sender.send_message(&websocket::Message::close()).unwrap();
+                    let _ = sender.send_message(&websocket::Message::close());
                     println!("Closing WebSocket connection...");
                     return;
                 }
@@ -426,8 +426,8 @@ fn main() {
     stdin().read_line(&mut input).expect("Failed to read line from stdin.");
 
     // Close the connection
-    tx.send(OwnedMessage::Close(Some(<CloseData>::new(0, "Program termination.".to_string()))))
-        .expect("Cannot send to channel!");
+    let _ =
+        tx.send(OwnedMessage::Close(Some(<CloseData>::new(0, "Program termination.".to_string()))));
 
     // Exit
     println!("Waiting for child threads to exit...");
