@@ -210,7 +210,9 @@ impl Default for StateValues<'_> {
 
 /// All Open Protocol message types.
 ///
-/// See [this document](https://github.com/chenhsong/OpenProtocol/blob/master/cs/doc/messages_reference.md) for details.
+/// See [this document] for details.
+///
+/// [this document]: https://github.com/chenhsong/OpenProtocol/blob/master/cs/doc/messages_reference.md
 ///
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "$type")]
@@ -230,7 +232,9 @@ pub enum Message<'a> {
         controller_id: ID,
         /// Unique action code.
         ///
-        /// See [this document](https://github.com/chenhsong/OpenProtocol/blob/master/doc/actions.md) for details.
+        /// See [this document] for details.
+        ///
+        /// [this document]: https://github.com/chenhsong/OpenProtocol/blob/master/doc/actions.md
         action_id: i32,
         //
         /// Time-stamp of the event.
@@ -246,8 +250,10 @@ pub enum Message<'a> {
     ///
     /// # Response
     ///
-    /// The Server should reply with a [`ControllersList`](enum.Message.html#variant.ControllersList)
-    /// message.
+    /// The Server should reply with a [`ControllersList`] message.
+    ///
+    /// [`ControllersList`]: enum.Message.html#variant.ControllersList
+    ///
     #[serde(rename_all = "camelCase")]
     RequestControllersList {
         /// Unique ID of the controller to request.
@@ -262,7 +268,10 @@ pub enum Message<'a> {
     },
     //
     /// The `RESP_CNTRLER_LIST` message, sent by the server in response to a
-    /// [`RequestControllersList`](enum.Message.html#variant.RequestControllersList) message.
+    /// [`RequestControllersList`] message.
+    ///
+    /// [`RequestControllersList`]: enum.Message.html#variant.RequestControllersList
+    ///
     #[serde(rename_all = "camelCase")]
     ControllersList {
         /// List of controllers requested by a previous `RequestControllersList` message.
@@ -307,7 +316,9 @@ pub enum Message<'a> {
         //
         /// State of an alarm (if any) on the controller (or `None` if not relevant).
         ///
-        /// See [this document](https://github.com/chenhsong/OpenProtocol/blob/master/doc/alarms.md) for valid alarm codes.
+        /// See [this document] for valid alarm codes.
+        ///
+        /// [this document]: https://github.com/chenhsong/OpenProtocol/blob/master/doc/alarms.md
         #[serde(skip_serializing_if = "Option::is_none")]
         alarm: Option<KeyValuePair<&'a str, bool>>,
         //
@@ -358,8 +369,7 @@ pub enum Message<'a> {
         /// Snapshot of the current known states of the controller.
         state: StateValues<'a>,
         //
-        /// A [`Controller`](struct.Controller.html) data structure containing the last-known state
-        /// of the controller.
+        /// A [`Controller`] data structure containing the last-known state of the controller.
         ///
         /// This field is only sent once by the server as soon as a new controller has connected
         /// to the network.
@@ -367,6 +377,8 @@ pub enum Message<'a> {
         ///
         /// If this field is not `None`, then all other info fields should be `None` or have values
         /// equal to the matching fields in `controller`.
+        ///
+        /// [`Controller`]: struct.Controller.html
         #[serde(skip_serializing_if = "Option::is_none")]
         controller: Option<Box<Controller<'a>>>,
         //
@@ -383,8 +395,9 @@ pub enum Message<'a> {
         //
         /// A data dictionary containing a set of cycle data.
         ///
-        /// See [this document](https://github.com/chenhsong/OpenProtocol/blob/master/doc/cycledata.md)
-        /// for examples.
+        /// See [this document] for examples.
+        ///
+        /// [this document]: https://github.com/chenhsong/OpenProtocol/blob/master/doc/cycledata.md
         data: HashMap<&'a str, f64>,
         //
         /// Time-stamp of the event.
@@ -404,8 +417,9 @@ pub enum Message<'a> {
     ///
     /// # Action Required
     ///
-    /// The user should send a [`JobCardsList`](enum.Message.html#variant.JobCardsList) message
-    /// to the Server as a reply.
+    /// The user should send a [`JobCardsList`] message to the Server as a reply.
+    ///
+    /// [`JobCardsList`]: enum.Message.html#variant.JobCardsList
     #[serde(rename_all = "camelCase")]
     RequestJobCardsList {
         /// Unique ID of the controller.
@@ -416,8 +430,9 @@ pub enum Message<'a> {
         options: MessageOptions<'a>,
     },
     //
-    /// The `RESP_JOBSLIST` message, sent to the server in response to a
-    /// [`RequestJobCardsList`](enum.Message.html#variant.RequestJobCardsList) message.
+    /// The `RESP_JOBSLIST` message, sent to the server in response to a [`RequestJobCardsList`] message.
+    ///
+    /// [`RequestJobCardsList`]: enum.Message.html#variant.RequestJobCardsList
     #[serde(rename_all = "camelCase")]
     JobCardsList {
         /// Unique ID of the controller.
@@ -435,8 +450,9 @@ pub enum Message<'a> {
     ///
     /// # Response
     ///
-    /// The Server should reply with a [`JoinResponse`](enum.Message.html#variant.JoinResponse)
-    /// message.
+    /// The Server should reply with a [`JoinResponse`] message.
+    ///
+    /// [`JoinResponse`]: enum.Message.html#variant.JoinResponse
     #[serde(rename_all = "camelCase")]
     Join {
         /// Organization ID (if any).
@@ -454,8 +470,9 @@ pub enum Message<'a> {
         /// Language encoding.
         language: Language,
         //
-        /// A collection of [`Filter`](struct.Filters.html) values containing what
-        /// type(s) of messages to receive.
+        /// A collection of [`Filter`] values containing what type(s) of messages to receive.
+        ///
+        /// [`Filter`]: struct.Filters.html
         filter: Filters,
         //
         /// Message configuration options.
@@ -463,8 +480,9 @@ pub enum Message<'a> {
         options: MessageOptions<'a>,
     },
     //
-    /// The `RESP_JOIN` message, sent by the Server in response to a
-    /// [`Join`](enum.Message.html#variant.Join) message.
+    /// The `RESP_JOIN` message, sent by the Server in response to a [`Join`] message.
+    ///
+    /// [`Join`]: enum.Message.html#variant.Join
     #[serde(rename_all = "camelCase")]
     JoinResponse {
         /// Result code, >= 100 indicates success.
@@ -488,7 +506,9 @@ pub enum Message<'a> {
     ///
     /// # Response
     ///
-    /// The Server should reply with a [`MoldData`](enum.Message.html#variant.MoldData) message.
+    /// The Server should reply with a [`MoldData`] message.
+    ///
+    /// [`MoldData`]: enum.Message.html#variant.MoldData
     #[serde(rename_all = "camelCase")]
     RequestMoldData {
         /// Unique ID of the controller.
@@ -499,10 +519,11 @@ pub enum Message<'a> {
         options: MessageOptions<'a>,
     },
     //
-    /// The `RESP_MOLD` message, sent by the server in response to a
-    /// [`RequestMoldData`](enum.Message.html#variant.RequestMoldData) message
-    /// or a [`ReadMoldData`](enum.Message.html#variant.ReadMoldData) message with
-    /// `field` set to `None` (meaning read all).
+    /// The `RESP_MOLD` message, sent by the server in response to a [`RequestMoldData`] message
+    /// or a [`ReadMoldData`] message with `field` set to `None` (meaning read all).
+    ///
+    /// [`RequestMoldData`]: enum.Message.html#variant.RequestMoldData
+    /// [`ReadMoldData`]: enum.Message.html#variant.ReadMoldData
     #[serde(rename_all = "camelCase")]
     MoldData {
         /// Unique ID of the controller.
@@ -532,8 +553,11 @@ pub enum Message<'a> {
     ///
     /// # Response
     ///
-    /// The Server should reply with a [`MoldData`](enum.Message.html#variant.MoldData) message
-    /// if `field` is `None`, or a [`MoldDataValue`])(enum.Message.html#variant.MoldDataValue) message.
+    /// The Server should reply with a [`MoldData`] message if `field` is `None`,
+    /// or a [`MoldDataValue`] message.
+    ///
+    /// [`MoldData`]: enum.Message.html#variant.MoldData
+    /// [`MoldDataValue`]: enum.Message.html#variant.MoldDataValue
     #[serde(rename_all = "camelCase")]
     ReadMoldData {
         /// Unique ID of the controller.
@@ -548,7 +572,9 @@ pub enum Message<'a> {
     },
     //
     /// The `RESP_MOLD_DATA_VALUE` message, sent by the server in response to a
-    /// [`ReadMoldData`](enum.Message.html#variant.ReadMoldData) message.
+    /// [`ReadMoldData`] message.
+    ///
+    /// [`ReadMoldData`]: enum.Message.html#variant.ReadMoldData
     #[serde(rename_all = "camelCase")]
     MoldDataValue {
         /// Unique ID of the controller.
@@ -570,8 +596,9 @@ pub enum Message<'a> {
     ///
     /// # Action Required
     ///
-    /// The user should send an [`OperatorInfo`](enum.Message.html#variant.OperatorInfo)
-    /// message to the Server as a reply.
+    /// The user should send an [`OperatorInfo`] message to the Server as a reply.
+    ///
+    /// [`OperatorInfo`]: enum.Message.html#variant.OperatorInfo
     #[serde(rename_all = "camelCase")]
     LoginOperator {
         /// Unique ID of the controller.
@@ -586,7 +613,9 @@ pub enum Message<'a> {
     },
     //
     /// The `RESP_PWD_LEVEL` message, sent to the server in response to a
-    /// [`LoginOperator`](enum.Message.html#variant.LoginOperator) message.
+    /// [`LoginOperator`] message.
+    ///
+    /// [`LoginOperator`]: enum.Message.html#variant.LoginOperator
     #[serde(rename_all = "camelCase")]
     OperatorInfo {
         /// Unique ID of the controller.
@@ -604,7 +633,9 @@ pub enum Message<'a> {
         //
         /// Allowed access level for the user.
         ///
-        /// Valid values are from 0 to [`Message::MAX_OPERATOR_LEVEL`](enum.Message.html#associatedconstant.MAX_OPERATOR_LEVEL) (usually 10).
+        /// Valid values are from 0 to [`MAX_OPERATOR_LEVEL`] (usually 10).
+        ///
+        /// [`MAX_OPERATOR_LEVEL`]: enum.Message.html#associatedconstant.MAX_OPERATOR_LEVEL
         level: u8,
         //
         /// Message configuration options.
@@ -627,7 +658,9 @@ impl<'a> Message<'a> {
     ///
     /// # Errors
     ///
-    /// Return `Err(`[`OpenProtocolError`](enum.OpenProtocolError.html)`)` if there is an error.
+    /// Return `Err(`[`OpenProtocolError`]`)` if there is an error.
+    ///
+    /// [`OpenProtocolError`]: enum.OpenProtocolError.html
     ///
     pub fn parse_from_json_str(json: &'a str) -> Result<'a, Self> {
         match serde_json::from_str::<Message>(json) {
@@ -642,7 +675,9 @@ impl<'a> Message<'a> {
     ///
     /// # Errors
     ///
-    /// Return `Err(`[`OpenProtocolError`](enum.OpenProtocolError.html)`)` if there is an error.
+    /// Return `Err(`[`OpenProtocolError`]`)` if there is an error.
+    ///
+    /// [`OpenProtocolError`]: enum.OpenProtocolError.html
     ///
     pub fn to_json_str(&self) -> Result<'_, String> {
         self.validate()?;
@@ -657,11 +692,12 @@ impl<'a> Message<'a> {
 
     /// Create a `JOIN` message with default language and protocol version.
     ///
-    /// The default language is [`Message::DEFAULT_LANGUAGE`](enum.Message.html#associatedconstant.DEFAULT_LANGUAGE)
-    /// (usually `EN`).
+    /// The default language is [`DEFAULT_LANGUAGE`] (usually `EN`).
     ///
-    /// The default protocol version is given in
-    /// [`Message::PROTOCOL_VERSION`](enum.Message.html#associatedconstant.PROTOCOL_VERSION).
+    /// The default protocol version is given in [`PROTOCOL_VERSION`].
+    ///
+    /// [`DEFAULT_LANGUAGE`]: enum.Message.html#associatedconstant.DEFAULT_LANGUAGE
+    /// [`PROTOCOL_VERSION`]: enum.Message.html#associatedconstant.PROTOCOL_VERSION
     ///
     pub fn new_join(password: &'a str, filter: Filters) -> Self {
         Self::new_join_with_org(password, filter, None)

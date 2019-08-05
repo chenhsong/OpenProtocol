@@ -7,7 +7,9 @@ use std::str::FromStr;
 bitflags! {
     /// General authorizations to access the iChen System via Open Protocol.
     ///
-    /// For details, see [this document](https://github.com/chenhsong/OpenProtocol/blob/master/doc/enums.md#filters).
+    /// See [this document] for details.
+    ///
+    /// [this document]: https://github.com/chenhsong/OpenProtocol/blob/master/doc/enums.md#filters
     ///
     pub struct Filters: u32 {
         /// No rights.

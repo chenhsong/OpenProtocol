@@ -15,8 +15,10 @@ pub fn is_zero(num: &i32) -> bool {
 ///
 /// # Errors
 ///
-/// Returns `Err(`[`OpenProtocolError::EmptyField`](enum.OpenProtocolError.html#variant.EmptyField)`)`
-/// if `text` is empty or contains all whitespace.
+/// Returns `Err(`[`OpenProtocolError::EmptyField`]`)` if `text` is empty or contains
+/// all whitespace.
+///
+/// [`OpenProtocolError::EmptyField`]: enum.OpenProtocolError.html#variant.EmptyField
 ///
 pub fn check_str_empty<S: AsRef<str>>(text: S, field: &'static str) -> ValidationResult {
     if text.as_ref().trim().is_empty() {
@@ -29,8 +31,10 @@ pub fn check_str_empty<S: AsRef<str>>(text: S, field: &'static str) -> Validatio
 ///
 /// # Errors
 ///
-/// Returns `Err(`[`OpenProtocolError::EmptyField`](enum.OpenProtocolError.html#variant.EmptyField)`)`
-/// if `opt` is `Some` text which either is empty or contains all whitespace.
+/// Returns `Err(`[`OpenProtocolError::EmptyField`]`)` if `opt` is `Some` text which either
+/// is empty or contains all whitespace.
+///
+/// [`OpenProtocolError::EmptyField`]: enum.OpenProtocolError.html#variant.EmptyField
 ///
 pub fn check_optional_str_empty<S: AsRef<str>>(
     opt: &Option<S>,
@@ -48,8 +52,10 @@ pub fn check_optional_str_empty<S: AsRef<str>>(
 ///
 /// # Errors
 ///
-/// Returns `Err(`[`OpenProtocolError::EmptyField`](enum.OpenProtocolError.html#variant.EmptyField)`)`
-/// if `opt` is `Some` text which is not empty but contains all whitespace.
+/// Returns `Err(`[`OpenProtocolError::EmptyField`]`)` if `opt` is `Some` text which is
+/// not empty but contains all whitespace.
+///
+/// [`OpenProtocolError::EmptyField`]: enum.OpenProtocolError.html#variant.EmptyField
 ///
 pub fn check_optional_str_whitespace<S: AsRef<str>>(
     opt: &Option<S>,
@@ -67,8 +73,10 @@ pub fn check_optional_str_whitespace<S: AsRef<str>>(
 ///
 /// # Errors
 ///
-/// Returns `Err(`[`OpenProtocolError::InvalidField`](enum.OpenProtocolError.html#variant.InvalidField)`)`
-/// if `value` is not a normal number (e.g. `NaN`, `Infinity`).
+/// Returns `Err(`[`OpenProtocolError::InvalidField`]`)` if `value` is not a normal number
+/// (e.g. `NaN`, `Infinity`).
+///
+/// [`OpenProtocolError::InvalidField`]: enum.OpenProtocolError.html#variant.InvalidField
 ///
 pub fn check_f64(value: f64, field: &str) -> BoundedValidationResult {
     if value.is_nan() {

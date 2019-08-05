@@ -7,7 +7,9 @@ use std::num::NonZeroU32;
 
 /// Supported UI languages for the controller's HMI.
 ///
-/// For details see [this document](https://github.com/chenhsong/OpenProtocol/blob/master/doc/enums.md#languages).
+/// See [this document] for details.
+///
+/// [this document]: https://github.com/chenhsong/OpenProtocol/blob/master/doc/enums.md#languages
 ///
 #[derive(Debug, Ord, PartialOrd, PartialEq, Eq, Hash, Serialize, Deserialize, Copy, Clone)]
 pub enum Language {
@@ -49,7 +51,9 @@ impl Default for Language {
 
 /// Operating modes of the controller.
 ///
-/// For details, see [this document](https://github.com/chenhsong/OpenProtocol/blob/master/doc/enums.md#opmodes).
+/// See [this document] for details.
+///
+/// [this document]: https://github.com/chenhsong/OpenProtocol/blob/master/doc/enums.md#opmodes
 ///
 #[derive(Debug, Ord, PartialOrd, PartialEq, Eq, Hash, Serialize, Deserialize, Copy, Clone)]
 pub enum OpMode {
@@ -111,7 +115,9 @@ impl Default for OpMode {
 ///
 /// On some controller models, job modes 1-15 (`ID01` - `ID15`) can be user-defined.
 ///
-/// For details, see [this document](https://github.com/chenhsong/OpenProtocol/blob/master/doc/enums.md#jobmodes).
+/// See [this document] for details.
+///
+/// [this document]: https://github.com/chenhsong/OpenProtocol/blob/master/doc/enums.md#jobmodes
 ///
 #[derive(Debug, Ord, PartialOrd, PartialEq, Eq, Hash, Serialize, Deserialize, Copy, Clone)]
 pub enum JobMode {
@@ -215,14 +221,14 @@ impl ID {
     ///
     /// ~~~should_panic
     /// # use ichen_openprotocol::*;
-    /// let id = ID::new(0);    // This will panic.
+    /// let id = ID::from_u32(0);    // This will panic.
     /// ~~~
     ///
     /// # Examples
     ///
     /// ~~~
     /// # use ichen_openprotocol::*;
-    /// let id = ID::new(42).unwrap();
+    /// let id = ID::from_u32(42).unwrap();
     /// assert_eq!(42, u32::from(id));
     /// ~~~
     pub fn from_u32(value: u32) -> Self {

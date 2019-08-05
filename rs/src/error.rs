@@ -15,7 +15,9 @@ pub enum OpenProtocolError<'a> {
     InconsistentState(Cow<'a, str>),
     //
     /// The value of a field is not consistent with the matching value in the
-    /// [`Controller`](struct.Controller.html) structure.
+    /// [`Controller`] structure.
+    ///
+    /// [`Controller`]: struct.Controller.html
     InconsistentField(Cow<'a, str>),
     //
     /// An enforced constraint is broken.
