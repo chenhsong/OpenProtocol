@@ -75,19 +75,19 @@ pub fn check_f64(value: f64, field: &str) -> BoundedValidationResult {
         Err(OpenProtocolError::InvalidField {
             field: field.into(),
             value: "NaN".into(),
-            description: "NaN is not a supported value.".into(),
+            description: "NaN is not a supported value".into(),
         })
     } else if value.is_infinite() {
         Err(OpenProtocolError::InvalidField {
             field: field.into(),
             value: "Infinity".into(),
-            description: "Infinity is not a supported value.".into(),
+            description: "Infinity is not a supported value".into(),
         })
     } else if !value.is_normal() && value != 0.0 {
         Err(OpenProtocolError::InvalidField {
             field: field.into(),
             value: "Sub-normal".into(),
-            description: "Sub-normal number is not a supported value.".into(),
+            description: "sub-normal number is not a supported value".into(),
         })
     } else {
         Ok(())
@@ -132,7 +132,7 @@ where
     if id == 0 {
         Ok(Some(None))
     } else {
-        Ok(Some(Some(ID::from(id))))
+        Ok(Some(Some(ID::from_u32(id))))
     }
 }
 

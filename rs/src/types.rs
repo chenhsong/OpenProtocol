@@ -1,6 +1,7 @@
 use derive_more::*;
 use serde::{Deserialize, Serialize};
 use std::cmp::{Ordering, PartialEq, PartialOrd};
+use std::convert::TryFrom;
 use std::fmt::Debug;
 use std::num::NonZeroU32;
 
@@ -188,10 +189,7 @@ impl Default for JobMode {
 pub struct ID(NonZeroU32);
 
 impl ID {
-    /// Create a new ID value.
-    ///
-    /// If `num` is known to be non-zero, you can use `ID::from(num)` which does not require
-    /// unwrapping a `Result`.
+    /// Create a new ID from an integer value.
     ///
     /// # Errors
     ///
@@ -200,13 +198,35 @@ impl ID {
     /// # Examples
     ///
     /// ~~~
-    /// use ichen_openprotocol::*;
+    /// # use ichen_openprotocol::*;
     /// let id = ID::new(42).unwrap();
     /// assert_eq!(42, u32::from(id));
-    /// assert!(ID::new(0).is_err());
+    /// assert_eq!(ID::new(0).is_err());
     /// ~~~
-    pub fn new(num: u32) -> std::result::Result<Self, &'static str> {
-        NonZeroU32::new(num).map(ID).ok_or("ID cannot be zero.")
+    pub fn new(value: u32) -> std::result::Result<Self, &'static str> {
+        Self::try_from(value)
+    }
+    //
+    /// Create a new ID from an integer value.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `value` is zero.
+    ///
+    /// ~~~should_panic
+    /// # use ichen_openprotocol::*;
+    /// let id = ID::new(0);    // This will panic.
+    /// ~~~
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// let id = ID::new(42).unwrap();
+    /// assert_eq!(42, u32::from(id));
+    /// ~~~
+    pub fn from_u32(value: u32) -> Self {
+        Self::try_from(value).unwrap()
     }
 }
 
@@ -216,33 +236,43 @@ impl Debug for ID {
     }
 }
 
-impl From<u32> for ID {
-    /// Create a new ID from an integer.
+impl TryFrom<u32> for ID {
+    type Error = &'static str;
+
+    /// Create a new ID from an integer value;
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// Panics if `num` is zero.
-    ///
-    /// ~~~should_panic
-    /// use ichen_openprotocol::*;
-    /// let id = ID::from(0);    // This line should panic
-    /// ~~~
+    /// Return `Err(&'static str)` if `num` is zero.
     ///
     /// # Examples
     ///
     /// ~~~
-    /// use ichen_openprotocol::*;
-    /// let id = ID::from(42);
+    /// # use ichen_openprotocol::*;
+    /// let id = ID::try_from(42).unwrap();
     /// assert_eq!(42, u32::from(id));
+    /// assert_eq!(ID::try_from(0).is_err());
     /// ~~~
-    fn from(num: u32) -> Self {
-        Self(NonZeroU32::new(num).unwrap())
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
+        NonZeroU32::new(value).map(Self).ok_or("ID value cannot be zero.")
     }
 }
 
 impl From<ID> for u32 {
     fn from(id: ID) -> Self {
         id.0.get()
+    }
+}
+
+impl AsRef<NonZeroU32> for ID {
+    fn as_ref(&self) -> &NonZeroU32 {
+        &self.0
+    }
+}
+
+impl AsMut<NonZeroU32> for ID {
+    fn as_mut(&mut self) -> &mut NonZeroU32 {
+        &mut self.0
     }
 }
 

@@ -182,7 +182,7 @@ impl<'a> StateValues<'a> {
         mold: Option<&'a str>,
     ) -> Self {
         Self {
-            operator_id: operator.map(|o| o.into()),
+            operator_id: operator.map(ID::from_u32),
             job_card_id: job_card.map(|j| j.into()),
             mold_id: mold.map(|m| m.into()),
             ..Self::new(op, job)
@@ -775,12 +775,7 @@ impl<'a> Message<'a> {
                     check_optional_str_whitespace(x, "operator_name")?;
 
                     if let Some(c) = controller {
-                        if *x
-                            != c.operator
-                                .as_ref()
-                                .map(|user| user.operator_name)
-                                .and_then(|name| name)
-                        {
+                        if *x != c.operator.as_ref().map(|u| u.operator_name).and_then(|n| n) {
                             return Err(OpenProtocolError::InconsistentField(
                                 "operator_name".into(),
                             ));
@@ -851,7 +846,7 @@ impl<'a> Message<'a> {
                     return Err(OpenProtocolError::InvalidField {
                         field: "language".into(),
                         value: "Unknown".into(),
-                        description: "Language cannot be Unknown.".into(),
+                        description: "language cannot be Unknown".into(),
                     });
                 }
                 options.validate()
@@ -930,7 +925,7 @@ mod test {
         map.insert("foo", 0.0);
 
         let m = MoldData {
-            controller_id: 123.into(),
+            controller_id: ID::from_u32(123),
             data: map,
 
             timestamp: DateTime::parse_from_rfc3339("2019-02-26T02:03:04+08:00").unwrap(),
@@ -968,7 +963,7 @@ mod test {
 
         if let ControllersList { data, .. } = &m {
             assert_eq!(2, data.len());
-            let c = data.get(&12345.into()).unwrap();
+            let c = data.get(&ID::from_u32(12345)).unwrap();
             assert_eq!("Hello", c.display_name);
         } else {
             panic!("Expected ControllersList, got {:#?}", m);
@@ -1042,14 +1037,14 @@ mod test {
     #[test]
     fn test_message_controller_status_to_json() {
         let status = ControllerStatus {
-            controller_id: 12345.into(),
+            controller_id: ID::from_u32(12345),
             display_name: None,
             is_disconnected: None,
             op_mode: None,
             job_mode: None,
             job_card_id: None,
             mold_id: Some(None),
-            operator_id: Some(Some(123.into())),
+            operator_id: Some(Some(ID::from_u32(123))),
             operator_name: Some(None),
             variable: None,
             audit: None,
@@ -1072,7 +1067,7 @@ mod test {
     #[test]
     fn test_message_controller_status_to_json2() {
         let status = ControllerStatus {
-            controller_id: 12345.into(),
+            controller_id: ID::from_u32(12345),
             display_name: None,
             is_disconnected: Some(true),
             op_mode: None,

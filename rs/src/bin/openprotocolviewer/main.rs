@@ -33,6 +33,7 @@
 //! access rights, you'll fail to see all Open Protocol™ messages._
 
 use std::collections::HashMap;
+use std::convert::TryInto;
 use std::error::Error;
 use std::io::{stdin, Write};
 use std::sync::mpsc::channel;
@@ -136,7 +137,7 @@ fn process_incoming_message<'a>(json: &'a str, builtin: &'a Constants<'a>) -> Op
                 // Return access level
                 Some(Message::OperatorInfo {
                     controller_id,
-                    operator_id: Some((u32::from(*level) + 1).into()),
+                    operator_id: Some((u32::from(*level) + 1).try_into().unwrap()), // Cheap: Use the access level as the operator's ID
                     name,
                     password,
                     level: *level,

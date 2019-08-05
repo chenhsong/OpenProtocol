@@ -204,13 +204,13 @@ impl<'a> Controller<'a> {
                         return Err(OpenProtocolError::InvalidField {
                             field: "ip[port]".into(),
                             value: port.into(),
-                            description: "IP port cannot be zero.".into(),
+                            description: "IP port cannot be zero".into(),
                         });
                     } else if n > 0 && unspecified {
                         return Err(OpenProtocolError::InvalidField {
                             field: "ip[port]".into(),
                             value: port.into(),
-                            description: "Null IP must have zero port number.".into(),
+                            description: "null IP must have zero port number".into(),
                         });
                     }
                 }
@@ -231,7 +231,7 @@ impl<'a> Controller<'a> {
 impl Default for Controller<'_> {
     fn default() -> Self {
         Controller {
-            controller_id: 1.into(),
+            controller_id: ID::from_u32(1),
             display_name: "Unknown",
             controller_type: "Unknown",
             version: "Unknown",
@@ -261,7 +261,7 @@ mod test {
         let c = Controller {
             op_mode: OpMode::Automatic,
             job_mode: JobMode::ID02,
-            operator: Some(Operator::new_with_name(123.into(), "John")),
+            operator: Some(Operator::new_with_name(ID::from_u32(123), "John")),
             ..Default::default()
         };
         c.validate().unwrap();
@@ -289,7 +289,9 @@ mod test {
 
     #[test]
     fn test_operator_validate() {
-        Operator { operator_id: 123.into(), operator_name: Some("John") }.validate().unwrap();
+        Operator { operator_id: ID::from_u32(123), operator_name: Some("John") }
+            .validate()
+            .unwrap();
     }
 
     #[test]

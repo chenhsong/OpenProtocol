@@ -33,7 +33,7 @@ impl std::error::Error for OpenProtocolError<'_> {
             //
             // Invalid field value
             OpenProtocolError::InvalidField { description, .. } if description.is_empty() => {
-                "Invalid field value."
+                "invalid field value"
             }
             OpenProtocolError::InvalidField { description, .. } => description,
             //
@@ -42,16 +42,16 @@ impl std::error::Error for OpenProtocolError<'_> {
             //
             // Inconsistent field
             OpenProtocolError::InconsistentField(_) => {
-                "Value of field is not the same as matching field in the Controller."
+                "value of field is not the same as matching field in the Controller"
             }
             //
             // Inconsistent state
             OpenProtocolError::InconsistentState(_) => {
-                "Value of field is not the same as matching field in the state."
+                "value of field is not the same as matching field in the state"
             }
             //
             // Field empty
-            OpenProtocolError::EmptyField(_) => "Field cannot be empty or all white-space.",
+            OpenProtocolError::EmptyField(_) => "field cannot be empty or all whitespace",
         }
     }
 
@@ -73,28 +73,32 @@ impl std::fmt::Display for OpenProtocolError<'_> {
             OpenProtocolError::InvalidField { field, value, description }
                 if description.is_empty() =>
             {
-                write!(f, "Value [{}] is invalid for the field {}", value, field)
+                write!(f, "value [{}] is invalid for the field {}", value, field)
             }
             OpenProtocolError::InvalidField { field, value, description } => {
-                write!(f, "Value [{}] is invalid for the field {}: {}.", value, field, description)
+                write!(f, "value [{}] is invalid for the field {}: {}", value, field, description)
             }
             //
             // Constraint violation
             OpenProtocolError::ConstraintViolated(err) => err.fmt(f),
             //
             // Inconsistent field value
-            OpenProtocolError::InconsistentField(field) => {
-                write!(f, "Value of field {} is not the same as the matching field in the Controller.", field)
-            }
+            OpenProtocolError::InconsistentField(field) => write!(
+                f,
+                "value of field {} is not the same as the matching field in the Controller",
+                field
+            ),
             //
             // Inconsistent state value
-            OpenProtocolError::InconsistentState(field) => {
-                write!(f, "Value of field {} is not the same as the matching field in state.", field)
-            }
+            OpenProtocolError::InconsistentState(field) => write!(
+                f,
+                "value of field {} is not the same as the matching field in the state",
+                field
+            ),
             //
             // Field empty
             OpenProtocolError::EmptyField(field) => {
-                write!(f, "Field {} cannot be empty or all white-space.", field)
+                write!(f, "field {} cannot be empty or all whitespace", field)
             }
         }
     }
