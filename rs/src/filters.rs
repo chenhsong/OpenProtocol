@@ -12,7 +12,7 @@ bitflags! {
     pub struct Filters: u32 {
         /// No rights.
         const None = 0;
-
+        //
         /// Controller status update messages.
         const Status = 0b_0000_0001;
         /// Cycle data messages.
@@ -40,7 +40,7 @@ bitflags! {
     }
 }
 
-static ALL: &str = "Status, Cycle, Mold, Actions, Alarms, Audit, All";
+static ALL: &str = "Status | Cycle | Mold | Actions | Alarms | Audit | All";
 
 impl Filters {
     /// Is a particular set of filters set?
@@ -107,7 +107,6 @@ impl FromStr for Filters {
 
 impl From<&str> for Filters {
     /// Call `Filters::from_str` to parse a filters value from a comma-delimited string.
-    ///
     fn from(s: &str) -> Self {
         Self::from_str(s).unwrap()
     }
@@ -115,7 +114,6 @@ impl From<&str> for Filters {
 
 impl Into<String> for Filters {
     /// Convert filters value into a comma-delimited list.
-    ///
     fn into(self) -> String {
         format!("{}", self)
     }
@@ -158,9 +156,8 @@ impl std::ops::AddAssign for Filters {
 
 impl std::fmt::Display for Filters {
     /// Display filters value as comma-delimited list.
-    ///
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let text = format!("{:?}", self).replace(" | ", ", ");
+        let text = format!("{:?}", self);
         let mut slice = text.trim();
 
         // Remove redundant flags when All is present
@@ -171,7 +168,7 @@ impl std::fmt::Display for Filters {
         if text.is_empty() {
             write!(f, "None")
         } else {
-            write!(f, "{}", slice)
+            write!(f, "{}", slice.replace(" | ", ", "))
         }
     }
 }

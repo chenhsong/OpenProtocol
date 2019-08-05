@@ -34,7 +34,6 @@ impl<'a> Operator<'a> {
     }
 
     /// Validate the data structure.
-    ///
     pub fn validate(&self) -> ValidationResult {
         check_optional_str_empty(&self.operator_name, "operator_name")
     }
@@ -58,7 +57,6 @@ impl GeoLocation {
     }
 
     /// Validate the data structure.
-    ///
     pub fn validate(&self) -> ValidationResult {
         check_f64(self.geo_latitude, "geo_latitude")?;
         check_f64(self.geo_longitude, "geo_longitude")
@@ -143,7 +141,6 @@ pub struct Controller<'a> {
 
 impl<'a> Controller<'a> {
     /// Validate the data structure.
-    ///
     pub fn validate(&self) -> BoundedValidationResult<'a> {
         // String fields should not be empty
         check_str_empty(self.controller_type, "controller_type")?;
@@ -239,7 +236,7 @@ impl Default for Controller<'_> {
             controller_type: "Unknown",
             version: "Unknown",
             model: "Unknown",
-            address: "0.0.0.0:0",
+            address: "0.0.0.0:0", // Address can be either a valid IP address/port or all-zero
             geo_location: None,
             op_mode: OpMode::Unknown,
             job_mode: JobMode::Unknown,

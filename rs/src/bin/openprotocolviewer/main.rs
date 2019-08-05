@@ -90,20 +90,20 @@ fn display_message(prefix: &str, msg: &Message) {
     }
 }
 
-// Act on Open Protocol message and generate response
+// Parse an Open Protocol message, act on it, and generate a response (if appropriate)
+// to send back to the server.
 //
-// This function takes a JSON string as input, parse it into an Open Protocol message,
-// acts on it, and returns a reply message (if any) to send to the server.
-//
-fn process_message<'a>(json: &'a str, builtin: &'a Constants<'a>) -> Option<Message<'a>> {
+fn process_incoming_message<'a>(json: &'a str, builtin: &'a Constants<'a>) -> Option<Message<'a>> {
     let message;
 
     // Parse message
     match Message::parse_from_json_str(json) {
+        // Valid Open Protocol message.
         Ok(m) => {
             display_message(">>> ", &m);
             message = m;
         }
+        // Invalid message for Open Protocol!
         Err(err) => {
             eprintln!("Error parsing message: {}", err);
             return None;
@@ -160,8 +160,7 @@ fn process_message<'a>(json: &'a str, builtin: &'a Constants<'a>) -> Option<Mess
         // MIS/MES integration - request list of jobs
         Message::RequestJobCardsList { controller_id, .. } => Some(Message::JobCardsList {
             controller_id,
-            // Load jobs list
-            data: builtin.jobs.iter().map(|jc| (jc.job_card_id.as_ref(), jc.clone())).collect(),
+            data: builtin.jobs.iter().map(|jc| (jc.job_card_id.as_ref(), jc.clone())).collect(), // Load jobs list
             options: Default::default(),
         }),
         //
@@ -334,9 +333,8 @@ fn main() {
                 OwnedMessage::Text(json) => {
                     // Display received text to screen
                     println!("Received ({}): {}", json.len(), json);
-
                     // Process the message, get reply message (if any)
-                    if let Some(msg) = process_message(&json, &builtin) {
+                    if let Some(msg) = process_incoming_message(&json, &builtin) {
                         match msg.to_json_str() {
                             // Serialize reply message to JSON and send it to the send loop
                             Ok(resp) => {

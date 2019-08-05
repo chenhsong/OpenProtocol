@@ -34,7 +34,6 @@ mod types;
 mod utils;
 
 /// Result type.
-///
 pub type Result<'a, T> = std::result::Result<T, OpenProtocolError<'a>>;
 
 type ValidationResult = Result<'static, ()>;
