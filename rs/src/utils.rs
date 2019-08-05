@@ -1,15 +1,23 @@
-use super::{BoundedValidationResult, OpenProtocolError, ValidationResult};
-use serde::{Deserialize, Deserializer};
+use super::{BoundedValidationResult, OpenProtocolError, ValidationResult, ID};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::hash::Hash;
 use std::str::FromStr;
 
+/// Used to suppress serialization numeric fields that are zero (e.g. priority).
 #[allow(clippy::trivially_copy_pass_by_ref)]
 pub fn is_zero(num: &i32) -> bool {
     *num == 0
 }
 
+/// Check if a string is empty or contains all whitespace.
+///
+/// # Errors
+///
+/// Returns `Err(`[`OpenProtocolError::EmptyField`](enum.OpenProtocolError.html#variant.EmptyField)`)`
+/// if `text` is empty or contains all whitespace.
+///
 pub fn check_str_empty<S: AsRef<str>>(text: S, field: &'static str) -> ValidationResult {
     if text.as_ref().trim().is_empty() {
         return Err(OpenProtocolError::EmptyField(field.into()));
@@ -17,6 +25,13 @@ pub fn check_str_empty<S: AsRef<str>>(text: S, field: &'static str) -> Validatio
     Ok(())
 }
 
+/// Check if an optional string is empty or contains all whitespace.
+///
+/// # Errors
+///
+/// Returns `Err(`[`OpenProtocolError::EmptyField`](enum.OpenProtocolError.html#variant.EmptyField)`)`
+/// if `opt` is `Some` text which either is empty or contains all whitespace.
+///
 pub fn check_optional_str_empty<S: AsRef<str>>(
     opt: &Option<S>,
     field: &'static str,
@@ -29,6 +44,13 @@ pub fn check_optional_str_empty<S: AsRef<str>>(
     }
 }
 
+/// Check if an optional string contains all whitespace (but is not empty).
+///
+/// # Errors
+///
+/// Returns `Err(`[`OpenProtocolError::EmptyField`](enum.OpenProtocolError.html#variant.EmptyField)`)`
+/// if `opt` is `Some` text which is not empty but contains all whitespace.
+///
 pub fn check_optional_str_whitespace<S: AsRef<str>>(
     opt: &Option<S>,
     field: &'static str,
@@ -41,6 +63,13 @@ pub fn check_optional_str_whitespace<S: AsRef<str>>(
     }
 }
 
+/// Check for non-numeric values of an `f64` field.
+///
+/// # Errors
+///
+/// Returns `Err(`[`OpenProtocolError::InvalidField`](enum.OpenProtocolError.html#variant.InvalidField)`)`
+/// if `value` is not a normal number (e.g. `NaN`, `Infinity`).
+///
 pub fn check_f64(value: f64, field: &str) -> BoundedValidationResult {
     if value.is_nan() {
         Err(OpenProtocolError::InvalidField {
@@ -65,6 +94,7 @@ pub fn check_f64(value: f64, field: &str) -> BoundedValidationResult {
     }
 }
 
+/// Deserialize a JSON `null` value as `Some(None)` instead of `None`.
 #[allow(clippy::option_option)]
 pub fn deserialize_null_to_some_none<'de, D, T>(
     d: D,
@@ -76,6 +106,42 @@ where
     Deserialize::deserialize(d).map(Some)
 }
 
+/// Serialize a `Some(None)` value as zero instead of `null`.
+#[allow(clippy::option_option)]
+#[allow(clippy::trivially_copy_pass_by_ref)]
+pub fn serialize_some_none_to_zero<S>(value: &Option<Option<ID>>, s: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    if Some(None) == *value {
+        s.serialize_u32(0)
+    } else {
+        Serialize::serialize(value, s)
+    }
+}
+
+/// Deserialize a zero value as `Some(None)` for an Option<Option<ID>> field.
+#[allow(clippy::option_option)]
+pub fn deserialize_zero_to_some_none<'de, D>(
+    d: D,
+) -> std::result::Result<Option<Option<ID>>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let id: u32 = Deserialize::deserialize(d)?;
+    if id == 0 {
+        Ok(Some(None))
+    } else {
+        Ok(Some(Some(ID::from(id))))
+    }
+}
+
+/// Deserialize a `HashMap` with keys that are not `String` (but is of a type
+/// that implements `FromStr`).
+///
+/// Serialization is usually not a problem because `serde_json` automatically calls
+/// `to_string()` (for key types that implement `Display`) when serializing.
+///
 pub fn deserialize_hashmap<'de, D, K, T>(d: D) -> std::result::Result<HashMap<K, T>, D::Error>
 where
     D: Deserializer<'de>,

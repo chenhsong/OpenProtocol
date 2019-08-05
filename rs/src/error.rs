@@ -9,13 +9,16 @@ pub enum OpenProtocolError<'a> {
     EmptyField(Cow<'a, str>),
     //
     /// The value (second parameter) of a field (first parameter) is not valid for that field.
-    ///
-    /// The strings are `Cow`'ed to minimize allocations and make the enum small.
     InvalidField { field: Cow<'a, str>, value: Cow<'a, str>, description: Cow<'a, str> },
     //
+    /// The value of a field is not consistent with the matching value in the state.
+    InconsistentState(Cow<'a, str>),
+    //
+    /// The value of a field is not consistent with the matching value in the
+    /// [`Controller`](struct.Controller.html) structure.
+    InconsistentField(Cow<'a, str>),
+    //
     /// An enforced constraint is broken.
-    ///
-    /// The string is `Cow`'ed to minimize allocations and make the enum small.
     ConstraintViolated(Cow<'a, str>),
     //
     /// Error when serializing/deserializing JSON.
@@ -36,6 +39,16 @@ impl std::error::Error for OpenProtocolError<'_> {
             //
             // Constraint violation
             OpenProtocolError::ConstraintViolated(err) => err,
+            //
+            // Inconsistent field
+            OpenProtocolError::InconsistentField(_) => {
+                "Value of field is not the same as matching field in the Controller."
+            }
+            //
+            // Inconsistent state
+            OpenProtocolError::InconsistentState(_) => {
+                "Value of field is not the same as matching field in the state."
+            }
             //
             // Field empty
             OpenProtocolError::EmptyField(_) => "Field cannot be empty or all white-space.",
@@ -68,6 +81,16 @@ impl std::fmt::Display for OpenProtocolError<'_> {
             //
             // Constraint violation
             OpenProtocolError::ConstraintViolated(err) => err.fmt(f),
+            //
+            // Inconsistent field value
+            OpenProtocolError::InconsistentField(field) => {
+                write!(f, "Value of field {} is not the same as the matching field in the Controller.", field)
+            }
+            //
+            // Inconsistent state value
+            OpenProtocolError::InconsistentState(field) => {
+                write!(f, "Value of field {} is not the same as the matching field in state.", field)
+            }
             //
             // Field empty
             OpenProtocolError::EmptyField(field) => {
