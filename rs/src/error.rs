@@ -105,3 +105,23 @@ impl std::fmt::Display for OpenProtocolError<'_> {
         }
     }
 }
+
+impl PartialEq for OpenProtocolError<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        match self {
+            // JSON error - since serde::error::Error does not implement PartialEq,
+            //              the only thing we can do is compare the debug representation.
+            OpenProtocolError::JsonError(err1) => match other {
+                OpenProtocolError::JsonError(err2) => {
+                    format!("{:?}", err1) == format!("{:?}", err2)
+                }
+                _ => false,
+            },
+            //
+            // All other variants that implement PartialEq
+            _ => *self == *other,
+        }
+    }
+}
+
+impl Eq for OpenProtocolError<'_> {}
