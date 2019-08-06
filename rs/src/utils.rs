@@ -1,9 +1,63 @@
 use super::{BoundedValidationResult, OpenProtocolError, ValidationResult, ID};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::HashMap;
+use std::convert::TryInto;
 use std::fmt::Display;
 use std::hash::Hash;
+use std::num::NonZeroU32;
 use std::str::FromStr;
+
+/// A trait to specify different _invalid_ values for a type for serialization purposes
+///
+pub trait InvalidValues {
+    type Marker;
+
+    /// Returns the standard invalid value for an implementing type
+    ///
+    fn invalid() -> Self::Marker;
+}
+
+impl InvalidValues for ID {
+    type Marker = u32;
+
+    /// [`ID`] cannot be zero.
+    ///
+    /// [`ID`]: struct.ID.html
+    ///
+    fn invalid() -> Self::Marker {
+        0
+    }
+}
+
+impl InvalidValues for NonZeroU32 {
+    type Marker = u32;
+
+    /// `NonZeroU32` cannot be zero.
+    ///
+    fn invalid() -> Self::Marker {
+        0
+    }
+}
+
+impl InvalidValues for f32 {
+    type Marker = f32;
+
+    /// Use NaN for floating-point numbers.
+    ///
+    fn invalid() -> Self::Marker {
+        std::f32::NAN
+    }
+}
+
+impl InvalidValues for f64 {
+    type Marker = f64;
+
+    /// Use NaN for floating-point numbers.
+    ///
+    fn invalid() -> Self::Marker {
+        std::f64::NAN
+    }
+}
 
 /// Used to suppress serialization numeric fields that are zero (e.g. priority).
 #[allow(clippy::trivially_copy_pass_by_ref)]
@@ -114,33 +168,41 @@ where
     Deserialize::deserialize(d).map(Some)
 }
 
-/// Serialize a `Some(None)` value as zero instead of `null`.
+/// Serialize a `Some(None)` value as the default value instead of `null`.
 #[allow(clippy::option_option)]
 #[allow(clippy::trivially_copy_pass_by_ref)]
-pub fn serialize_some_none_to_zero<S>(value: &Option<Option<ID>>, s: S) -> Result<S::Ok, S::Error>
+pub fn serialize_some_none_to_invalid<S, T>(
+    value: &Option<Option<T>>,
+    s: S,
+) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
+    T: InvalidValues + Serialize,
+    T::Marker: PartialEq + Serialize,
 {
-    if Some(None) == *value {
-        s.serialize_u32(0)
-    } else {
-        Serialize::serialize(value, s)
+    match value {
+        Some(None) => Serialize::serialize(&T::invalid(), s),
+        _ => Serialize::serialize(value, s),
     }
 }
 
-/// Deserialize a zero value as `Some(None)` for an Option<Option<ID>> field.
+/// Deserialize an invalid value as `Some(None)` for an Option<Option<ID>> field.
 #[allow(clippy::option_option)]
-pub fn deserialize_zero_to_some_none<'de, D>(
+pub fn deserialize_invalid_to_some_none<'de, D, T>(
     d: D,
-) -> std::result::Result<Option<Option<ID>>, D::Error>
+) -> std::result::Result<Option<Option<T>>, D::Error>
 where
     D: Deserializer<'de>,
+    T: InvalidValues + Deserialize<'de>,
+    T::Marker: PartialEq + Deserialize<'de> + TryInto<T>,
+    <T::Marker as TryInto<T>>::Error: Display,
 {
-    let id: u32 = Deserialize::deserialize(d)?;
-    if id == 0 {
+    let id: T::Marker = Deserialize::deserialize(d)?;
+
+    if id == T::invalid() {
         Ok(Some(None))
     } else {
-        Ok(Some(Some(ID::from_u32(id))))
+        id.try_into().map(|val| Some(Some(val))).map_err(serde::de::Error::custom)
     }
 }
 
