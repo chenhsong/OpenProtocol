@@ -1,9 +1,9 @@
 //! Rust access library to read/write iChen® 4 Open Protocol™ messages.
 //!
-//! Details on the protocol can be found [here](https://github.com/chenhsong/OpenProtocol/blob/master/cs/doc/messages_reference.md).
+//! Details on the protocol can be found in [this document].
 //!
-//! Notes on Usage
-//! ==============
+//! Design Notes
+//! ============
 //!
 //! Beware that all data types defined in this crate use borrowed string slices (i.e. `&str`) extensively.
 //! This is because the most common usage pattern is to create a data variable, set fields, immediately
@@ -21,6 +21,9 @@
 //! the original JSON string.  Luckily this is extremely rare for most fields holding names, ID's etc.
 //! For this reason, only certain user-defined text fields (such as `job_card_id`) may contain
 //! escaped characters (especially the double-quote); those are therefore modeled using `Cow<&str>` instead.
+//!
+//! [this document]: https://github.com/chenhsong/OpenProtocol/blob/master/cs/doc/messages_reference.md
+//!
 
 #![doc(html_logo_url = "https://chenhsong.github.io/iChen/images/ichen_40_logo_small.png")]
 #![doc(html_root_url = "https://docs.rs/ichen-openprotocol")]

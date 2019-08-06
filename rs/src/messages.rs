@@ -38,15 +38,60 @@ pub struct MessageOptions<'a> {
 }
 
 impl<'a> MessageOptions<'a> {
+    /// Create a `MessageOptions` with default values (for example, the `sequence` field
+    /// auto-increments).
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// let opt1 = MessageOptions::new();
+    /// assert_eq!(1, opt1.sequence);
+    /// assert_eq!(0, opt1.priority);
+    ///
+    /// let opt2 = MessageOptions::new();
+    /// assert_eq!(2, opt2.sequence);       // `sequence` auto-increments.
+    /// assert_eq!(0, opt2.priority);
+    /// ~~~
     pub fn new() -> Self {
         Default::default()
     }
 
+    /// Create a `MessageOptions` with a particular `priority` but otherwise
+    /// default values (for example, the `sequence` field auto-increments).
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// let opt1 = MessageOptions::new_with_priority(100);
+    /// assert_eq!(1, opt1.sequence);
+    /// assert_eq!(100, opt1.priority);
+    ///
+    /// let opt2 = MessageOptions::new_with_priority(-42);
+    /// assert_eq!(2, opt2.sequence);       // `sequence` auto-increments.
+    /// assert_eq!(-42, opt2.priority);
+    /// ~~~
     pub fn new_with_priority(priority: i32) -> Self {
         Self { priority, ..Self::new() }
     }
 
     /// Validate the data structure.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(`[`OpenProtocolError::EmptyField`]`)` if the `id` field is set to an empty string
+    /// or is all whitespace.
+    ///
+    /// ## Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// let opt1 = MessageOptions { id: Some(""), ..Default::default() };
+    /// assert_eq!(r#"Err(EmptyField("id"))"#, format!("{:?}", opt1.validate()));
+    /// ~~~
+    ///
+    /// [`OpenProtocolError::EmptyField`]: enum.OpenProtocolError.html#variant.EmptyField
     ///
     pub fn validate(&self) -> ValidationResult {
         check_optional_str_empty(&self.id, "id")?;
@@ -55,6 +100,22 @@ impl<'a> MessageOptions<'a> {
 }
 
 impl Default for MessageOptions<'_> {
+    /// Default value for `MessageOptions`.
+    ///
+    /// The `sequence` field is auto-incrementing.
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// let opt1: MessageOptions = Default::default();
+    /// assert_eq!(1, opt1.sequence);
+    /// assert_eq!(0, opt1.priority);
+    ///
+    /// let opt2: MessageOptions = Default::default();
+    /// assert_eq!(2, opt2.sequence);       // `sequence` auto-increments.
+    /// assert_eq!(0, opt2.priority);
+    /// ~~~
     fn default() -> Self {
         Self { id: None, sequence: SEQ.fetch_add(1, Ordering::SeqCst), priority: 0 }
     }
@@ -81,18 +142,63 @@ pub struct JobCard<'a> {
 }
 
 impl<'a> JobCard<'a> {
+    /// Create a new `JobCard` with the specified field values.
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// let jobs = vec![
+    ///     JobCard::new("J001".into(), "Mold#001".into(), 0, 10000),
+    ///     JobCard::new("J002".into(), "Mold#002".into(), 1000, 5000),
+    ///     JobCard::new("J003".into(), "Mold#003".into(), 42, 1000),
+    ///     JobCard::new("J004".into(), "Mold#004".into(), 0, 0),
+    /// ];
+    ///
+    /// assert_eq!(4, jobs.len());
+    /// assert_eq!("J002", jobs[1].job_card_id);
+    /// assert_eq!(1000, jobs[2].total);
+    /// ~~~
     pub fn new(id: &'a str, mold: &'a str, progress: u32, total: u32) -> Self {
         Self { job_card_id: id.into(), mold_id: mold.into(), progress, total }
     }
 
     /// Validate the data structure.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(`[`OpenProtocolError::EmptyField`]`)` if `job_card_id` or `mold_id`
+    /// is set to an empty string or is all whitespace.
+    ///
+    /// Returns `Err(`[`OpenProtocolError::ConstraintViolated`]`)` if `progress` is larger
+    /// than `total`.
+    ///
+    /// ## Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// let job1 = JobCard::new("".into(), "M1".into(), 0, 10000);
+    /// let job2 = JobCard::new("J2".into(), "   ".into(), 0, 10000);
+    /// let job3 = JobCard::new("J3".into(), "M3".into(), 50000, 10000);
+    ///
+    /// assert_eq!(r#"Err(EmptyField("job_card_id"))"#, format!("{:?}", job1.validate()));
+    /// assert_eq!(r#"Err(EmptyField("mold_id"))"#, format!("{:?}", job2.validate()));
+    /// assert_eq!(
+    ///     r#"Err(ConstraintViolated("job-card progress (50000) must not be larger than the total production count (10000)"))"#,
+    ///     format!("{:?}", job3.validate())
+    /// );
+    /// ~~~
+    ///
+    /// [`OpenProtocolError::EmptyField`]: enum.OpenProtocolError.html#variant.EmptyField
+    /// [`OpenProtocolError::ConstraintViolated`]: enum.OpenProtocolError.html#variant.ConstraintViolated
+    ///
     pub fn validate(&self) -> ValidationResult {
         check_str_empty(&self.job_card_id, "job_card_id")?;
         check_str_empty(&self.mold_id, "mold_id")?;
         if self.progress > self.total {
             return Err(OpenProtocolError::ConstraintViolated(
                 format!(
-                    "JobCard progress ({}) must not be larger than total ({}).",
+                    "job-card progress ({}) must not be larger than the total production count ({})",
                     self.progress, self.total
                 )
                 .into(),
@@ -104,7 +210,7 @@ impl<'a> JobCard<'a> {
 
 /// A general data structure holding a key and value pair.
 ///
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Eq, PartialEq, Serialize, Deserialize, Hash)]
 #[serde(rename_all = "camelCase")]
 pub struct KeyValuePair<K, V> {
     pub key: K,
@@ -112,12 +218,40 @@ pub struct KeyValuePair<K, V> {
 }
 
 impl<K, V> KeyValuePair<K, V> {
+    /// Create a `KewValuePair`.
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// let kv = KeyValuePair::new("TheKey", 42.0);
+    /// assert_eq!(KeyValuePair { key: "TheKey", value: 42.0 }, kv);
+    /// ~~~
     pub fn new(key: K, value: V) -> Self {
         Self { key, value }
     }
 }
 
 impl<K: AsRef<str>> KeyValuePair<K, bool> {
+    /// Validate a `KeyValuePair` data structure with a string-like key
+    /// and boolean value by making sure that the `key` cannot be empty
+    /// or all whitespace.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(`[`OpenProtocolError::EmptyField`]`)` if `key` is set to an empty string
+    /// or is all whitespace.
+    ///
+    /// ## Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// let kv = KeyValuePair::new("    ", true);
+    /// assert_eq!(r#"Err(EmptyField("key"))"#, format!("{:?}", kv.validate()));
+    /// ~~~
+    ///
+    /// [`OpenProtocolError::EmptyField`]: enum.OpenProtocolError.html#variant.EmptyField
+    ///
     pub fn validate(&self) -> ValidationResult {
         check_str_empty(&self.key, "key")?;
         Ok(())
@@ -125,6 +259,36 @@ impl<K: AsRef<str>> KeyValuePair<K, bool> {
 }
 
 impl<K: AsRef<str>> KeyValuePair<K, f64> {
+    /// Validate a `KeyValuePair` data structure with a string-like key
+    /// and `f64` value by making sure that the `key` cannot be empty
+    /// or all whitespace, and that the `value` is a valid floating-point
+    /// number.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(`[`OpenProtocolError::EmptyField`]`)` if `key` is set to an empty string
+    /// or is all whitespace.
+    ///
+    /// Returns `Err(`[`OpenProtocolError::InvalidField`]`)` if `value` is not a valid floating-point
+    /// number.
+    ///
+    /// ## Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// let kv1 = KeyValuePair::new("     ", 42.0);
+    /// assert_eq!(r#"Err(EmptyField("key"))"#, format!("{:?}", kv1.validate()));
+    ///
+    /// let kv2 = KeyValuePair::new("K2", std::f64::NAN);
+    /// assert_eq!(
+    ///     r#"Err(InvalidField { field: "value", value: "NaN", description: "NaN is not a supported value" })"#,
+    ///     format!("{:?}", kv2.validate())
+    /// );
+    /// ~~~
+    ///
+    /// [`OpenProtocolError::EmptyField`]: enum.OpenProtocolError.html#variant.EmptyField
+    /// [`OpenProtocolError::InvalidField`]: enum.OpenProtocolError.html#variant.InvalidField
+    ///
     pub fn validate(&self) -> ValidationResult {
         check_str_empty(&self.key, "key")?;
         check_f64(self.value, "value")?;
@@ -164,6 +328,18 @@ pub struct StateValues<'a> {
 
 impl<'a> StateValues<'a> {
     /// Create a new `StateValues` wth no operator ID, job card ID and mold ID.
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// let state = StateValues::new(OpMode::Automatic, JobMode::ID02);
+    /// assert_eq!(OpMode::Automatic, state.op_mode);
+    /// assert_eq!(JobMode::ID02, state.job_mode);
+    /// assert_eq!(None, state.operator_id);
+    /// assert_eq!(None, state.job_card_id);
+    /// assert_eq!(None, state.mold_id);
+    /// ~~~
     pub fn new(op: OpMode, job: JobMode) -> Self {
         Self { op_mode: op, job_mode: job, operator_id: None, job_card_id: None, mold_id: None }
     }
@@ -174,6 +350,23 @@ impl<'a> StateValues<'a> {
     ///
     /// Panics if `operator` is `Some(0)`.
     ///
+    /// ~~~should_panic
+    /// # use ichen_openprotocol::*;
+    /// // The following will panic because of `Some(0)` in `operator`
+    /// let state = StateValues::new_with_all(OpMode::Automatic, JobMode::ID02, Some(0), None, Some("M001"));
+    /// ~~~
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// let state = StateValues::new_with_all(OpMode::Automatic, JobMode::ID02, Some(123), None, Some("M001"));
+    /// assert_eq!(OpMode::Automatic, state.op_mode);
+    /// assert_eq!(JobMode::ID02, state.job_mode);
+    /// assert_eq!(Some(ID::from_u32(123)), state.operator_id);
+    /// assert_eq!(None, state.job_card_id);
+    /// assert_eq!(r#"Some("M001")"#, format!("{:?}", state.mold_id));
+    /// ~~~
     pub fn new_with_all(
         op: OpMode,
         job: JobMode,
@@ -190,6 +383,22 @@ impl<'a> StateValues<'a> {
     }
 
     /// Validate the data structure.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(`[`OpenProtocolError::EmptyField`]`)` if `job_card_id` or `mold_id`
+    /// is set to an empty string or is all whitespace.
+    ///
+    /// ## Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// let state = StateValues::new_with_all(OpMode::Automatic, JobMode::ID02, Some(123), Some(""), None);
+    /// assert_eq!(r#"Err(EmptyField("job_card_id"))"#, format!("{:?}", state.validate()));
+    /// ~~~
+    ///
+    /// [`OpenProtocolError::EmptyField`]: enum.OpenProtocolError.html#variant.EmptyField
+    ///
     pub fn validate(&self) -> ValidationResult {
         check_optional_str_empty(&self.job_card_id, "job_card_id")?;
         check_optional_str_empty(&self.mold_id, "mold_id")
@@ -197,6 +406,8 @@ impl<'a> StateValues<'a> {
 }
 
 impl Default for StateValues<'_> {
+    /// Default value of `StateValues`.
+    ///
     fn default() -> Self {
         Self {
             op_mode: OpMode::Unknown,
@@ -334,8 +545,8 @@ pub enum Message<'a> {
         /// Unique ID of the current logged-on user, `Some(None)` if a user has logged out
         /// (or `None` if not relevant).
         #[allow(clippy::option_option)]
-        #[serde(serialize_with = "serialize_some_none_to_zero")]
-        #[serde(deserialize_with = "deserialize_zero_to_some_none")]
+        #[serde(serialize_with = "serialize_some_none_to_invalid")]
+        #[serde(deserialize_with = "deserialize_invalid_to_some_none")]
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(default)]
         operator_id: Option<Option<ID>>,
@@ -658,7 +869,7 @@ impl<'a> Message<'a> {
     ///
     /// # Errors
     ///
-    /// Return `Err(`[`OpenProtocolError`]`)` if there is an error.
+    /// Return `Err(`[`OpenProtocolError`]`)` if there is an error during parsing.
     ///
     /// [`OpenProtocolError`]: enum.OpenProtocolError.html
     ///
@@ -679,6 +890,16 @@ impl<'a> Message<'a> {
     ///
     /// [`OpenProtocolError`]: enum.OpenProtocolError.html
     ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// let msg = Message::new_join_with_org("MyPassword", Filters::Status + Filters::Cycle, "MyCompany");
+    /// assert_eq!(
+    ///     r#"{"$type":"Join","orgId":"MyCompany","version":"4.0","password":"MyPassword","language":"EN","filter":"Status, Cycle","sequence":1}"#,
+    ///     msg.to_json_str().unwrap()
+    /// );
+    /// ~~~
     pub fn to_json_str(&self) -> Result<'_, String> {
         self.validate()?;
 
@@ -699,14 +920,27 @@ impl<'a> Message<'a> {
     /// [`DEFAULT_LANGUAGE`]: enum.Message.html#associatedconstant.DEFAULT_LANGUAGE
     /// [`PROTOCOL_VERSION`]: enum.Message.html#associatedconstant.PROTOCOL_VERSION
     ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// use ichen_openprotocol::*;
+    /// let msg = Message::new_join("MyPassword", Filters::Status + Filters::Cycle);
+    ///
+    /// match msg {
+    ///     Message::Join {
+    ///         org_id: None,
+    ///         version: Message::PROTOCOL_VERSION,
+    ///         password: "MyPassword",
+    ///         language: Message::DEFAULT_LANGUAGE,
+    ///         filter,
+    ///         ..
+    ///     } if filter == Filters::Status + Filters::Cycle => (),
+    ///     _ => panic!()
+    /// }
+    /// ~~~
     pub fn new_join(password: &'a str, filter: Filters) -> Self {
-        Self::new_join_with_org(password, filter, None)
-    }
-
-    /// Create a `JOIN` message with non-default organization.
-    pub fn new_join_with_org(password: &'a str, filter: Filters, org: Option<&'a str>) -> Self {
         Join {
-            org_id: org,
+            org_id: None,
             version: Self::PROTOCOL_VERSION,
             password,
             language: Self::DEFAULT_LANGUAGE,
@@ -715,7 +949,76 @@ impl<'a> Message<'a> {
         }
     }
 
-    /// Validate the data structure.
+    /// Create a `JOIN` message with non-default organization.
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// use ichen_openprotocol::*;
+    /// let msg = Message::new_join_with_org("MyPassword", Filters::Status + Filters::Cycle, "MyCompany");
+    ///
+    /// match msg {
+    ///     Message::Join {
+    ///         org_id: Some("MyCompany"),
+    ///         version: Message::PROTOCOL_VERSION,
+    ///         password: "MyPassword",
+    ///         language: Message::DEFAULT_LANGUAGE,
+    ///         filter,
+    ///         ..
+    ///     } if filter == Filters::Status + Filters::Cycle => (),
+    ///     _ => panic!()
+    /// }
+    /// ~~~
+    pub fn new_join_with_org(password: &'a str, filter: Filters, org: &'a str) -> Self {
+        let mut msg = Self::new_join(password, filter);
+        if let Join { ref mut org_id, .. } = msg {
+            *org_id = Some(org)
+        }
+        msg
+    }
+
+    /// Validate the `Message` data structure.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(`[`OpenProtocolError`]`)` if some fields in the `Message` are not valid.
+    ///
+    /// [`OpenProtocolError`]: enum.OpenProtocolError.html
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// let msg = Message::ControllerStatus {
+    ///     controller_id: ID::from_u32(12345),
+    ///     display_name: None,
+    ///     is_disconnected: None,
+    ///     op_mode: None,
+    ///     job_mode: None,
+    ///     job_card_id: Some(None),
+    ///     mold_id: Some(Some("Test-123".into())),     // Value is "Test-123"
+    ///     operator_id: None,
+    ///     operator_name: None,
+    ///     variable: None,
+    ///     audit: None,
+    ///     alarm: None,
+    ///     controller: None,
+    ///     state: StateValues::new_with_all(
+    ///         OpMode::Automatic,
+    ///         JobMode::ID02,
+    ///         None,
+    ///         None,
+    ///         Some("Test-FooBar"),    // Notice that this state value should be "Test-123"
+    ///     ),
+    ///     options: Default::default(),
+    /// };
+    ///
+    /// // Validation will fail because `state.mold_id` is not the same as the `mold_id` field.
+    /// assert_eq!(
+    ///     r#"Err(InconsistentState("mold_id"))"#,
+    ///     format!("{:?}", msg.validate())
+    /// );
+    /// ~~~
     pub fn validate(&self) -> BoundedValidationResult<'a> {
         match self {
             Alive { options, .. }
@@ -757,29 +1060,41 @@ impl<'a> Message<'a> {
                         ));
                     }
                     c.validate()?;
-                }
 
-                if let Some(x) = display_name {
-                    check_str_empty(x, "display_name")?;
-
-                    if let Some(c) = controller {
-                        if *x != c.display_name {
-                            return Err(OpenProtocolError::InconsistentField(
-                                "display_name".into(),
-                            ));
-                        }
+                    // Check controller fields with specified fields
+                    if display_name.is_some() && *display_name != Some(c.display_name) {
+                        return Err(OpenProtocolError::InconsistentField("display_name".into()));
+                    }
+                    if op_mode.is_some() && *op_mode != Some(c.op_mode) {
+                        return Err(OpenProtocolError::InconsistentField("op_mode".into()));
+                    }
+                    if job_mode.is_some() && *job_mode != Some(c.job_mode) {
+                        return Err(OpenProtocolError::InconsistentField("job_mode".into()));
+                    }
+                    if operator_id.is_some()
+                        && *operator_id != Some(c.operator.as_ref().map(|user| user.operator_id))
+                    {
+                        return Err(OpenProtocolError::InconsistentField("operator_id".into()));
+                    }
+                    if operator_name.is_some()
+                        && *operator_name
+                            != Some(c.operator.as_ref().map(|u| u.operator_name).and_then(|n| n))
+                    {
+                        return Err(OpenProtocolError::InconsistentField("operator_name".into()));
+                    }
+                    if job_card_id.is_some() && *job_card_id.as_ref().unwrap() != c.job_card_id {
+                        return Err(OpenProtocolError::InconsistentField("job_card_id".into()));
+                    }
+                    if mold_id.is_some() && *mold_id.as_ref().unwrap() != c.mold_id {
+                        return Err(OpenProtocolError::InconsistentField("mold_id".into()));
                     }
                 }
+
+                check_optional_str_empty(display_name, "display_name")?;
 
                 if let Some(x) = op_mode {
                     if *x != state.op_mode {
                         return Err(OpenProtocolError::InconsistentState("op_mode".into()));
-                    }
-
-                    if let Some(c) = controller {
-                        if *x != c.op_mode {
-                            return Err(OpenProtocolError::InconsistentField("op_mode".into()));
-                        }
                     }
                 }
 
@@ -787,36 +1102,16 @@ impl<'a> Message<'a> {
                     if *x != state.job_mode {
                         return Err(OpenProtocolError::InconsistentState("job_mode".into()));
                     }
-
-                    if let Some(c) = controller {
-                        if *x != c.job_mode {
-                            return Err(OpenProtocolError::InconsistentField("job_mode".into()));
-                        }
-                    }
                 }
 
                 if let Some(x) = operator_id {
                     if *x != state.operator_id {
                         return Err(OpenProtocolError::InconsistentState("operator_id".into()));
                     }
-
-                    if let Some(c) = controller {
-                        if *x != c.operator.as_ref().map(|user| user.operator_id) {
-                            return Err(OpenProtocolError::InconsistentField("operator_id".into()));
-                        }
-                    }
                 }
 
                 if let Some(x) = operator_name {
                     check_optional_str_whitespace(x, "operator_name")?;
-
-                    if let Some(c) = controller {
-                        if *x != c.operator.as_ref().map(|u| u.operator_name).and_then(|n| n) {
-                            return Err(OpenProtocolError::InconsistentField(
-                                "operator_name".into(),
-                            ));
-                        }
-                    }
                 }
 
                 if let Some(x) = job_card_id {
@@ -824,12 +1119,6 @@ impl<'a> Message<'a> {
 
                     if *x != state.job_card_id {
                         return Err(OpenProtocolError::InconsistentState("job_card_id".into()));
-                    }
-
-                    if let Some(c) = controller {
-                        if *x != c.job_card_id {
-                            return Err(OpenProtocolError::InconsistentField("job_card_id".into()));
-                        }
                     }
                 }
 
@@ -839,13 +1128,9 @@ impl<'a> Message<'a> {
                     if *x != state.mold_id {
                         return Err(OpenProtocolError::InconsistentState("mold_id".into()));
                     }
-
-                    if let Some(c) = controller {
-                        if *x != c.mold_id {
-                            return Err(OpenProtocolError::InconsistentField("mold_id".into()));
-                        }
-                    }
                 }
+
+                state.validate()?;
 
                 if let Some(kv) = alarm {
                     kv.validate()?;
@@ -857,7 +1142,6 @@ impl<'a> Message<'a> {
                     kv.validate()?;
                 }
 
-                state.validate()?;
                 options.validate()
             }
             CycleData { options, data, state, .. } => {
@@ -1043,7 +1327,7 @@ mod test {
 
     #[test]
     fn test_message_controller_status_with_controller_from_json() {
-        let json = r#"{"$type":"ControllerStatus","controllerId":123,"state":{"opMode":"Automatic","jobMode":"ID05"},"controller":{"controllerId":123,"displayName":"Testing","controllerType":"Ai02","version":"2.2","model":"JM138Ai","IP":"192.168.1.1:12345","geoLatitude":123.0,"geoLongitude":-21.0,"opMode":"Automatic","jobMode":"ID05","jobCardId":"XYZ","lastCycleData":{"INJ":5,"CLAMP":400},"moldId":"Mold-123"},"sequence":1}"#;
+        let json = r#"{"$type":"ControllerStatus","controllerId":123,"state":{"opMode":"Automatic","jobMode":"ID05"},"controller":{"controllerId":123,"displayName":"Testing","controllerType":"Ai02","version":"2.2","model":"JM138Ai","IP":"192.168.1.1:12345","geoLatitude":23.0,"geoLongitude":-121.0,"opMode":"Automatic","jobMode":"ID05","jobCardId":"XYZ","lastCycleData":{"INJ":5,"CLAMP":400},"moldId":"Mold-123"},"sequence":1}"#;
 
         let m: Message = serde_json::from_str(&json).unwrap();
         m.validate().unwrap();

@@ -142,13 +142,13 @@ pub fn check_f64(value: f64, field: &str) -> BoundedValidationResult {
     } else if value.is_infinite() {
         Err(OpenProtocolError::InvalidField {
             field: field.into(),
-            value: "Infinity".into(),
+            value: value.to_string().into(),
             description: "Infinity is not a supported value".into(),
         })
     } else if !value.is_normal() && value != 0.0 {
         Err(OpenProtocolError::InvalidField {
             field: field.into(),
-            value: "Sub-normal".into(),
+            value: value.to_string().into(),
             description: "sub-normal number is not a supported value".into(),
         })
     } else {

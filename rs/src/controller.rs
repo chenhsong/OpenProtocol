@@ -24,16 +24,50 @@ pub struct Operator<'a> {
 
 impl<'a> Operator<'a> {
     /// Create an `Operator` with just an ID and no name.
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// let op = Operator::new(ID::from(12345));
+    /// assert_eq!(12345, u32::from(op.operator_id));
+    /// assert_eq!(None, op.operator_name);
+    /// ~~~
     pub fn new(id: ID) -> Self {
         Self { operator_id: id, operator_name: None }
     }
 
-    /// Create an `Operator` with name.
+    /// Create an `Operator` with ID and name.
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// let op = Operator::new_with_name(ID::from(12345), "John");
+    /// assert_eq!(12345, u32::from(op.operator_id));
+    /// assert_eq!(Some("John"), op.operator_name);
+    /// ~~~
     pub fn new_with_name(id: ID, name: &'a str) -> Self {
         Self { operator_name: Some(name), ..Self::new(id) }
     }
 
     /// Validate the data structure.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(`[`OpenProtocolError::EmptyField`]`)` if the `operator_name` field is
+    /// set to an empty string or is all whitespace.
+    ///
+    /// ## Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// let op = Operator::new_with_name(ID::from(12345), "John");
+    /// assert_eq!(r#"Err(EmptyField("operator_name"))"#, format!("{:?}", op.validate()));
+    /// ~~~
+    ///
+    /// [`OpenProtocolError::EmptyField`]: enum.OpenProtocolError.html#variant.EmptyField
+    ///
     pub fn validate(&self) -> ValidationResult {
         check_optional_str_empty(&self.operator_name, "operator_name")
     }
@@ -52,14 +86,70 @@ pub struct GeoLocation {
 }
 
 impl GeoLocation {
+    /// Create a new `GeoLocation`.
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// // Notice this is an invalid geo-location position, but still works
+    /// // To validate the data structure, call the `validate` method.
+    /// let geo = GeoLocation::new(123.456, -987.654);
+    /// assert_eq!(123.456, geo.geo_latitude);
+    /// assert_eq!(-987.654, geo.geo_longitude);
+    /// ~~~
     pub fn new(latitude: f64, longitude: f64) -> Self {
         GeoLocation { geo_latitude: latitude, geo_longitude: longitude }
     }
 
     /// Validate the data structure.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(`[`OpenProtocolError::InvalidField`]`)` if either `geo_latitude` or `geo_longitude`
+    /// is not a valid floating-point number.
+    ///
+    /// Returns `Err(`[`OpenProtocolError::ConstraintViolated`]`)` if `geo_latitude` and `geo_longitude`
+    /// together does not represent a valid Geo-Location position.
+    ///
+    /// ## Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// let geo1 = GeoLocation::new(23.456, std::f64::NEG_INFINITY);
+    /// assert_eq!(
+    ///     r#"Err(InvalidField { field: "geo_longitude", value: "-inf", description: "Infinity is not a supported value" })"#,
+    ///     format!("{:?}", geo1.validate())
+    /// );
+    ///
+    /// let geo2 = GeoLocation::new(123.456, 987.654);
+    /// assert_eq!(
+    ///     r#"Err(ConstraintViolated("latitude (123.456) must be between -90 and 90"))"#,
+    ///     format!("{:?}", geo2.validate())
+    /// );
+    /// ~~~
+    ///
+    /// [`OpenProtocolError::InvalidField`]: enum.OpenProtocolError.html#variant.InvalidField
+    /// [`OpenProtocolError::ConstraintViolated`]: enum.OpenProtocolError.html#variant.ConstraintViolated
+    ///
     pub fn validate(&self) -> ValidationResult {
         check_f64(self.geo_latitude, "geo_latitude")?;
-        check_f64(self.geo_longitude, "geo_longitude")
+
+        if !(-90.0..=90.0).contains(&self.geo_latitude) {
+            return Err(OpenProtocolError::ConstraintViolated(
+                format!("latitude ({}) must be between -90 and 90", self.geo_latitude).into(),
+            ));
+        }
+
+        check_f64(self.geo_longitude, "geo_longitude")?;
+
+        if !(-180.0..=180.0).contains(&self.geo_longitude) {
+            return Err(OpenProtocolError::ConstraintViolated(
+                format!("longitude ({}) must be between -180 and 180", self.geo_longitude).into(),
+            ));
+        }
+
+        Ok(())
     }
 }
 
@@ -141,6 +231,13 @@ pub struct Controller<'a> {
 
 impl<'a> Controller<'a> {
     /// Validate the data structure.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(`[`OpenProtocolError`]`)` if there are any errors or inconsistencies.
+    ///
+    /// [`OpenProtocolError`]: enum.OpenProtocolError.html
+    ///
     pub fn validate(&self) -> BoundedValidationResult<'a> {
         // String fields should not be empty
         check_str_empty(self.controller_type, "controller_type")?;
@@ -229,6 +326,8 @@ impl<'a> Controller<'a> {
 }
 
 impl Default for Controller<'_> {
+    /// Default value for `Controller`.
+    ///
     fn default() -> Self {
         Controller {
             controller_id: ID::from_u32(1),

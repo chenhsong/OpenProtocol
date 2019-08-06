@@ -37,6 +37,14 @@ pub enum Language {
 
 impl Language {
     /// Returns true if Language::Unknown.
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// let lang = Language::Unknown;
+    /// assert!(lang.is_unknown());
+    /// ~~~
     #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_unknown(&self) -> bool {
         *self == Language::Unknown
@@ -44,6 +52,7 @@ impl Language {
 }
 
 impl Default for Language {
+    /// Default value for `Language`.
     fn default() -> Self {
         Language::Unknown
     }
@@ -75,18 +84,44 @@ pub enum OpMode {
 
 impl OpMode {
     /// Returns true if `Unknown`.
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// let op = OpMode::Unknown;
+    /// assert!(op.is_unknown());
+    /// ~~~
     #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_unknown(&self) -> bool {
         *self == OpMode::Unknown
     }
 
     /// Returns true if `Offline`.
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// let op = OpMode::Offline;
+    /// assert!(op.is_offline());
+    /// ~~~
     #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_offline(&self) -> bool {
         *self == OpMode::Offline
     }
 
-    /// All variants other than `Unknown` and `Offline` means on-line.
+    /// Returns true for all variants other than `Unknown` and `Offline`.
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// assert!(!OpMode::Offline.is_online());
+    /// assert!(!OpMode::Unknown.is_online());
+    /// assert!(OpMode::Automatic.is_online());
+    /// assert!(OpMode::Manual.is_online());
+    /// ~~~
     #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_online(&self) -> bool {
         match self {
@@ -96,6 +131,16 @@ impl OpMode {
     }
 
     /// A machine is producing if it is in either `Automatic` or `Semi-Automatic` mode.
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// assert!(!OpMode::Offline.is_producing());
+    /// assert!(!OpMode::Unknown.is_producing());
+    /// assert!(OpMode::Automatic.is_producing());
+    /// assert!(!OpMode::Manual.is_producing());
+    /// ~~~
     #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_producing(&self) -> bool {
         match self {
@@ -106,6 +151,7 @@ impl OpMode {
 }
 
 impl Default for OpMode {
+    /// Default value for `OpMode`.
     fn default() -> Self {
         OpMode::Unknown
     }
@@ -146,18 +192,44 @@ pub enum JobMode {
 
 impl JobMode {
     /// Returns true if `Unknown`.
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// let job = JobMode::Unknown;
+    /// assert!(job.is_unknown());
+    /// ~~~
     #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_unknown(&self) -> bool {
         *self == JobMode::Unknown
     }
 
     /// Returns true if `Offline`.
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// let job = JobMode::Offline;
+    /// assert!(job.is_offline());
+    /// ~~~
     #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_offline(&self) -> bool {
         *self == JobMode::Offline
     }
 
-    /// All variants other than `Unknown` and `Offline` means on-line.
+    /// Returns true for all variants other than `Unknown` and `Offline`.
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// assert!(!JobMode::Offline.is_online());
+    /// assert!(!JobMode::Unknown.is_online());
+    /// assert!(JobMode::ID01.is_online());
+    /// assert!(JobMode::ID15.is_online());
+    /// ~~~
     #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_online(&self) -> bool {
         match self {
@@ -168,6 +240,7 @@ impl JobMode {
 }
 
 impl Default for JobMode {
+    /// Default value for `JobMode`.
     fn default() -> Self {
         JobMode::Unknown
     }
@@ -195,11 +268,11 @@ impl Default for JobMode {
 pub struct ID(NonZeroU32);
 
 impl ID {
-    /// Create a new ID from an integer value.
+    /// Create a new ID from a `u32` value.
     ///
     /// # Errors
     ///
-    /// Return `Err(&'static str)` if `num` is zero.
+    /// Returns `Err(&'static str)` if `value` is zero.
     ///
     /// # Examples
     ///
@@ -207,17 +280,19 @@ impl ID {
     /// # use ichen_openprotocol::*;
     /// let id = ID::new(42).unwrap();
     /// assert_eq!(42, u32::from(id));
-    /// assert_eq!(ID::new(0).is_err());
+    /// assert!(ID::new(0).is_err());
     /// ~~~
     pub fn new(value: u32) -> std::result::Result<Self, &'static str> {
         Self::try_from(value)
     }
     //
-    /// Create a new ID from an integer value.
+    /// Create a new ID from a `u32` value.
     ///
     /// # Panics
     ///
     /// Panics if `value` is zero.
+    ///
+    /// ## Examples
     ///
     /// ~~~should_panic
     /// # use ichen_openprotocol::*;
@@ -228,7 +303,7 @@ impl ID {
     ///
     /// ~~~
     /// # use ichen_openprotocol::*;
-    /// let id = ID::from_u32(42).unwrap();
+    /// let id = ID::from_u32(42);
     /// assert_eq!(42, u32::from(id));
     /// ~~~
     pub fn from_u32(value: u32) -> Self {
@@ -255,9 +330,10 @@ impl TryFrom<u32> for ID {
     ///
     /// ~~~
     /// # use ichen_openprotocol::*;
+    /// # use std::convert::TryFrom;
     /// let id = ID::try_from(42).unwrap();
     /// assert_eq!(42, u32::from(id));
-    /// assert_eq!(ID::try_from(0).is_err());
+    /// assert!(ID::try_from(0).is_err());
     /// ~~~
     fn try_from(value: u32) -> Result<Self, Self::Error> {
         NonZeroU32::new(value).map(Self).ok_or("ID value cannot be zero.")
