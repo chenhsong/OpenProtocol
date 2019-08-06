@@ -68,9 +68,9 @@ impl FromStr for Filters {
 
     /// Parse a comma-delimited `String` into a `Filters` values.
     ///
-    /// Notice that `Filters::from_str` never fails.
+    /// **`Filters::from_str` never fails.**
     /// Unmatched tokens will simply be discarded.
-    /// If nothing matches, `Filters::None` will be returned.
+    /// If nothing matches, `None` will be returned.
     ///
     /// # Examples
     ///
@@ -114,10 +114,10 @@ impl From<&str> for Filters {
     }
 }
 
-impl Into<String> for Filters {
+impl From<Filters> for String {
     /// Convert filters value into a comma-delimited list.
-    fn into(self) -> String {
-        format!("{}", self)
+    fn from(f: Filters) -> Self {
+        format!("{}", f)
     }
 }
 
