@@ -50,7 +50,7 @@ impl Filters {
     /// # Examples
     ///
     /// ~~~
-    /// use ichen_openprotocol::Filters;
+    /// # use ichen_openprotocol::*;
     /// let f = Filters::Status + Filters::Audit + Filters::JobCards;
     /// assert!(f.has(Filters::Status));
     /// assert!(f.has(Filters::JobCards));
@@ -76,7 +76,7 @@ impl FromStr for Filters {
     ///
     /// ~~~
     /// # use std::str::FromStr;
-    /// use ichen_openprotocol::Filters;
+    /// # use ichen_openprotocol::*;
     /// let f = Filters::from_str("Hello, World, Cycle, Mold,Operators|Foo+BarXYZYXYZ=123").unwrap();
     /// assert_eq!(Filters::Cycle + Filters::Mold, f);
     /// ~~~
@@ -129,7 +129,7 @@ impl std::ops::Add for Filters {
     /// # Example
     ///
     /// ~~~
-    /// use ichen_openprotocol::Filters;
+    /// # use ichen_openprotocol::*;
     /// let mut f = Filters::Cycle + Filters::OPCUA;
     /// f = f + Filters::All;
     /// assert_eq!(Filters::All + Filters::OPCUA, f);
@@ -146,7 +146,7 @@ impl std::ops::AddAssign for Filters {
     /// # Example
     ///
     /// ~~~
-    /// use ichen_openprotocol::Filters;
+    /// # use ichen_openprotocol::*;
     /// let mut f = Filters::Cycle + Filters::OPCUA;
     /// f += Filters::All;
     /// assert_eq!(Filters::All + Filters::OPCUA, f);

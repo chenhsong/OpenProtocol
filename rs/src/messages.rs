@@ -923,7 +923,7 @@ impl<'a> Message<'a> {
     /// # Examples
     ///
     /// ~~~
-    /// use ichen_openprotocol::*;
+    /// # use ichen_openprotocol::*;
     /// let msg = Message::new_join("MyPassword", Filters::Status + Filters::Cycle);
     ///
     /// match msg {
@@ -954,7 +954,7 @@ impl<'a> Message<'a> {
     /// # Examples
     ///
     /// ~~~
-    /// use ichen_openprotocol::*;
+    /// # use ichen_openprotocol::*;
     /// let msg = Message::new_join_with_org("MyPassword", Filters::Status + Filters::Cycle, "MyCompany");
     ///
     /// match msg {
