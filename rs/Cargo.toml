@@ -3,7 +3,7 @@ name = "ichen-openprotocol"
 description = "iChen Open Protocol access library."
 keywords = ["ChenHsong", "iChen", "OpenProtocol"]
 categories = ["api-bindings"]
-version = "0.4.0"
+version = "0.4.1"
 edition = "2018"
 authors = ["Chen Hsong"]
 homepage = "https://chenhsong.github.io/iChen/"
@@ -12,7 +12,7 @@ readme = "README.md"
 license = "MIT"
 
 [dependencies]
-derive_more = "0.15.0"
+derive_more = "0.15.*"
 serde = { version = "1.0.*", features = ["derive"] }
 serde_json = "1.0.*"
 chrono = { version="0.4.*", features = ["serde"] }
