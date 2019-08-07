@@ -1,8 +1,8 @@
 use super::filters::Filters;
 use super::utils::*;
 use super::{
-    BoundedValidationResult, Controller, JobMode, Language, OpMode, OpenProtocolError, Result,
-    ValidationResult, ID,
+    BoundedValidationResult, Controller, JobMode, Language, OpMode, OpenProtocolError as Error,
+    Result, ValidationResult, ID,
 };
 use chrono::{DateTime, FixedOffset};
 use serde::{Deserialize, Serialize};
@@ -83,7 +83,7 @@ impl<'a> MessageOptions<'a> {
     /// Returns `Err(`[`OpenProtocolError::EmptyField`]`)` if the `id` field is set to an empty string
     /// or is all whitespace.
     ///
-    /// ## Examples
+    /// ## Error Examples
     ///
     /// ~~~
     /// # use ichen_openprotocol::*;
@@ -173,7 +173,7 @@ impl<'a> JobCard<'a> {
     /// Returns `Err(`[`OpenProtocolError::ConstraintViolated`]`)` if `progress` is larger
     /// than `total`.
     ///
-    /// ## Examples
+    /// ## Error Examples
     ///
     /// ~~~
     /// # use ichen_openprotocol::*;
@@ -196,7 +196,7 @@ impl<'a> JobCard<'a> {
         check_str_empty(&self.job_card_id, "job_card_id")?;
         check_str_empty(&self.mold_id, "mold_id")?;
         if self.progress > self.total {
-            return Err(OpenProtocolError::ConstraintViolated(
+            return Err(Error::ConstraintViolated(
                 format!(
                     "job-card progress ({}) must not be larger than the total production count ({})",
                     self.progress, self.total
@@ -242,7 +242,7 @@ impl<K: AsRef<str>> KeyValuePair<K, bool> {
     /// Returns `Err(`[`OpenProtocolError::EmptyField`]`)` if `key` is set to an empty string
     /// or is all whitespace.
     ///
-    /// ## Examples
+    /// ## Error Examples
     ///
     /// ~~~
     /// # use ichen_openprotocol::*;
@@ -272,7 +272,7 @@ impl<K: AsRef<str>> KeyValuePair<K, f64> {
     /// Returns `Err(`[`OpenProtocolError::InvalidField`]`)` if `value` is not a valid floating-point
     /// number.
     ///
-    /// ## Examples
+    /// ## Error Examples
     ///
     /// ~~~
     /// # use ichen_openprotocol::*;
@@ -389,7 +389,7 @@ impl<'a> StateValues<'a> {
     /// Returns `Err(`[`OpenProtocolError::EmptyField`]`)` if `job_card_id` or `mold_id`
     /// is set to an empty string or is all whitespace.
     ///
-    /// ## Examples
+    /// ## Error Examples
     ///
     /// ~~~
     /// # use ichen_openprotocol::*;
@@ -878,7 +878,7 @@ impl<'a> Message<'a> {
             // Do validation check if successfully parsed
             Ok(m) => m.validate().map(|_| m),
             // Otherwise return error
-            Err(err) => Err(OpenProtocolError::JsonError(err)),
+            Err(err) => Err(Error::JsonError(err)),
         }
     }
 
@@ -903,7 +903,7 @@ impl<'a> Message<'a> {
     pub fn to_json_str(&self) -> Result<'_, String> {
         self.validate()?;
 
-        serde_json::to_string(self).map_err(OpenProtocolError::JsonError)
+        serde_json::to_string(self).map_err(Error::JsonError)
     }
 
     /// Create an `ALIVE` message.
@@ -1055,7 +1055,7 @@ impl<'a> Message<'a> {
                         || !audit.is_none()
                         || !variable.is_none()
                     {
-                        return Err(OpenProtocolError::ConstraintViolated(
+                        return Err(Error::ConstraintViolated(
                             "All other fields must be set to None if controller is present.".into(),
                         ));
                     }
@@ -1063,30 +1063,30 @@ impl<'a> Message<'a> {
 
                     // Check controller fields with specified fields
                     if display_name.is_some() && *display_name != Some(c.display_name) {
-                        return Err(OpenProtocolError::InconsistentField("display_name".into()));
+                        return Err(Error::InconsistentField("display_name".into()));
                     }
                     if op_mode.is_some() && *op_mode != Some(c.op_mode) {
-                        return Err(OpenProtocolError::InconsistentField("op_mode".into()));
+                        return Err(Error::InconsistentField("op_mode".into()));
                     }
                     if job_mode.is_some() && *job_mode != Some(c.job_mode) {
-                        return Err(OpenProtocolError::InconsistentField("job_mode".into()));
+                        return Err(Error::InconsistentField("job_mode".into()));
                     }
                     if operator_id.is_some()
                         && *operator_id != Some(c.operator.as_ref().map(|user| user.operator_id))
                     {
-                        return Err(OpenProtocolError::InconsistentField("operator_id".into()));
+                        return Err(Error::InconsistentField("operator_id".into()));
                     }
                     if operator_name.is_some()
                         && *operator_name
                             != Some(c.operator.as_ref().map(|u| u.operator_name).and_then(|n| n))
                     {
-                        return Err(OpenProtocolError::InconsistentField("operator_name".into()));
+                        return Err(Error::InconsistentField("operator_name".into()));
                     }
                     if job_card_id.is_some() && *job_card_id.as_ref().unwrap() != c.job_card_id {
-                        return Err(OpenProtocolError::InconsistentField("job_card_id".into()));
+                        return Err(Error::InconsistentField("job_card_id".into()));
                     }
                     if mold_id.is_some() && *mold_id.as_ref().unwrap() != c.mold_id {
-                        return Err(OpenProtocolError::InconsistentField("mold_id".into()));
+                        return Err(Error::InconsistentField("mold_id".into()));
                     }
                 }
 
@@ -1094,19 +1094,19 @@ impl<'a> Message<'a> {
 
                 if let Some(x) = op_mode {
                     if *x != state.op_mode {
-                        return Err(OpenProtocolError::InconsistentState("op_mode".into()));
+                        return Err(Error::InconsistentState("op_mode".into()));
                     }
                 }
 
                 if let Some(x) = job_mode {
                     if *x != state.job_mode {
-                        return Err(OpenProtocolError::InconsistentState("job_mode".into()));
+                        return Err(Error::InconsistentState("job_mode".into()));
                     }
                 }
 
                 if let Some(x) = operator_id {
                     if *x != state.operator_id {
-                        return Err(OpenProtocolError::InconsistentState("operator_id".into()));
+                        return Err(Error::InconsistentState("operator_id".into()));
                     }
                 }
 
@@ -1118,7 +1118,7 @@ impl<'a> Message<'a> {
                     check_optional_str_whitespace(x, "job_card_id")?;
 
                     if *x != state.job_card_id {
-                        return Err(OpenProtocolError::InconsistentState("job_card_id".into()));
+                        return Err(Error::InconsistentState("job_card_id".into()));
                     }
                 }
 
@@ -1126,7 +1126,7 @@ impl<'a> Message<'a> {
                     check_optional_str_whitespace(x, "mold_id")?;
 
                     if *x != state.mold_id {
-                        return Err(OpenProtocolError::InconsistentState("mold_id".into()));
+                        return Err(Error::InconsistentState("mold_id".into()));
                     }
                 }
 
@@ -1152,7 +1152,7 @@ impl<'a> Message<'a> {
             }
             JobCardsList { options, data, .. } => {
                 if data.is_empty() {
-                    return Err(OpenProtocolError::EmptyField("data".into()));
+                    return Err(Error::EmptyField("data".into()));
                 }
                 data.iter().try_for_each(|jc| jc.1.validate())?;
                 options.validate()
@@ -1163,7 +1163,7 @@ impl<'a> Message<'a> {
                 check_str_empty(password, "password")?;
                 // Check for invalid language
                 if *language == Language::Unknown {
-                    return Err(OpenProtocolError::InvalidField {
+                    return Err(Error::InvalidField {
                         field: "language".into(),
                         value: "Unknown".into(),
                         description: "language cannot be Unknown".into(),
@@ -1173,7 +1173,7 @@ impl<'a> Message<'a> {
             }
             MoldData { options, data, state, .. } => {
                 if data.is_empty() {
-                    return Err(OpenProtocolError::EmptyField("data".into()));
+                    return Err(Error::EmptyField("data".into()));
                 }
                 data.iter().try_for_each(|d| check_f64(*d.1, d.0))?;
                 check_optional_str_empty(&state.job_card_id, "job_card_id")?;
@@ -1197,7 +1197,7 @@ impl<'a> Message<'a> {
                 check_str_empty(name, "name")?;
                 check_optional_str_whitespace(&Some(*password), "password")?;
                 if *level > Self::MAX_OPERATOR_LEVEL {
-                    return Err(OpenProtocolError::ConstraintViolated(
+                    return Err(Error::ConstraintViolated(
                         format!(
                             "Level {} is too high - must be between 0 and {}.",
                             level,

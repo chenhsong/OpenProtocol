@@ -292,7 +292,7 @@ impl ID {
     ///
     /// Panics if `value` is zero.
     ///
-    /// ## Examples
+    /// ## Error Examples
     ///
     /// ~~~should_panic
     /// # use ichen_openprotocol::*;

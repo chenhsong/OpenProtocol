@@ -1,4 +1,4 @@
-use super::{BoundedValidationResult, OpenProtocolError, ValidationResult, ID};
+use super::{BoundedValidationResult, OpenProtocolError as Error, ValidationResult, ID};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::HashMap;
 use std::convert::TryInto;
@@ -76,7 +76,7 @@ pub fn is_zero(num: &i32) -> bool {
 ///
 pub fn check_str_empty<S: AsRef<str>>(text: S, field: &'static str) -> ValidationResult {
     if text.as_ref().trim().is_empty() {
-        return Err(OpenProtocolError::EmptyField(field.into()));
+        return Err(Error::EmptyField(field.into()));
     }
     Ok(())
 }
@@ -95,9 +95,7 @@ pub fn check_optional_str_empty<S: AsRef<str>>(
     field: &'static str,
 ) -> ValidationResult {
     match opt {
-        Some(text) if text.as_ref().trim().is_empty() => {
-            Err(OpenProtocolError::EmptyField(field.into()))
-        }
+        Some(text) if text.as_ref().trim().is_empty() => Err(Error::EmptyField(field.into())),
         _ => Ok(()),
     }
 }
@@ -117,7 +115,7 @@ pub fn check_optional_str_whitespace<S: AsRef<str>>(
 ) -> ValidationResult {
     match opt {
         Some(text) if !text.as_ref().is_empty() && text.as_ref().trim().is_empty() => {
-            Err(OpenProtocolError::EmptyField(field.into()))
+            Err(Error::EmptyField(field.into()))
         }
         _ => Ok(()),
     }
@@ -134,19 +132,19 @@ pub fn check_optional_str_whitespace<S: AsRef<str>>(
 ///
 pub fn check_f64(value: f64, field: &str) -> BoundedValidationResult {
     if value.is_nan() {
-        Err(OpenProtocolError::InvalidField {
+        Err(Error::InvalidField {
             field: field.into(),
             value: "NaN".into(),
             description: "NaN is not a supported value".into(),
         })
     } else if value.is_infinite() {
-        Err(OpenProtocolError::InvalidField {
+        Err(Error::InvalidField {
             field: field.into(),
             value: value.to_string().into(),
             description: "Infinity is not a supported value".into(),
         })
     } else if !value.is_normal() && value != 0.0 {
-        Err(OpenProtocolError::InvalidField {
+        Err(Error::InvalidField {
             field: field.into(),
             value: value.to_string().into(),
             description: "sub-normal number is not a supported value".into(),

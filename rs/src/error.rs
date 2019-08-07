@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use OpenProtocolError::*;
 
 /// Result error type.
 ///
@@ -11,7 +12,10 @@ pub enum OpenProtocolError<'a> {
     /// The value (second parameter) of a field (first parameter) is not valid for that field.
     InvalidField { field: Cow<'a, str>, value: Cow<'a, str>, description: Cow<'a, str> },
     //
-    /// The value of a field is not consistent with the matching value in the state.
+    /// The value of a field is not consistent with the matching value in the [`state`].
+    ///
+    /// [`state`]: struct.StateValues.html
+    ///
     InconsistentState(Cow<'a, str>),
     //
     /// The value of a field is not consistent with the matching value in the
@@ -31,35 +35,31 @@ impl std::error::Error for OpenProtocolError<'_> {
     fn description(&self) -> &str {
         match self {
             // JSON error
-            OpenProtocolError::JsonError(err) => err.description(),
+            JsonError(err) => err.description(),
             //
             // Invalid field value
-            OpenProtocolError::InvalidField { description, .. } if description.is_empty() => {
-                "invalid field value"
-            }
-            OpenProtocolError::InvalidField { description, .. } => description,
+            InvalidField { description, .. } if description.is_empty() => "invalid field value",
+            InvalidField { description, .. } => description,
             //
             // Constraint violation
-            OpenProtocolError::ConstraintViolated(err) => err,
+            ConstraintViolated(err) => err,
             //
             // Inconsistent field
-            OpenProtocolError::InconsistentField(_) => {
+            InconsistentField(_) => {
                 "value of field is not the same as matching field in the Controller"
             }
             //
             // Inconsistent state
-            OpenProtocolError::InconsistentState(_) => {
-                "value of field is not the same as matching field in the state"
-            }
+            InconsistentState(_) => "value of field is not the same as matching field in the state",
             //
             // Field empty
-            OpenProtocolError::EmptyField(_) => "field cannot be empty or all whitespace",
+            EmptyField(_) => "field cannot be empty or all whitespace",
         }
     }
 
     fn cause(&self) -> Option<&dyn std::error::Error> {
         match self {
-            OpenProtocolError::JsonError(err) => Some(err),
+            JsonError(err) => Some(err),
             _ => None,
         }
     }
@@ -69,52 +69,57 @@ impl std::fmt::Display for OpenProtocolError<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
         match self {
             // JSON error
-            OpenProtocolError::JsonError(err) => err.fmt(f),
+            JsonError(err) => err.fmt(f),
             //
             // Invalid field value
-            OpenProtocolError::InvalidField { field, value, description }
-                if description.is_empty() =>
-            {
+            InvalidField { field, value, description } if description.is_empty() => {
                 write!(f, "value [{}] is invalid for the field {}", value, field)
             }
-            OpenProtocolError::InvalidField { field, value, description } => {
+            InvalidField { field, value, description } => {
                 write!(f, "value [{}] is invalid for the field {}: {}", value, field, description)
             }
             //
             // Constraint violation
-            OpenProtocolError::ConstraintViolated(err) => err.fmt(f),
+            ConstraintViolated(err) => err.fmt(f),
             //
             // Inconsistent field value
-            OpenProtocolError::InconsistentField(field) => write!(
+            InconsistentField(field) => write!(
                 f,
                 "value of field {} is not the same as the matching field in the Controller",
                 field
             ),
             //
             // Inconsistent state value
-            OpenProtocolError::InconsistentState(field) => write!(
+            InconsistentState(field) => write!(
                 f,
                 "value of field {} is not the same as the matching field in the state",
                 field
             ),
             //
             // Field empty
-            OpenProtocolError::EmptyField(field) => {
-                write!(f, "field {} cannot be empty or all whitespace", field)
-            }
+            EmptyField(field) => write!(f, "field {} cannot be empty or all whitespace", field),
         }
     }
 }
 
 impl PartialEq for OpenProtocolError<'_> {
+    /// Implement `PartialEq` for `OpenProtocolError`.
+    ///
+    /// Most variants already implement `PartialEq` and are simply delegated.
+    ///
+    /// The only variant that doesn't automatically implement `PartialEq` is [`JsonError`]
+    /// which encapsulates a `serde::error::Error` object that does not implement
+    /// `PartialEq`.  In this case, we test for equality simply by comparing the `Debug`
+    /// output of `self` and `other`.
+    ///
+    /// [`JsonError`]: #variant.JsonError
+    ///
     fn eq(&self, other: &Self) -> bool {
         match self {
             // JSON error - since serde::error::Error does not implement PartialEq,
             //              the only thing we can do is compare the debug representation.
-            OpenProtocolError::JsonError(err1) => match other {
-                OpenProtocolError::JsonError(err2) => {
-                    format!("{:?}", err1) == format!("{:?}", err2)
-                }
+            JsonError(err1) => match other {
+                JsonError(err2) => format!("{:?}", err1) == format!("{:?}", err2),
                 _ => false,
             },
             //

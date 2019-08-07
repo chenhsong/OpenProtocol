@@ -1,12 +1,13 @@
 use super::utils::*;
-use super::{BoundedValidationResult, JobMode, OpMode, OpenProtocolError, ValidationResult, ID};
+use super::{
+    BoundedValidationResult, JobMode, OpMode, OpenProtocolError as Error, ValidationResult, ID,
+};
 use chrono::{DateTime, FixedOffset};
 use lazy_static::*;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::collections::HashMap;
-use std::error::Error;
 use std::net::IpAddr;
 use std::str::FromStr;
 
@@ -58,7 +59,7 @@ impl<'a> Operator<'a> {
     /// Returns `Err(`[`OpenProtocolError::EmptyField`]`)` if the `operator_name` field is
     /// set to an empty string or is all whitespace.
     ///
-    /// ## Examples
+    /// ## Error Examples
     ///
     /// ~~~
     /// # use ichen_openprotocol::*;
@@ -112,7 +113,7 @@ impl GeoLocation {
     /// Returns `Err(`[`OpenProtocolError::ConstraintViolated`]`)` if `geo_latitude` and `geo_longitude`
     /// together does not represent a valid Geo-Location position.
     ///
-    /// ## Examples
+    /// ## Error Examples
     ///
     /// ~~~
     /// # use ichen_openprotocol::*;
@@ -136,7 +137,7 @@ impl GeoLocation {
         check_f64(self.geo_latitude, "geo_latitude")?;
 
         if !(-90.0..=90.0).contains(&self.geo_latitude) {
-            return Err(OpenProtocolError::ConstraintViolated(
+            return Err(Error::ConstraintViolated(
                 format!("latitude ({}) must be between -90 and 90", self.geo_latitude).into(),
             ));
         }
@@ -144,7 +145,7 @@ impl GeoLocation {
         check_f64(self.geo_longitude, "geo_longitude")?;
 
         if !(-180.0..=180.0).contains(&self.geo_longitude) {
-            return Err(OpenProtocolError::ConstraintViolated(
+            return Err(Error::ConstraintViolated(
                 format!("longitude ({}) must be between -180 and 180", self.geo_longitude).into(),
             ));
         }
@@ -269,7 +270,7 @@ impl<'a> Controller<'a> {
 
         if !IP_REGEX.is_match(self.address) {
             if !TTY_REGEX.is_match(self.address) && !COM_REGEX.is_match(self.address) {
-                return Err(OpenProtocolError::InvalidField {
+                return Err(Error::InvalidField {
                     field: "ip".into(),
                     value: self.address.into(),
                     description: "".into(),
@@ -284,10 +285,13 @@ impl<'a> Controller<'a> {
             match IpAddr::from_str(address) {
                 Ok(addr) => unspecified = addr.is_unspecified(),
                 Err(err) => {
-                    return Err(OpenProtocolError::InvalidField {
+                    return Err(Error::InvalidField {
                         field: "ip[address]".into(),
                         value: address.into(),
-                        description: format!("{} ({})", address, err.description()).into(),
+                        description: {
+                            use std::error::Error;
+                            format!("{} ({})", address, err.description()).into()
+                        },
                     })
                 }
             }
@@ -298,13 +302,13 @@ impl<'a> Controller<'a> {
             match u16::from_str(port) {
                 Ok(n) => {
                     if n == 0 && !unspecified {
-                        return Err(OpenProtocolError::InvalidField {
+                        return Err(Error::InvalidField {
                             field: "ip[port]".into(),
                             value: port.into(),
                             description: "IP port cannot be zero".into(),
                         });
                     } else if n > 0 && unspecified {
-                        return Err(OpenProtocolError::InvalidField {
+                        return Err(Error::InvalidField {
                             field: "ip[port]".into(),
                             value: port.into(),
                             description: "null IP must have zero port number".into(),
@@ -312,10 +316,13 @@ impl<'a> Controller<'a> {
                     }
                 }
                 Err(err) => {
-                    return Err(OpenProtocolError::InvalidField {
+                    return Err(Error::InvalidField {
                         field: "ip[port]".into(),
                         value: port.into(),
-                        description: err.description().to_string().into(),
+                        description: {
+                            use std::error::Error;
+                            err.description().to_string().into()
+                        },
                     })
                 }
             }
