@@ -2,7 +2,7 @@ use derive_more::*;
 use serde::{Deserialize, Serialize};
 use std::cmp::{Ordering, PartialEq, PartialOrd};
 use std::convert::TryFrom;
-use std::fmt::Debug;
+use std::fmt::{Debug, Formatter};
 use std::num::NonZeroU32;
 
 /// Supported UI languages for the controller's HMI.
@@ -11,7 +11,9 @@ use std::num::NonZeroU32;
 ///
 /// [this document]: https://github.com/chenhsong/OpenProtocol/blob/master/doc/enums.md#languages
 ///
-#[derive(Debug, Ord, PartialOrd, PartialEq, Eq, Hash, Serialize, Deserialize, Copy, Clone)]
+#[derive(
+    Debug, Display, Ord, PartialOrd, PartialEq, Eq, Hash, Serialize, Deserialize, Copy, Clone,
+)]
 pub enum Language {
     /// Unknown language.
     Unknown,
@@ -64,7 +66,9 @@ impl Default for Language {
 ///
 /// [this document]: https://github.com/chenhsong/OpenProtocol/blob/master/doc/enums.md#opmodes
 ///
-#[derive(Debug, Ord, PartialOrd, PartialEq, Eq, Hash, Serialize, Deserialize, Copy, Clone)]
+#[derive(
+    Debug, Display, Ord, PartialOrd, PartialEq, Eq, Hash, Serialize, Deserialize, Copy, Clone,
+)]
 pub enum OpMode {
     /// Unknown operation mode.
     Unknown,
@@ -165,7 +169,9 @@ impl Default for OpMode {
 ///
 /// [this document]: https://github.com/chenhsong/OpenProtocol/blob/master/doc/enums.md#jobmodes
 ///
-#[derive(Debug, Ord, PartialOrd, PartialEq, Eq, Hash, Serialize, Deserialize, Copy, Clone)]
+#[derive(
+    Debug, Display, Ord, PartialOrd, PartialEq, Eq, Hash, Serialize, Deserialize, Copy, Clone,
+)]
 pub enum JobMode {
     /// Unknown job mode.
     Unknown,
@@ -312,7 +318,7 @@ impl ID {
 }
 
 impl Debug for ID {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         Debug::fmt(&self.0, f)
     }
 }

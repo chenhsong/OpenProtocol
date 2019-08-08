@@ -156,9 +156,7 @@ pub fn check_f64(value: f64, field: &str) -> BoundedValidationResult {
 
 /// Deserialize a JSON `null` value as `Some(None)` instead of `None`.
 #[allow(clippy::option_option)]
-pub fn deserialize_null_to_some_none<'de, D, T>(
-    d: D,
-) -> std::result::Result<Option<Option<T>>, D::Error>
+pub fn deserialize_null_to_some_none<'de, D, T>(d: D) -> Result<Option<Option<T>>, D::Error>
 where
     D: Deserializer<'de>,
     T: Deserialize<'de>,
@@ -186,9 +184,7 @@ where
 
 /// Deserialize an invalid value as `Some(None)` for an Option<Option<ID>> field.
 #[allow(clippy::option_option)]
-pub fn deserialize_invalid_to_some_none<'de, D, T>(
-    d: D,
-) -> std::result::Result<Option<Option<T>>, D::Error>
+pub fn deserialize_invalid_to_some_none<'de, D, T>(d: D) -> Result<Option<Option<T>>, D::Error>
 where
     D: Deserializer<'de>,
     T: InvalidValues + Deserialize<'de>,
@@ -210,14 +206,14 @@ where
 /// Serialization is usually not a problem because `serde_json` automatically calls
 /// `to_string()` (for key types that implement `Display`) when serializing.
 ///
-pub fn deserialize_hashmap<'de, D, K, T>(d: D) -> std::result::Result<HashMap<K, T>, D::Error>
+pub fn deserialize_hashmap<'de, D, K, T>(d: D) -> Result<HashMap<K, T>, D::Error>
 where
     D: Deserializer<'de>,
     K: FromStr + Eq + Hash,
     K::Err: Display,
     T: Deserialize<'de>,
 {
-    fn deserialize_string_key<'de, D, S>(d: D) -> std::result::Result<S, D::Error>
+    fn deserialize_string_key<'de, D, S>(d: D) -> Result<S, D::Error>
     where
         D: Deserializer<'de>,
         S: FromStr,

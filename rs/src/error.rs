@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::fmt::{Display, Formatter};
 use OpenProtocolError::*;
 
 /// Result error type.
@@ -65,8 +66,8 @@ impl std::error::Error for OpenProtocolError<'_> {
     }
 }
 
-impl std::fmt::Display for OpenProtocolError<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+impl Display for OpenProtocolError<'_> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
         match self {
             // JSON error
             JsonError(err) => err.fmt(f),

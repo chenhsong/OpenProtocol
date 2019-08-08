@@ -2,6 +2,8 @@
 
 use bitflags::*;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::fmt::{Display, Formatter};
+use std::ops::{Add, AddAssign};
 use std::str::FromStr;
 
 bitflags! {
@@ -121,7 +123,7 @@ impl From<Filters> for String {
     }
 }
 
-impl std::ops::Add for Filters {
+impl Add for Filters {
     type Output = Self;
 
     /// Turn on a particular filter.
@@ -140,7 +142,7 @@ impl std::ops::Add for Filters {
     }
 }
 
-impl std::ops::AddAssign for Filters {
+impl AddAssign for Filters {
     /// Turn on a particular filter.
     ///
     /// # Example
@@ -156,9 +158,9 @@ impl std::ops::AddAssign for Filters {
     }
 }
 
-impl std::fmt::Display for Filters {
+impl Display for Filters {
     /// Display filters value as comma-delimited list.
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         let text = format!("{:?}", self);
         let mut slice = text.trim();
 
