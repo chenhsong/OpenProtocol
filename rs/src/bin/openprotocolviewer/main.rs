@@ -20,7 +20,7 @@
 //! **`WebSocket URL`** : URL of the Open Protocol™ interface,
 //! usually `ws://MyiChenServerUrl:5788` or `ws://x.x.x.x:5788`
 //! (5788 is the default Open Protocol™ interface port).
-//! `wss:` access to secured WebSocket ports with HTTPS is _not_ supported in this sample.
+//! Use `wss://` for secured connection.
 //!
 //! **`Password`** : A login password to connect to the system.
 //! System default is `chenhsong` for the `admin` user with unlimited admin rights
@@ -36,12 +36,13 @@ use std::collections::HashMap;
 use std::convert::TryInto;
 use std::error::Error;
 use std::io::{stdin, Write};
-use std::sync::mpsc::channel;
-use std::thread;
 
 // This program uses the `websocket` crate for connection.
 use websocket::client::ClientBuilder;
-use websocket::{CloseData, OwnedMessage, WebSocketError};
+use websocket::{CloseData, OwnedMessage, WebSocketError, WebSocketResult};
+type Client = websocket::client::sync::Client<
+    std::boxed::Box<dyn websocket::stream::sync::NetworkStream + std::marker::Send>,
+>;
 
 // Pull in the `ichen_openprotocol` namespace.
 // Beware that `ichen_openprotocol::Message` will conflict with `websocket::Message`
@@ -170,12 +171,96 @@ fn process_incoming_message<'a>(json: &'a str, builtin: &'a Constants<'a>) -> Op
     }
 }
 
+fn send(client: &mut Client, message: &OwnedMessage) -> WebSocketResult<()> {
+    match client.send_message(message) {
+        Ok(()) => match message {
+            OwnedMessage::Close(data) => {
+                // If it's a Close command, just send it and then terminate the send loop
+                if let Some(d) = data {
+                    println!("Closing WebSocket connection: ({}) {}", d.status_code, d.reason);
+                } else {
+                    println!("Closing WebSocket connection...");
+                }
+                return Ok(());
+            }
+            OwnedMessage::Text(json) => println!("Sent ({}): {}", json.len(), json),
+            OwnedMessage::Binary(data) => println!("Sent data: {} byte(s)", data.len()),
+            _ => (),
+        },
+        Err(err) => {
+            // Error when sending message to the WebSocket
+            // Log the error, send Close command and terminate the send loop
+            eprintln!("Error sending message: {}", err);
+            client.send_message(&websocket::Message::close())?;
+            println!("Closing WebSocket connection...");
+            return Ok(());
+        }
+    }
+
+    Ok(())
+}
+
+fn run(mut client: Client, builtin: &Constants<'_>) -> WebSocketResult<()> {
+    loop {
+        let message = match client.recv_message() {
+            Ok(msg) => msg,
+            Err(err) => {
+                // Error when receiving message from the WebSocket
+                // Log the error, send Close command and terminate the receive loop
+                eprintln!("Error receiving message: {}", err);
+                send(
+                    &mut client,
+                    &OwnedMessage::Close(Some(CloseData::new(
+                        1,
+                        format!("Error receiving message: {}", err),
+                    ))),
+                )?;
+                return Ok(());
+            }
+        };
+
+        match message {
+            OwnedMessage::Close(data) => {
+                // Got a Close command, so send a Close command back and terminate the receive loop
+                if let Some(d) = data {
+                    println!("WebSocket closed: ({}) {}", d.status_code, d.reason);
+                } else {
+                    println!("WebSocket closed.");
+                }
+                return Ok(());
+            }
+            OwnedMessage::Ping(data) => send(&mut client, &OwnedMessage::Pong(data))?,
+            OwnedMessage::Text(json) => {
+                // Display received text to screen
+                println!("Received ({}): {}", json.len(), json);
+                // Process the message, get reply message (if any)
+                if let Some(msg) = process_incoming_message(&json, &builtin) {
+                    match msg.to_json_str() {
+                        // Serialize reply message to JSON and send it to the send loop
+                        Ok(resp) => {
+                            send(&mut client, &OwnedMessage::Text(resp))?;
+                            display_message("<<< ", &msg);
+                        }
+                        Err(err) => eprintln!("Error serializing message: {}", err),
+                    }
+                }
+            }
+            OwnedMessage::Binary(data) => {
+                // Display info if binary data received
+                println!("Received binary data: {} byte(s)", data.len())
+            }
+            // Everything else
+            _ => println!("Received: {:#?}", message),
+        }
+    }
+}
+
 fn main() {
     println!("iChen 4 Open Protocol Viewer");
     println!();
 
     // Read URL and password
-    print!("WebSocket URL (example: ws://x.x.x.x:port): ");
+    print!("WebSocket URL (example: ws://x.x.x.x:port or wss://x.x.x.x:port): ");
     std::io::stdout().flush().expect("Failed to flush stdout.");
 
     let mut input = String::new();
@@ -185,12 +270,10 @@ fn main() {
     if conn.is_empty() {
         eprintln!("URL cannot be empty.");
         return;
-    } else if conn.starts_with("wss://") {
-        eprintln!("This program is intended as a simple example for illustration purposes only.");
-        eprintln!("Due to added complexity, the wss: protocol is not supported by this program.");
-        return;
-    } else if !conn.starts_with("ws://") {
-        eprintln!("Invalid WebSocket URL format.  Should be: ws://x.x.x.x:port");
+    } else if !conn.starts_with("ws://") && !conn.starts_with("wss://") {
+        eprintln!(
+            "Invalid WebSocket URL format.  Should be: ws://x.x.x.x:port or wss://x.x.x.x:port"
+        );
         return;
     }
 
@@ -219,10 +302,10 @@ fn main() {
         }
     }
 
-    let client;
+    let mut client;
 
     // Attempt to connect
-    match ws_builder.connect_insecure() {
+    match ws_builder.connect(None) {
         Ok(c) => client = c,
         Err(err) => {
             eprintln!("Connect connect to server: {}", &err);
@@ -233,21 +316,23 @@ fn main() {
                     WebSocketError::ProtocolError(e)
                     | WebSocketError::RequestError(e)
                     | WebSocketError::ResponseError(e)
-                    | WebSocketError::DataFrameError(e) => e,
+                    | WebSocketError::DataFrameError(e) => e.to_string(),
                     //
                     // Errors with embedded error types
-                    WebSocketError::IoError(e) => e.description(),
-                    WebSocketError::HttpError(e) => e.description(),
-                    WebSocketError::UrlError(e) => e.description(),
-                    WebSocketError::TlsError(e) => e.description(),
-                    WebSocketError::Utf8Error(e) => e.description(),
-                    WebSocketError::WebSocketUrlError(e) => e.description(),
+                    WebSocketError::IoError(e) => e.description().to_string(),
+                    WebSocketError::HttpError(e) => e.description().to_string(),
+                    WebSocketError::UrlError(e) => e.description().to_string(),
+                    WebSocketError::TlsError(e) => e.description().to_string(),
+                    WebSocketError::Utf8Error(e) => e.description().to_string(),
+                    WebSocketError::WebSocketUrlError(e) => e.description().to_string(),
+                    //
+                    // Errors with status code
+                    WebSocketError::StatusCodeError(code) => format!("status code = {}", code),
                     //
                     // Errors with no more information
-                    WebSocketError::StatusCodeError(_)
-                    | WebSocketError::NoDataAvailable
+                    WebSocketError::NoDataAvailable
                     | WebSocketError::TlsHandshakeFailure
-                    | WebSocketError::TlsHandshakeInterruption => return,
+                    | WebSocketError::TlsHandshakeInterruption => "".to_string(),
                 }
             );
             return;
@@ -293,105 +378,6 @@ fn main() {
         )
     });
     println!("=================================================");
-    println!("Press ENTER to quit...");
-
-    // Split WebSocket into sender and receiver
-    let (mut receiver, mut sender) = client.split().expect("Failed to split WebSocket channel.");
-
-    // Create a channel for communications between the send and receive loops
-    let (tx, rx) = channel();
-    let txx = tx.clone();
-
-    // Receive loop
-    let receive_loop = thread::spawn(move || {
-        for message in receiver.incoming_messages() {
-            let message = match message {
-                Ok(msg) => msg,
-                Err(err) => {
-                    // Error when receiving message from the WebSocket
-                    // Log the error, send Close command and terminate the receive loop
-                    eprintln!("Error receiving message: {}", err);
-                    txx.send(OwnedMessage::Close(Some(CloseData::new(
-                        1,
-                        format!("Error receiving message: {}", err),
-                    ))))
-                    .unwrap();
-                    return;
-                }
-            };
-
-            match message {
-                OwnedMessage::Close(data) => {
-                    // Got a Close command, so send a Close command back and terminate the receive loop
-                    if let Some(d) = data {
-                        println!("WebSocket closed: ({}) {}", d.status_code, d.reason);
-                    } else {
-                        println!("WebSocket closed.");
-                    }
-                    return;
-                }
-                OwnedMessage::Ping(data) => txx.send(OwnedMessage::Pong(data)).unwrap(),
-                OwnedMessage::Text(json) => {
-                    // Display received text to screen
-                    println!("Received ({}): {}", json.len(), json);
-                    // Process the message, get reply message (if any)
-                    if let Some(msg) = process_incoming_message(&json, &builtin) {
-                        match msg.to_json_str() {
-                            // Serialize reply message to JSON and send it to the send loop
-                            Ok(resp) => {
-                                txx.send(OwnedMessage::Text(resp)).unwrap();
-                                display_message("<<< ", &msg);
-                            }
-                            Err(err) => eprintln!("Error serializing message: {}", err),
-                        }
-                    }
-                }
-                OwnedMessage::Binary(data) => {
-                    // Display info if binary data received
-                    println!("Received binary data: {} byte(s)", data.len())
-                }
-                // Everything else
-                _ => println!("Received: {:#?}", message),
-            }
-        }
-    });
-
-    // Send loop
-    let send_loop = thread::spawn(move || {
-        // Sleep for 1 sec. before sending anything for the WebSocket connection to stabilize
-        thread::sleep(std::time::Duration::from_secs(1));
-
-        for message in rx {
-            // Send the message and display it to screen
-            match sender.send_message(&message) {
-                Ok(()) => match message {
-                    OwnedMessage::Close(data) => {
-                        // If it's a Close command, just send it and then terminate the send loop
-                        if let Some(d) = data {
-                            println!(
-                                "Closing WebSocket connection: ({}) {}",
-                                d.status_code, d.reason
-                            );
-                        } else {
-                            println!("Closing WebSocket connection...");
-                        }
-                        return;
-                    }
-                    OwnedMessage::Text(json) => println!("Sent ({}): {}", json.len(), json),
-                    OwnedMessage::Binary(data) => println!("Sent data: {} byte(s)", data.len()),
-                    _ => (),
-                },
-                Err(err) => {
-                    // Error when sending message to the WebSocket
-                    // Log the error, send Close command and terminate the send loop
-                    eprintln!("Error sending message: {}", err);
-                    let _ = sender.send_message(&websocket::Message::close());
-                    println!("Closing WebSocket connection...");
-                    return;
-                }
-            }
-        }
-    });
 
     println!("Sending JOIN message...");
 
@@ -414,27 +400,21 @@ fn main() {
     let msg = Message::new_join(password, Filters::All + Filters::JobCards + Filters::Operators);
 
     match msg.to_json_str() {
-        Ok(m) => match tx.send(OwnedMessage::Text(m)) {
-            Ok(()) => (),
+        Ok(m) => match send(&mut client, &OwnedMessage::Text(m)) {
+            Ok(_) => (),
             Err(err) => eprintln!("Error when sending JOIN message: {}", err),
         },
         Err(err) => eprintln!("Error in JOIN message: {}", err),
     }
 
-    // After sending the `JOIN` message, everything else should occur automatically in the background.
-    // So just wait for an ENTER key to quit...
-    let mut input = String::new();
-    stdin().read_line(&mut input).expect("Failed to read line from stdin.");
+    // After sending the `JOIN` message, start processing messages...
+    println!("Process loop started...");
 
-    // Close the connection
-    let _ =
-        tx.send(OwnedMessage::Close(Some(<CloseData>::new(0, "Program termination.".to_string()))));
+    match run(client, &builtin) {
+        Ok(_) => println!("Process loop stopped."),
+        Err(err) => eprintln!("Error in process loop: {}", err),
+    }
 
     // Exit
-    println!("Waiting for child threads to exit...");
-
-    let _ = send_loop.join();
-    let _ = receive_loop.join();
-
     println!("Program terminated.");
 }
