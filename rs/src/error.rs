@@ -1,6 +1,5 @@
 use std::borrow::Cow;
 use std::fmt::{Display, Formatter};
-use OpenProtocolError::*;
 
 /// Result error type.
 ///
@@ -36,31 +35,35 @@ impl std::error::Error for OpenProtocolError<'_> {
     fn description(&self) -> &str {
         match self {
             // JSON error
-            JsonError(err) => err.description(),
+            Self::JsonError(err) => err.description(),
             //
             // Invalid field value
-            InvalidField { description, .. } if description.is_empty() => "invalid field value",
-            InvalidField { description, .. } => description,
+            Self::InvalidField { description, .. } if description.is_empty() => {
+                "invalid field value"
+            }
+            Self::InvalidField { description, .. } => description,
             //
             // Constraint violation
-            ConstraintViolated(err) => err,
+            Self::ConstraintViolated(err) => err,
             //
             // Inconsistent field
-            InconsistentField(_) => {
+            Self::InconsistentField(_) => {
                 "value of field is not the same as matching field in the Controller"
             }
             //
             // Inconsistent state
-            InconsistentState(_) => "value of field is not the same as matching field in the state",
+            Self::InconsistentState(_) => {
+                "value of field is not the same as matching field in the state"
+            }
             //
             // Field empty
-            EmptyField(_) => "field cannot be empty or all whitespace",
+            Self::EmptyField(_) => "field cannot be empty or all whitespace",
         }
     }
 
     fn cause(&self) -> Option<&dyn std::error::Error> {
         match self {
-            JsonError(err) => Some(err),
+            Self::JsonError(err) => Some(err),
             _ => None,
         }
     }
@@ -70,35 +73,37 @@ impl Display for OpenProtocolError<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
         match self {
             // JSON error
-            JsonError(err) => err.fmt(f),
+            Self::JsonError(err) => err.fmt(f),
             //
             // Invalid field value
-            InvalidField { field, value, description } if description.is_empty() => {
+            Self::InvalidField { field, value, description } if description.is_empty() => {
                 write!(f, "value [{}] is invalid for the field {}", value, field)
             }
-            InvalidField { field, value, description } => {
+            Self::InvalidField { field, value, description } => {
                 write!(f, "value [{}] is invalid for the field {}: {}", value, field, description)
             }
             //
             // Constraint violation
-            ConstraintViolated(err) => err.fmt(f),
+            Self::ConstraintViolated(err) => err.fmt(f),
             //
             // Inconsistent field value
-            InconsistentField(field) => write!(
+            Self::InconsistentField(field) => write!(
                 f,
                 "value of field {} is not the same as the matching field in the Controller",
                 field
             ),
             //
             // Inconsistent state value
-            InconsistentState(field) => write!(
+            Self::InconsistentState(field) => write!(
                 f,
                 "value of field {} is not the same as the matching field in the state",
                 field
             ),
             //
             // Field empty
-            EmptyField(field) => write!(f, "field {} cannot be empty or all whitespace", field),
+            Self::EmptyField(field) => {
+                write!(f, "field {} cannot be empty or all whitespace", field)
+            }
         }
     }
 }
@@ -119,8 +124,8 @@ impl PartialEq for OpenProtocolError<'_> {
         match self {
             // JSON error - since serde::error::Error does not implement PartialEq,
             //              the only thing we can do is compare the debug representation.
-            JsonError(err1) => match other {
-                JsonError(err2) => format!("{:?}", err1) == format!("{:?}", err2),
+            Self::JsonError(err1) => match other {
+                Self::JsonError(err2) => format!("{:?}", err1) == format!("{:?}", err2),
                 _ => false,
             },
             //

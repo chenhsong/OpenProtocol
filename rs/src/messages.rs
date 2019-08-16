@@ -1,8 +1,8 @@
 use super::filters::Filters;
 use super::utils::*;
 use super::{
-    BoundedValidationResult, Controller, JobMode, Language, OpMode, OpenProtocolError as Error,
-    Result, ValidationResult, ID,
+    BoundedValidationResult, Controller, Error, JobMode, Language, OpMode, Result,
+    ValidationResult, ID,
 };
 use chrono::{DateTime, FixedOffset};
 use serde::{Deserialize, Serialize};

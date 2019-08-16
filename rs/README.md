@@ -1,7 +1,8 @@
 Open Protocol™ Rust Interface Library
 ====================================
 
-Rust Edition: 2018
+Rust Edition: 2018  
+Rust Version: 1.37 and up
 
 Rust crate to interface with the iChen® System 4 using Open Protocol™.
 

@@ -1,4 +1,4 @@
-use super::{BoundedValidationResult, OpenProtocolError as Error, ValidationResult, ID};
+use super::{BoundedValidationResult, Error, ValidationResult, ID};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::HashMap;
 use std::convert::TryInto;
