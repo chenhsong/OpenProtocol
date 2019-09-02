@@ -11,7 +11,7 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use Message::*;
 
-// Auto-incrementing global counter for message sequences
+// Auto-incrementing global counter for message sequence numbers.
 static SEQ: AtomicU64 = AtomicU64::new(1);
 
 /// Common options of an Open Protocol message.

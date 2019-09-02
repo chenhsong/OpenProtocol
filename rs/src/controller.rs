@@ -27,8 +27,9 @@ impl<'a> Operator<'a> {
     /// # Examples
     ///
     /// ~~~
+    /// # use std::convert::TryFrom;
     /// # use ichen_openprotocol::*;
-    /// let op = Operator::new(ID::from(12345));
+    /// let op = Operator::new(ID::try_from(12345).unwrap());
     /// assert_eq!(12345, u32::from(op.operator_id));
     /// assert_eq!(None, op.operator_name);
     /// ~~~
@@ -41,8 +42,9 @@ impl<'a> Operator<'a> {
     /// # Examples
     ///
     /// ~~~
+    /// # use std::convert::TryFrom;
     /// # use ichen_openprotocol::*;
-    /// let op = Operator::new_with_name(ID::from(12345), "John");
+    /// let op = Operator::new_with_name(ID::try_from(12345).unwrap(), "John");
     /// assert_eq!(12345, u32::from(op.operator_id));
     /// assert_eq!(Some("John"), op.operator_name);
     /// ~~~
@@ -60,13 +62,24 @@ impl<'a> Operator<'a> {
     /// ## Error Examples
     ///
     /// ~~~
+    /// # use std::convert::TryFrom;
     /// # use ichen_openprotocol::*;
-    /// let op = Operator::new_with_name(ID::from(12345), "John");
+    ///
+    /// let op = Operator::new_with_name(ID::try_from(12345).unwrap(), "");
     /// assert_eq!(r#"Err(EmptyField("operator_name"))"#, format!("{:?}", op.validate()));
     /// ~~~
     ///
     /// [`OpenProtocolError::EmptyField`]: enum.OpenProtocolError.html#variant.EmptyField
     ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use std::convert::TryFrom;
+    /// # use ichen_openprotocol::*;
+    ///
+    /// let op = Operator::new_with_name(ID::try_from(12345).unwrap(), "John");
+    /// assert_eq!(Ok(()), op.validate());
+    /// ~~~
     pub fn validate(&self) -> ValidationResult {
         check_optional_str_empty(&self.operator_name, "operator_name")
     }
@@ -237,6 +250,50 @@ impl<'a> Controller<'a> {
     ///
     /// [`OpenProtocolError`]: enum.OpenProtocolError.html
     ///
+    /// # Examples
+    ///
+    /// ## Default values should pass validation
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// let c: Controller = Default::default();
+    /// assert_eq!(Ok(()), c.validate());
+    /// ~~~
+    ///
+    /// ## Address validation
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    ///
+    /// // 1.02.003.004:05
+    /// let mut c = Controller {
+    ///     address: "1.02.003.004:05",
+    ///     .. Default::default()
+    /// };
+    /// assert_eq!(Ok(()), c.validate());
+    ///
+    /// // 1.02.003.004:0 - should fail because port cannot be zero if IP address is not zero
+    /// c.address = "1.02.003.004:0";
+    /// assert_eq!(
+    ///     r#"Err(InvalidField { field: "ip[port]", value: "0", description: "IP port cannot be zero" })"#,
+    ///     format!("{:?}", c.validate()));
+    ///
+    /// // 0.0.0.0:0 - OK because both IP address and port are zero
+    /// c.address = "0.0.0.0:0";
+    /// assert_eq!(Ok(()), c.validate());
+    ///
+    /// // 0.0.0.0:123 - should fail because port must be zero if IP address is zero
+    /// c.address = "0.0.0.0:123";
+    /// assert_eq!(
+    ///     r#"Err(InvalidField { field: "ip[port]", value: "123", description: "null IP must have zero port number" })"#,
+    ///     format!("{:?}", c.validate()));
+    ///
+    /// // COM123
+    /// c.address = "COM123";
+    /// assert_eq!(Ok(()), c.validate());
+    ///
+    /// // ttyABC
+    /// c.address = "ttyABC";
+    /// assert_eq!(Ok(()), c.validate());
+    /// ~~~
     pub fn validate(&self) -> BoundedValidationResult<'a> {
         // String fields should not be empty
         check_str_empty(self.controller_type, "controller_type")?;
@@ -383,47 +440,5 @@ mod test {
         assert_eq!(
             r#"Controller { controller_id: 1, display_name: "Hello", controller_type: "Unknown", version: "Unknown", model: "Unknown", address: "127.0.0.1:123", geo_location: None, op_mode: Automatic, job_mode: ID02, last_cycle_data: {}, variables: {}, last_connection_time: None, operator: Some(Operator { operator_id: 123, operator_name: Some("John") }), job_card_id: None, mold_id: None }"#,
             format!("{:?}", &c));
-    }
-
-    #[test]
-    fn test_controller_validate() {
-        let c: Controller = Default::default();
-        c.validate().unwrap();
-    }
-
-    #[test]
-    fn test_operator_validate() {
-        Operator { operator_id: ID::from_u32(123), operator_name: Some("John") }
-            .validate()
-            .unwrap();
-    }
-
-    #[test]
-    fn test_controller_validate_address() {
-        let mut c: Controller = Default::default();
-
-        // 1.02.003.004:05
-        c.address = "1.02.003.004:05";
-        c.validate().unwrap();
-
-        // 1.02.003.004:0 - should fail
-        c.address = "1.02.003.004:0";
-        assert!(c.validate().is_err());
-
-        // 0.0.0.0:0
-        c.address = "0.0.0.0:0";
-        c.validate().unwrap();
-
-        // 0.0.0.0:123 - should fail
-        c.address = "0.0.0.0:123";
-        assert!(c.validate().is_err());
-
-        // COM123
-        c.address = "COM123";
-        c.validate().unwrap();
-
-        // ttyABC
-        c.address = "ttyABC";
-        c.validate().unwrap();
     }
 }

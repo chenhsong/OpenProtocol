@@ -81,6 +81,18 @@ impl FromStr for Filters {
     /// # use ichen_openprotocol::*;
     /// let f = Filters::from_str("Hello, World, Cycle, Mold,Operators|Foo+BarXYZYXYZ=123").unwrap();
     /// assert_eq!(Filters::Cycle + Filters::Mold, f);
+    ///
+    /// let f = Filters::from_str("All, OPCUA").unwrap();
+    /// assert_eq!(Filters::All + Filters::OPCUA, f);
+    /// assert!(f.has(Filters::All));
+    /// assert!(f.has(Filters::OPCUA));
+    /// assert!(!f.has(Filters::Operators));
+    /// assert!(!f.has(Filters::JobCards));
+    /// assert!(f.has(Filters::Cycle));
+    /// assert!(f.has(Filters::Status));
+    /// assert!(f.has(Filters::Mold));
+    /// assert!(f.has(Filters::Audit));
+    /// assert!(f.has(Filters::Alarms));
     /// ~~~
     fn from_str(text: &str) -> Result<Self, Self::Err> {
         let text = text.trim();
@@ -158,6 +170,15 @@ impl AddAssign for Filters {
     }
 }
 
+/// Serialize `Filters` as comma-separated list.
+///
+/// # Examples
+///
+/// ~~~
+/// # use ichen_openprotocol::*;
+/// let f = Filters::All + Filters::Cycle + Filters::OPCUA;
+/// assert_eq!("All, OPCUA", f.to_string());
+/// ~~~
 impl Display for Filters {
     /// Display filters value as comma-delimited list.
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
@@ -193,30 +214,5 @@ impl<'de> Deserialize<'de> for Filters {
     {
         let s = Deserialize::deserialize(d).map_err(serde::de::Error::custom)?;
         Filters::from_str(s).map_err(serde::de::Error::custom)
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_serialize_filters() {
-        let f = Filters::All + Filters::Cycle + Filters::OPCUA;
-        assert_eq!("All, OPCUA", format!("{}", f));
-    }
-
-    #[test]
-    fn test_deserialize_filters() {
-        let f = Filters::from_str("All, OPCUA").unwrap();
-        assert!(f.has(Filters::All));
-        assert!(f.has(Filters::OPCUA));
-        assert!(!f.has(Filters::Operators));
-        assert!(!f.has(Filters::JobCards));
-        assert!(f.has(Filters::Cycle));
-        assert!(f.has(Filters::Status));
-        assert!(f.has(Filters::Mold));
-        assert!(f.has(Filters::Audit));
-        assert!(f.has(Filters::Alarms));
     }
 }

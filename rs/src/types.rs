@@ -335,8 +335,8 @@ impl TryFrom<u32> for ID {
     /// # Examples
     ///
     /// ~~~
-    /// # use ichen_openprotocol::*;
     /// # use std::convert::TryFrom;
+    /// # use ichen_openprotocol::*;
     /// let id = ID::try_from(42).unwrap();
     /// assert_eq!(42, u32::from(id));
     /// assert!(ID::try_from(0).is_err());
