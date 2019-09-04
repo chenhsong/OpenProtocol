@@ -9,51 +9,44 @@ use std::str::FromStr;
 
 /// A trait to specify different _invalid_ values for a type for serialization purposes
 ///
-pub trait InvalidValues {
+pub trait HasInvalidValue {
     type Marker;
 
     /// Returns the standard invalid value for an implementing type
-    ///
     fn invalid() -> Self::Marker;
 }
 
-impl InvalidValues for ID {
+impl HasInvalidValue for ID {
     type Marker = u32;
 
-    /// [`ID`] cannot be zero.
-    ///
-    /// [`ID`]: struct.ID.html
-    ///
+    /// `ID` cannot be zero.
     fn invalid() -> Self::Marker {
         0
     }
 }
 
-impl InvalidValues for NonZeroU32 {
+impl HasInvalidValue for NonZeroU32 {
     type Marker = u32;
 
     /// `NonZeroU32` cannot be zero.
-    ///
     fn invalid() -> Self::Marker {
         0
     }
 }
 
-impl InvalidValues for f32 {
+impl HasInvalidValue for f32 {
     type Marker = f32;
 
-    /// Use NaN for floating-point numbers.
-    ///
+    /// Use NaN as an invalid value for floating-point numbers.
     fn invalid() -> Self::Marker {
         std::f32::NAN
     }
 }
 
-impl InvalidValues for f64 {
+impl HasInvalidValue for f64 {
     type Marker = f64;
 
-    /// Use NaN for floating-point numbers.
-    ///
+    /// Use NaN as an invalid value for floating-point numbers.
     fn invalid() -> Self::Marker {
         std::f64::NAN
     }
@@ -164,7 +157,7 @@ where
     Deserialize::deserialize(d).map(Some)
 }
 
-/// Serialize a `Some(None)` value as the default value instead of `null`.
+/// Serialize a `Some(None)` value as the invalid value instead of `null`.
 #[allow(clippy::option_option)]
 #[allow(clippy::trivially_copy_pass_by_ref)]
 pub fn serialize_some_none_to_invalid<S, T>(
@@ -173,7 +166,7 @@ pub fn serialize_some_none_to_invalid<S, T>(
 ) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
-    T: InvalidValues + Serialize,
+    T: HasInvalidValue + Serialize,
     T::Marker: PartialEq + Serialize,
 {
     match value {
@@ -187,7 +180,7 @@ where
 pub fn deserialize_invalid_to_some_none<'de, D, T>(d: D) -> Result<Option<Option<T>>, D::Error>
 where
     D: Deserializer<'de>,
-    T: InvalidValues + Deserialize<'de>,
+    T: HasInvalidValue + Deserialize<'de>,
     T::Marker: PartialEq + Deserialize<'de> + TryInto<T>,
     <T::Marker as TryInto<T>>::Error: Display,
 {
