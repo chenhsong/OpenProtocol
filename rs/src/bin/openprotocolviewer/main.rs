@@ -183,7 +183,7 @@ fn send(client: &mut Client, message: &OwnedMessage) -> WebSocketResult<()> {
                 }
                 return Ok(());
             }
-            OwnedMessage::Text(json) => println!("Sent ({}): {}", json.len(), json),
+            OwnedMessage::Text(json) => println!("Sent [{}]: {}", json.len(), json),
             OwnedMessage::Binary(data) => println!("Sent data: {} byte(s)", data.len()),
             _ => (),
         },
@@ -232,7 +232,7 @@ fn run(mut client: Client, builtin: &Constants<'_>) -> WebSocketResult<()> {
             OwnedMessage::Ping(data) => send(&mut client, &OwnedMessage::Pong(data))?,
             OwnedMessage::Text(json) => {
                 // Display received text to screen
-                println!("Received ({}): {}", json.len(), json);
+                println!("Received [{}]: {}", json.len(), json);
                 // Process the message, get reply message (if any)
                 if let Some(msg) = process_incoming_message(&json, &builtin) {
                     match msg.to_json_str() {
