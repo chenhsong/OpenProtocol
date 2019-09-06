@@ -136,3 +136,9 @@ impl PartialEq for OpenProtocolError<'_> {
 }
 
 impl Eq for OpenProtocolError<'_> {}
+
+impl std::convert::From<OpenProtocolError<'_>> for String {
+    fn from(error: OpenProtocolError<'_>) -> Self {
+        error.to_string()
+    }
+}

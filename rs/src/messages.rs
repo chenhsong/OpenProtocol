@@ -1082,11 +1082,15 @@ impl<'a> Message<'a> {
                     {
                         return Err(Error::InconsistentField("operator_name".into()));
                     }
-                    if job_card_id.is_some() && *job_card_id.as_ref().unwrap() != c.job_card_id {
-                        return Err(Error::InconsistentField("job_card_id".into()));
+                    if let Some(jc) = job_card_id {
+                        if *jc != c.job_card_id {
+                            return Err(Error::InconsistentField("job_card_id".into()));
+                        }
                     }
-                    if mold_id.is_some() && *mold_id.as_ref().unwrap() != c.mold_id {
-                        return Err(Error::InconsistentField("mold_id".into()));
+                    if let Some(m) = mold_id {
+                        if *m != c.mold_id {
+                            return Err(Error::InconsistentField("mold_id".into()));
+                        }
                     }
                 }
 
@@ -1217,6 +1221,7 @@ impl<'a> Message<'a> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::result::Result;
 
     impl<'a> MessageOptions<'a> {
         /// A private constructor function that creates a `MessageOptions` structure
@@ -1227,28 +1232,31 @@ mod test {
     }
 
     #[test]
-    fn test_message_alive_to_json() {
-        let m =
+    fn test_message_alive_to_json() -> Result<(), String> {
+        let msg =
             Alive { options: MessageOptions { id: Some("Hello"), sequence: 999, priority: 20 } };
 
-        let serialized = serde_json::to_string(&m).unwrap();
+        let serialized = serde_json::to_string(&msg).map_err(|x| x.to_string())?;
 
         assert_eq!(r#"{"$type":"Alive","id":"Hello","sequence":999,"priority":20}"#, serialized);
+
+        Ok(())
     }
 
     #[test]
-    fn test_message_mold_data_to_json() {
+    fn test_message_mold_data_to_json() -> Result<(), String> {
         let mut map = HashMap::<&str, f64>::new();
 
         map.insert("Hello", 123.0);
         map.insert("World", -987.6543);
         map.insert("foo", 0.0);
 
-        let m = MoldData {
+        let msg = MoldData {
             controller_id: ID::from_u32(123),
             data: map,
 
-            timestamp: DateTime::parse_from_rfc3339("2019-02-26T02:03:04+08:00").unwrap(),
+            timestamp: DateTime::parse_from_rfc3339("2019-02-26T02:03:04+08:00")
+                .map_err(|x| x.to_string())?,
 
             state: StateValues::new_with_all(
                 OpMode::SemiAutomatic,
@@ -1261,80 +1269,85 @@ mod test {
             options: MessageOptions { id: None, sequence: 999, priority: -20 },
         };
 
-        let serialized = serde_json::to_string(&m).unwrap();
+        let serialized = serde_json::to_string(&msg).map_err(|x| x.to_string())?;
 
         assert_eq!(
             r#"{"$type":"MoldData","controllerId":123,"data":{"foo":0.0,"Hello":123.0,"World":-987.6543},"timestamp":"2019-02-26T02:03:04+08:00","jobCardId":"Hello World!","operatorId":42,"opMode":"SemiAutomatic","jobMode":"Offline","sequence":999,"priority":-20}"#,
             serialized
         );
 
-        let m2: Message = serde_json::from_str(&serialized).unwrap();
-        m2.validate().unwrap();
+        let m2: Message = serde_json::from_str(&serialized).map_err(|x| x.to_string())?;
+        m2.validate()?;
 
-        assert_eq!(m, m2);
+        assert_eq!(msg, m2);
+
+        Ok(())
     }
 
     #[test]
-    fn test_message_controllers_list_from_json() {
+    fn test_message_controllers_list_from_json() -> Result<(), String> {
         let json = r#"{"$type":"ControllersList","data":{"12345":{"controllerId":12345,"displayName":"Hello","controllerType":"Ai12","version":"1.0.0","model":"JM128-Ai","IP":"192.168.5.1:123","opMode":"Manual","jobMode":"ID11","lastCycleData":{"Z_QDGODCNT":8567,"Z_QDCYCTIM":979,"Z_QDINJTIM":5450,"Z_QDPLSTIM":7156,"Z_QDINJENDPOS":8449,"Z_QDPLSENDPOS":2212,"Z_QDFLAG":8988,"Z_QDPRDCNT":65500,"Z_QDCOLTIM":4435,"Z_QDMLDOPNTIM":652,"Z_QDMLDCLSTIM":2908,"Z_QDVPPOS":4732,"Z_QDMLDOPNENDPOS":6677,"Z_QDMAXINJSPD":7133,"Z_QDMAXPLSRPM":641,"Z_QDNOZTEMP":6693,"Z_QDTEMPZ01":9964,"Z_QDTEMPZ02":7579,"Z_QDTEMPZ03":4035,"Z_QDTEMPZ04":5510,"Z_QDTEMPZ05":8460,"Z_QDTEMPZ06":9882,"Z_QDBCKPRS":2753,"Z_QDHLDTIM":9936},"lastConnectionTime":"2016-03-06T23:11:27.1442177+08:00"},"22334":{"controllerId":22334,"displayName":"World","controllerType":"Ai01","version":"1.0.0","model":"JM128-Ai","IP":"192.168.5.2:234","opMode":"SemiAutomatic","jobMode":"ID12","lastCycleData":{"Z_QDGODCNT":6031,"Z_QDCYCTIM":7526,"Z_QDINJTIM":4896,"Z_QDPLSTIM":5196,"Z_QDINJENDPOS":1250,"Z_QDPLSENDPOS":8753,"Z_QDFLAG":3314,"Z_QDPRDCNT":65500,"Z_QDCOLTIM":3435,"Z_QDMLDOPNTIM":7854,"Z_QDMLDCLSTIM":4582,"Z_QDVPPOS":7504,"Z_QDMLDOPNENDPOS":7341,"Z_QDMAXINJSPD":7322,"Z_QDMAXPLSRPM":6024,"Z_QDNOZTEMP":3406,"Z_QDTEMPZ01":3067,"Z_QDTEMPZ02":9421,"Z_QDTEMPZ03":2080,"Z_QDTEMPZ04":8845,"Z_QDTEMPZ05":4478,"Z_QDTEMPZ06":3126,"Z_QDBCKPRS":2807,"Z_QDHLDTIM":3928},"lastConnectionTime":"2016-03-06T23:11:27.149218+08:00"}},"sequence":68568}"#;
 
-        let m: Message = serde_json::from_str(&json).unwrap();
-        m.validate().unwrap();
+        let msg: Message = serde_json::from_str(&json).map_err(|x| x.to_string())?;
+        msg.validate()?;
 
-        if let ControllersList { data, .. } = &m {
+        if let ControllersList { data, .. } = &msg {
             assert_eq!(2, data.len());
             let c = data.get(&ID::from_u32(12345)).unwrap();
             assert_eq!("Hello", c.display_name);
+            Ok(())
         } else {
-            panic!("Expected ControllersList, got {:#?}", m);
+            Err(format!("Expected ControllersList, got {:#?}", msg))
         }
     }
 
     #[test]
-    fn test_message_cycle_data_from_json() {
+    fn test_message_cycle_data_from_json() -> Result<(), String> {
         let json = r#"{"$type":"CycleData","timestamp":"2016-02-26T01:12:23+08:00","opMode":"Automatic","jobMode":"ID02","controllerId":123,"data":{"Z_QDGODCNT":123,"Z_QDCYCTIM":12.33,"Z_QDINJTIM":3,"Z_QDPLSTIM":4.4,"Z_QDINJENDPOS":30.1,"Z_QDPLSENDPOS":20.3,"Z_QDFLAG":1,"Z_QDPRDCNT":500,"Z_QDCOLTIM":12.12,"Z_QDMLDOPNTIM":2.1,"Z_QDMLDCLSTIM":1.3,"Z_QDVPPOS":12.11,"Z_QDMLDOPNENDPOS":130.1,"Z_QDMAXINJSPD":213.12,"Z_QDMAXPLSRPM":551,"Z_QDNOZTEMP":256,"Z_QDTEMPZ01":251,"Z_QDTEMPZ02":252,"Z_QDTEMPZ03":253,"Z_QDTEMPZ04":254,"Z_QDTEMPZ05":255,"Z_QDTEMPZ06":256,"Z_QDBCKPRS":54,"Z_QDHLDTIM":2.3,"Z_QDCPT01":231,"Z_QDCPT02":232,"Z_QDCPT03":233,"Z_QDCPT04":234,"Z_QDCPT05":235,"Z_QDCPT06":236,"Z_QDCPT07":237,"Z_QDCPT08":238,"Z_QDCPT09":239,"Z_QDCPT10":240,"Z_QDCPT11":241,"Z_QDCPT12":242,"Z_QDCPT13":243,"Z_QDCPT14":244,"Z_QDCPT15":245,"Z_QDCPT16":246,"Z_QDCPT17":247,"Z_QDCPT18":248,"Z_QDCPT19":249,"Z_QDCPT20":250,"Z_QDCPT21":251,"Z_QDCPT22":252,"Z_QDCPT23":253,"Z_QDCPT24":254,"Z_QDCPT25":255,"Z_QDCPT26":256,"Z_QDCPT27":257,"Z_QDCPT28":258,"Z_QDCPT29":259,"Z_QDCPT30":260,"Z_QDCPT31":261,"Z_QDCPT32":262,"Z_QDCPT33":263,"Z_QDCPT34":264,"Z_QDCPT35":265,"Z_QDCPT36":266,"Z_QDCPT37":267,"Z_QDCPT38":268,"Z_QDCPT39":269,"Z_QDCPT40":270},"sequence":1}"#;
 
-        let m: Message = serde_json::from_str(&json).unwrap();
-        m.validate().unwrap();
+        let msg: Message = serde_json::from_str(&json).map_err(|x| x.to_string())?;
+        msg.validate()?;
 
-        if let CycleData { options, controller_id, data, .. } = m {
+        if let CycleData { options, controller_id, data, .. } = msg {
             assert_eq!(0, options.priority);
             assert_eq!(123, controller_id);
             assert_eq!(64, data.len());
             assert!((*data.get("Z_QDCPT13").unwrap() - 243.0).abs() < std::f64::EPSILON);
+            Ok(())
         } else {
-            panic!("Expected CycleData, got {:#?}", m);
+            Err(format!("Expected CycleData, got {:#?}", msg))
         }
     }
 
     #[test]
-    fn test_message_controller_status_without_controller_from_json() {
+    fn test_message_controller_status_without_controller_from_json() -> Result<(), String> {
         let json = r#"{"$type":"ControllerStatus","controllerId":123,"displayName":"Testing","opMode":"Automatic","jobMode":"ID05","jobCardId":"XYZ","moldId":"Mold-123","state":{"opMode":"Automatic","jobMode":"ID05","jobCardId":"XYZ","moldId":"Mold-123"},"sequence":1,"priority":50}"#;
 
-        let m: Message = serde_json::from_str(&json).unwrap();
-        m.validate().unwrap();
+        let msg: Message = serde_json::from_str(&json).map_err(|x| x.to_string())?;
+        msg.validate()?;
 
-        if let ControllerStatus { options, controller_id, display_name, controller, .. } = m {
+        if let ControllerStatus { options, controller_id, display_name, controller, .. } = msg {
             assert_eq!(50, options.priority);
             assert_eq!(1, options.sequence);
             assert_eq!(123, controller_id);
             assert_eq!(Some("Testing"), display_name);
             assert_eq!(None, controller);
+            Ok(())
         } else {
-            panic!("Expected ControllerStatus, got {:#?}", m);
+            Err(format!("Expected ControllerStatus, got {:#?}", msg))
         }
     }
 
     #[test]
-    fn test_message_controller_status_with_controller_from_json() {
+    fn test_message_controller_status_with_controller_from_json() -> Result<(), String> {
         let json = r#"{"$type":"ControllerStatus","controllerId":123,"state":{"opMode":"Automatic","jobMode":"ID05"},"controller":{"controllerId":123,"displayName":"Testing","controllerType":"Ai02","version":"2.2","model":"JM138Ai","IP":"192.168.1.1:12345","geoLatitude":23.0,"geoLongitude":-121.0,"opMode":"Automatic","jobMode":"ID05","jobCardId":"XYZ","lastCycleData":{"INJ":5,"CLAMP":400},"moldId":"Mold-123"},"sequence":1}"#;
 
-        let m: Message = serde_json::from_str(&json).unwrap();
-        m.validate().unwrap();
+        let msg: Message = serde_json::from_str(&json).map_err(|x| x.to_string())?;
+        msg.validate()?;
 
         if let ControllerStatus {
             options, controller_id, display_name, state, controller, ..
-        } = m
+        } = msg
         {
             assert_eq!(0, options.priority);
             assert_eq!(1, options.sequence);
@@ -1349,13 +1362,14 @@ mod test {
             assert!(c.operator.is_none());
             assert_eq!(2, d.len());
             assert!((*d.get("INJ").unwrap() - 5.0).abs() < std::f64::EPSILON);
+            Ok(())
         } else {
-            panic!("Expected ControllerStatus, got {:#?}", m);
+            Err(format!("Expected ControllerStatus, got {:#?}", msg))
         }
     }
 
     #[test]
-    fn test_message_controller_status_to_json() {
+    fn test_message_controller_status_to_json() -> Result<(), String> {
         let status = ControllerStatus {
             controller_id: ID::from_u32(12345),
             display_name: None,
@@ -1380,12 +1394,13 @@ mod test {
             options: MessageOptions::default_new(),
         };
 
-        let msg = status.to_json_str().unwrap();
+        let msg = status.to_json_str()?;
         assert_eq!(r#"{"$type":"ControllerStatus","controllerId":12345,"operatorId":123,"operatorName":null,"moldId":null,"state":{"opMode":"Automatic","jobMode":"ID02","operatorId":123},"sequence":1}"#, msg);
+        Ok(())
     }
 
     #[test]
-    fn test_message_controller_status_to_json2() {
+    fn test_message_controller_status_to_json2() -> Result<(), String> {
         let status = ControllerStatus {
             controller_id: ID::from_u32(12345),
             display_name: None,
@@ -1410,7 +1425,8 @@ mod test {
             options: MessageOptions::default_new(),
         };
 
-        let msg = status.to_json_str().unwrap();
+        let msg = status.to_json_str()?;
         assert_eq!(r#"{"$type":"ControllerStatus","controllerId":12345,"isDisconnected":true,"operatorId":0,"operatorName":null,"jobCardId":null,"moldId":"Test","state":{"opMode":"Automatic","jobMode":"ID02","moldId":"Test"},"sequence":1}"#, msg);
+        Ok(())
     }
 }
