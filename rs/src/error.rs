@@ -29,6 +29,9 @@ pub enum OpenProtocolError<'a> {
     //
     /// Error when serializing/deserializing JSON.
     JsonError(serde_json::Error),
+    //
+    /// An unexpected system error.
+    SystemError(Cow<'a, str>),
 }
 
 impl std::error::Error for OpenProtocolError<'_> {
@@ -45,6 +48,9 @@ impl std::error::Error for OpenProtocolError<'_> {
             //
             // Constraint violation
             Self::ConstraintViolated(err) => err,
+            //
+            // System error
+            Self::SystemError(err) => err,
             //
             // Inconsistent field
             Self::InconsistentField(_) => {
@@ -85,6 +91,9 @@ impl Display for OpenProtocolError<'_> {
             //
             // Constraint violation
             Self::ConstraintViolated(err) => err.fmt(f),
+            //
+            // System error
+            Self::SystemError(err) => err.fmt(f),
             //
             // Inconsistent field value
             Self::InconsistentField(field) => write!(

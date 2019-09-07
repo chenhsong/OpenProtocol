@@ -27,9 +27,8 @@ impl<'a> Operator<'a> {
     /// # Examples
     ///
     /// ~~~
-    /// # use std::convert::TryFrom;
     /// # use ichen_openprotocol::*;
-    /// let op = Operator::new(ID::try_from(12345).unwrap());
+    /// let op = Operator::new(ID::from_u32(12345));
     /// assert_eq!(12345, u32::from(op.operator_id));
     /// assert_eq!(None, op.operator_name);
     /// ~~~
@@ -42,9 +41,8 @@ impl<'a> Operator<'a> {
     /// # Examples
     ///
     /// ~~~
-    /// # use std::convert::TryFrom;
     /// # use ichen_openprotocol::*;
-    /// let op = Operator::new_with_name(ID::try_from(12345).unwrap(), "John");
+    /// let op = Operator::new_with_name(ID::from_u32(12345), "John");
     /// assert_eq!(12345, u32::from(op.operator_id));
     /// assert_eq!(Some("John"), op.operator_name);
     /// ~~~
@@ -62,11 +60,13 @@ impl<'a> Operator<'a> {
     /// ## Error Examples
     ///
     /// ~~~
-    /// # use std::convert::TryFrom;
     /// # use ichen_openprotocol::*;
-    ///
-    /// let op = Operator::new_with_name(ID::try_from(12345).unwrap(), "");
-    /// assert_eq!(r#"Err(EmptyField("operator_name"))"#, format!("{:?}", op.validate()));
+    /// let op = Operator::new_with_name(ID::from_u32(12345), "");
+    /// match op.validate()
+    /// {
+    ///     Err(Error::EmptyField(ref field)) if field == "operator_name" => (),
+    ///     _ => panic!("wrong error")
+    /// }
     /// ~~~
     ///
     /// [`OpenProtocolError::EmptyField`]: enum.OpenProtocolError.html#variant.EmptyField
@@ -74,11 +74,12 @@ impl<'a> Operator<'a> {
     /// # Examples
     ///
     /// ~~~
-    /// # use std::convert::TryFrom;
     /// # use ichen_openprotocol::*;
-    ///
-    /// let op = Operator::new_with_name(ID::try_from(12345).unwrap(), "John");
-    /// assert_eq!(Ok(()), op.validate());
+    /// # fn main() -> std::result::Result<(), Error<'static>> {
+    /// let op = Operator::new_with_name(ID::from_u32(12345), "John");
+    /// op.validate()?;
+    /// # Ok(())
+    /// # }
     /// ~~~
     pub fn validate(&self) -> ValidationResult {
         check_optional_str_empty(&self.operator_name, "operator_name")
@@ -129,16 +130,23 @@ impl GeoLocation {
     /// ~~~
     /// # use ichen_openprotocol::*;
     /// let geo1 = GeoLocation::new(23.456, std::f64::NEG_INFINITY);
-    /// assert_eq!(
-    ///     r#"Err(InvalidField { field: "geo_longitude", value: "-inf", description: "Infinity is not a supported value" })"#,
-    ///     format!("{:?}", geo1.validate())
-    /// );
+    /// match geo1.validate()
+    /// {
+    ///     Err(Error::InvalidField { ref field, ref value, ref description }) if
+    ///         field == "geo_longitude"
+    ///         && value == "-inf"
+    ///         && description == "Infinity is not a supported value"
+    ///     => {},
+    ///     _ => panic!("wrong error")
+    /// }
     ///
     /// let geo2 = GeoLocation::new(123.456, 987.654);
-    /// assert_eq!(
-    ///     r#"Err(ConstraintViolated("latitude (123.456) must be between -90 and 90"))"#,
-    ///     format!("{:?}", geo2.validate())
-    /// );
+    /// match geo2.validate()
+    /// {
+    ///     Err(Error::ConstraintViolated(ref err))
+    ///         if err == "latitude (123.456) must be between -90 and 90" => (),
+    ///     _ => panic!("wrong error")
+    /// }
     /// ~~~
     ///
     /// [`OpenProtocolError::InvalidField`]: enum.OpenProtocolError.html#variant.InvalidField
@@ -255,44 +263,61 @@ impl<'a> Controller<'a> {
     /// ## Default values should pass validation
     /// ~~~
     /// # use ichen_openprotocol::*;
+    /// # fn main() -> std::result::Result<(), Error<'static>> {
     /// let c: Controller = Default::default();
-    /// assert_eq!(Ok(()), c.validate());
+    /// c.validate()?;
+    /// # Ok(())
+    /// # }
     /// ~~~
     ///
     /// ## Address validation
     /// ~~~
     /// # use ichen_openprotocol::*;
-    ///
+    /// # fn main() -> std::result::Result<(), Error<'static>> {
     /// // 1.02.003.004:05
     /// let mut c = Controller {
     ///     address: "1.02.003.004:05",
     ///     .. Default::default()
     /// };
-    /// assert_eq!(Ok(()), c.validate());
+    /// c.validate()?;
     ///
-    /// // 1.02.003.004:0 - should fail because port cannot be zero if IP address is not zero
+    /// // 1.02.003.004:0 - should error because port cannot be zero if IP address is not zero
     /// c.address = "1.02.003.004:0";
-    /// assert_eq!(
-    ///     r#"Err(InvalidField { field: "ip[port]", value: "0", description: "IP port cannot be zero" })"#,
-    ///     format!("{:?}", c.validate()));
+    /// match c.validate()
+    /// {
+    ///     Err(Error::InvalidField { ref field, ref value, ref description }) if
+    ///         field == "ip[port]"
+    ///         && value == "0"
+    ///         && description == "IP port cannot be zero"
+    ///     => (),
+    ///     _ => panic!("wrong error")
+    /// }
     ///
     /// // 0.0.0.0:0 - OK because both IP address and port are zero
     /// c.address = "0.0.0.0:0";
-    /// assert_eq!(Ok(()), c.validate());
+    /// c.validate()?;
     ///
-    /// // 0.0.0.0:123 - should fail because port must be zero if IP address is zero
+    /// // 0.0.0.0:123 - should error because port must be zero if IP address is zero
     /// c.address = "0.0.0.0:123";
-    /// assert_eq!(
-    ///     r#"Err(InvalidField { field: "ip[port]", value: "123", description: "null IP must have zero port number" })"#,
-    ///     format!("{:?}", c.validate()));
+    /// match c.validate()
+    /// {
+    ///     Err(Error::InvalidField { ref field, ref value, ref description }) if
+    ///         field == "ip[port]"
+    ///         && value == "123"
+    ///         && description == "null IP must have zero port number"
+    ///     => (),
+    ///     _ => panic!("wrong error")
+    /// }
     ///
     /// // COM123
     /// c.address = "COM123";
-    /// assert_eq!(Ok(()), c.validate());
+    /// c.validate()?;
     ///
     /// // ttyABC
     /// c.address = "ttyABC";
-    /// assert_eq!(Ok(()), c.validate());
+    /// c.validate()?;
+    /// # Ok(())
+    /// # }
     /// ~~~
     pub fn validate(&self) -> BoundedValidationResult<'a> {
         // String fields should not be empty
@@ -389,6 +414,10 @@ impl<'a> Controller<'a> {
 
 impl Default for Controller<'_> {
     /// Default value for `Controller`.
+    ///
+    /// `controller_id` is set to 1 because zero is not allowed.  
+    /// `address` is set to `0.0.0.0:0` which is allowed as an empty address.  
+    /// All other fields are set to `Unknown` or empty.
     ///
     fn default() -> Self {
         Controller {

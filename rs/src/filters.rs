@@ -72,7 +72,7 @@ impl FromStr for Filters {
     ///
     /// **`Filters::from_str` never fails.**
     /// Unmatched tokens will simply be discarded.
-    /// If nothing matches, `None` will be returned.
+    /// If nothing matches, `Filters::None` will be returned.
     ///
     /// # Examples
     ///
@@ -124,6 +124,7 @@ impl FromStr for Filters {
 impl From<&str> for Filters {
     /// Call `Filters::from_str` to parse a filters value from a comma-delimited string.
     fn from(s: &str) -> Self {
+        // `Filters::from_str` does not fail.
         Self::from_str(s).unwrap()
     }
 }

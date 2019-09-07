@@ -894,11 +894,14 @@ impl<'a> Message<'a> {
     ///
     /// ~~~
     /// # use ichen_openprotocol::*;
+    /// # fn main() -> std::result::Result<(), String> {
     /// let msg = Message::new_join_with_org("MyPassword", Filters::Status + Filters::Cycle, "MyCompany");
     /// assert_eq!(
     ///     r#"{"$type":"Join","orgId":"MyCompany","version":"4.0","password":"MyPassword","language":"EN","filter":"Status, Cycle","sequence":1}"#,
-    ///     msg.to_json_str().unwrap()
+    ///     msg.to_json_str()?
     /// );
+    /// # Ok(())
+    /// # }
     /// ~~~
     pub fn to_json_str(&self) -> Result<'_, String> {
         self.validate()?;
@@ -925,7 +928,6 @@ impl<'a> Message<'a> {
     /// ~~~
     /// # use ichen_openprotocol::*;
     /// let msg = Message::new_join("MyPassword", Filters::Status + Filters::Cycle);
-    ///
     /// match msg {
     ///     Message::Join {
     ///         org_id: None,
@@ -935,7 +937,7 @@ impl<'a> Message<'a> {
     ///         filter,
     ///         ..
     ///     } if filter == Filters::Status + Filters::Cycle => (),
-    ///     _ => panic!()
+    ///     _ => panic!("wrong message")
     /// }
     /// ~~~
     pub fn new_join(password: &'a str, filter: Filters) -> Self {
@@ -956,7 +958,6 @@ impl<'a> Message<'a> {
     /// ~~~
     /// # use ichen_openprotocol::*;
     /// let msg = Message::new_join_with_org("MyPassword", Filters::Status + Filters::Cycle, "MyCompany");
-    ///
     /// match msg {
     ///     Message::Join {
     ///         org_id: Some("MyCompany"),
@@ -966,7 +967,7 @@ impl<'a> Message<'a> {
     ///         filter,
     ///         ..
     ///     } if filter == Filters::Status + Filters::Cycle => (),
-    ///     _ => panic!()
+    ///     _ => panic!("wrong message")
     /// }
     /// ~~~
     pub fn new_join_with_org(password: &'a str, filter: Filters, org: &'a str) -> Self {
@@ -1013,11 +1014,12 @@ impl<'a> Message<'a> {
     ///     options: Default::default(),
     /// };
     ///
-    /// // Validation will fail because `state.mold_id` is not the same as the `mold_id` field.
-    /// assert_eq!(
-    ///     r#"Err(InconsistentState("mold_id"))"#,
-    ///     format!("{:?}", msg.validate())
-    /// );
+    /// // Validation should error because `state.mold_id` is not the same as the `mold_id` field.
+    /// match msg.validate()
+    /// {
+    ///     Err(Error::InconsistentState(ref field)) if field == "mold_id" => (),
+    ///     _ => panic!("wrong error")
+    /// }
     /// ~~~
     pub fn validate(&self) -> BoundedValidationResult<'a> {
         match self {
