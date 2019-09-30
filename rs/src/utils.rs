@@ -68,10 +68,10 @@ pub fn is_zero(num: &i32) -> bool {
 /// [`OpenProtocolError::EmptyField`]: enum.OpenProtocolError.html#variant.EmptyField
 ///
 pub fn check_str_empty<S: AsRef<str>>(text: S, field: &'static str) -> ValidationResult {
-    if text.as_ref().trim().is_empty() {
-        return Err(Error::EmptyField(field.into()));
+    match text.as_ref().trim() {
+        "" => Err(Error::EmptyField(field)),
+        _ => Ok(()),
     }
-    Ok(())
 }
 
 /// Check if an optional string is empty or contains all whitespace.
@@ -88,7 +88,7 @@ pub fn check_optional_str_empty<S: AsRef<str>>(
     field: &'static str,
 ) -> ValidationResult {
     match opt {
-        Some(text) if text.as_ref().trim().is_empty() => Err(Error::EmptyField(field.into())),
+        Some(text) if text.as_ref().trim().is_empty() => Err(Error::EmptyField(field)),
         _ => Ok(()),
     }
 }
@@ -108,7 +108,7 @@ pub fn check_optional_str_whitespace<S: AsRef<str>>(
 ) -> ValidationResult {
     match opt {
         Some(text) if !text.as_ref().is_empty() && text.as_ref().trim().is_empty() => {
-            Err(Error::EmptyField(field.into()))
+            Err(Error::EmptyField(field))
         }
         _ => Ok(()),
     }
@@ -126,19 +126,19 @@ pub fn check_optional_str_whitespace<S: AsRef<str>>(
 pub fn check_f64(value: f64, field: &str) -> BoundedValidationResult {
     if value.is_nan() {
         Err(Error::InvalidField {
-            field: field.into(),
+            field,
             value: "NaN".into(),
             description: "NaN is not a supported value".into(),
         })
     } else if value.is_infinite() {
         Err(Error::InvalidField {
-            field: field.into(),
+            field,
             value: value.to_string().into(),
             description: "Infinity is not a supported value".into(),
         })
     } else if !value.is_normal() && value != 0.0 {
         Err(Error::InvalidField {
-            field: field.into(),
+            field,
             value: value.to_string().into(),
             description: "sub-normal number is not a supported value".into(),
         })
@@ -169,9 +169,10 @@ where
     T: HasInvalidValue + Serialize,
     T::Marker: PartialEq + Serialize,
 {
-    match value {
-        Some(None) => Serialize::serialize(&T::invalid(), s),
-        _ => Serialize::serialize(value, s),
+    if let Some(None) = value {
+        Serialize::serialize(&T::invalid(), s)
+    } else {
+        Serialize::serialize(value, s)
     }
 }
 

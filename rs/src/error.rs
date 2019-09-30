@@ -7,22 +7,22 @@ use std::fmt::{Display, Formatter};
 pub enum OpenProtocolError<'a> {
     /// The value of a field is the empty string `""` or containing all white-spaces,
     /// which is not allowed as value of that field.
-    EmptyField(Cow<'a, str>),
+    EmptyField(&'a str),
     //
-    /// The value (second parameter) of a field (first parameter) is not valid for that field.
-    InvalidField { field: Cow<'a, str>, value: Cow<'a, str>, description: Cow<'a, str> },
+    /// The value of a field is not valid.
+    InvalidField { field: &'a str, value: Cow<'a, str>, description: Cow<'a, str> },
     //
     /// The value of a field is not consistent with the matching value in the [`state`].
     ///
     /// [`state`]: struct.StateValues.html
     ///
-    InconsistentState(Cow<'a, str>),
+    InconsistentState(&'a str),
     //
     /// The value of a field is not consistent with the matching value in the
     /// [`Controller`] structure.
     ///
     /// [`Controller`]: struct.Controller.html
-    InconsistentField(Cow<'a, str>),
+    InconsistentField(&'a str),
     //
     /// An enforced constraint is broken.
     ConstraintViolated(Cow<'a, str>),
@@ -130,16 +130,23 @@ impl PartialEq for OpenProtocolError<'_> {
     /// [`JsonError`]: #variant.JsonError
     ///
     fn eq(&self, other: &Self) -> bool {
-        match self {
+        match (self, other) {
             // JSON error - since serde::error::Error does not implement PartialEq,
             //              the only thing we can do is compare the debug representation.
-            Self::JsonError(err1) => match other {
-                Self::JsonError(err2) => format!("{:?}", err1) == format!("{:?}", err2),
-                _ => false,
-            },
+            (Self::JsonError(err1), Self::JsonError(err2)) => {
+                format!("{:?}", err1) == format!("{:?}", err2)
+            }
             //
-            // All other variants that implement PartialEq
-            _ => *self == *other,
+            // All other variants need to manually implement PartialEq
+            (Self::EmptyField(err1), Self::EmptyField(err2)) => err1 == err2,
+            (
+                Self::InvalidField { field: field1, value: value1, description: err1 },
+                Self::InvalidField { field: field2, value: value2, description: err2 },
+            ) => field1 == field2 && value1 == value2 && err1 == err2,
+            (Self::InconsistentState(err1), Self::InconsistentState(err2)) => err1 == err2,
+            (Self::InconsistentField(err1), Self::InconsistentField(err2)) => err1 == err2,
+            (Self::ConstraintViolated(err1), Self::ConstraintViolated(err2)) => err1 == err2,
+            _ => false,
         }
     }
 }

@@ -44,8 +44,8 @@ impl Language {
     ///
     /// ~~~
     /// # use ichen_openprotocol::*;
-    /// let lang = Language::Unknown;
-    /// assert!(lang.is_unknown());
+    /// assert!(Language::Unknown.is_unknown());
+    /// assert!(!Language::FR.is_unknown());
     /// ~~~
     #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_unknown(&self) -> bool {
@@ -93,8 +93,8 @@ impl OpMode {
     ///
     /// ~~~
     /// # use ichen_openprotocol::*;
-    /// let op = OpMode::Unknown;
-    /// assert!(op.is_unknown());
+    /// assert!(OpMode::Unknown.is_unknown());
+    /// assert!(!OpMode::Manual.is_unknown());
     /// ~~~
     #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_unknown(&self) -> bool {
@@ -107,8 +107,8 @@ impl OpMode {
     ///
     /// ~~~
     /// # use ichen_openprotocol::*;
-    /// let op = OpMode::Offline;
-    /// assert!(op.is_offline());
+    /// assert!(OpMode::Offline.is_offline());
+    /// assert!(!OpMode::Manual.is_offline());
     /// ~~~
     #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_offline(&self) -> bool {
@@ -203,8 +203,8 @@ impl JobMode {
     ///
     /// ~~~
     /// # use ichen_openprotocol::*;
-    /// let job = JobMode::Unknown;
-    /// assert!(job.is_unknown());
+    /// assert!(JobMode::Unknown.is_unknown());
+    /// assert!(!JobMode::ID08.is_unknown());
     /// ~~~
     #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_unknown(&self) -> bool {
@@ -217,8 +217,8 @@ impl JobMode {
     ///
     /// ~~~
     /// # use ichen_openprotocol::*;
-    /// let job = JobMode::Offline;
-    /// assert!(job.is_offline());
+    /// assert!(JobMode::Offline.is_offline());
+    /// assert!(!JobMode::ID08.is_offline());
     /// ~~~
     #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn is_offline(&self) -> bool {
@@ -286,7 +286,7 @@ impl ID {
     /// # use ichen_openprotocol::*;
     /// let id = ID::new(42).unwrap();
     /// assert_eq!(42, u32::from(id));
-    /// assert!(ID::new(0).is_err());
+    /// assert_eq!(Err("ID value cannot be zero."), ID::new(0));
     /// ~~~
     pub fn new(value: u32) -> std::result::Result<Self, &'static str> {
         Self::try_from(value)
@@ -339,7 +339,7 @@ impl TryFrom<u32> for ID {
     /// # use ichen_openprotocol::*;
     /// let id = ID::try_from(42).unwrap();
     /// assert_eq!(42, u32::from(id));
-    /// assert!(ID::try_from(0).is_err());
+    /// assert_eq!(Err("ID value cannot be zero."), ID::try_from(0));
     /// ~~~
     fn try_from(value: u32) -> Result<Self, Self::Error> {
         NonZeroU32::new(value).map(Self).ok_or("ID value cannot be zero.")

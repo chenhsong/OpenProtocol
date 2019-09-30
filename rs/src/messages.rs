@@ -88,7 +88,7 @@ impl<'a> MessageOptions<'a> {
     /// ~~~
     /// # use ichen_openprotocol::*;
     /// let opt1 = MessageOptions { id: Some(""), ..Default::default() };
-    /// assert_eq!(r#"Err(EmptyField("id"))"#, format!("{:?}", opt1.validate()));
+    /// assert_eq!(Err(Error::EmptyField("id")), opt1.validate());
     /// ~~~
     ///
     /// [`OpenProtocolError::EmptyField`]: enum.OpenProtocolError.html#variant.EmptyField
@@ -181,11 +181,11 @@ impl<'a> JobCard<'a> {
     /// let job2 = JobCard::new("J2".into(), "   ".into(), 0, 10000);
     /// let job3 = JobCard::new("J3".into(), "M3".into(), 50000, 10000);
     ///
-    /// assert_eq!(r#"Err(EmptyField("job_card_id"))"#, format!("{:?}", job1.validate()));
-    /// assert_eq!(r#"Err(EmptyField("mold_id"))"#, format!("{:?}", job2.validate()));
+    /// assert_eq!(Err(Error::EmptyField("job_card_id")), job1.validate());
+    /// assert_eq!(Err(Error::EmptyField("mold_id")), job2.validate());
     /// assert_eq!(
-    ///     r#"Err(ConstraintViolated("job-card progress (50000) must not be larger than the total production count (10000)"))"#,
-    ///     format!("{:?}", job3.validate())
+    ///     Err(Error::ConstraintViolated("job-card progress (50000) must not be larger than the total production count (10000)".into())),
+    ///     job3.validate()
     /// );
     /// ~~~
     ///
@@ -195,6 +195,7 @@ impl<'a> JobCard<'a> {
     pub fn validate(&self) -> ValidationResult {
         check_str_empty(&self.job_card_id, "job_card_id")?;
         check_str_empty(&self.mold_id, "mold_id")?;
+
         if self.progress > self.total {
             return Err(Error::ConstraintViolated(
                 format!(
@@ -204,6 +205,7 @@ impl<'a> JobCard<'a> {
                 .into(),
             ));
         }
+
         Ok(())
     }
 }
@@ -247,14 +249,13 @@ impl<K: AsRef<str>> KeyValuePair<K, bool> {
     /// ~~~
     /// # use ichen_openprotocol::*;
     /// let kv = KeyValuePair::new("    ", true);
-    /// assert_eq!(r#"Err(EmptyField("key"))"#, format!("{:?}", kv.validate()));
+    /// assert_eq!(Err(Error::EmptyField("key")), kv.validate());
     /// ~~~
     ///
     /// [`OpenProtocolError::EmptyField`]: enum.OpenProtocolError.html#variant.EmptyField
     ///
     pub fn validate(&self) -> ValidationResult {
-        check_str_empty(&self.key, "key")?;
-        Ok(())
+        check_str_empty(&self.key, "key")
     }
 }
 
@@ -277,12 +278,16 @@ impl<K: AsRef<str>> KeyValuePair<K, f64> {
     /// ~~~
     /// # use ichen_openprotocol::*;
     /// let kv1 = KeyValuePair::new("     ", 42.0);
-    /// assert_eq!(r#"Err(EmptyField("key"))"#, format!("{:?}", kv1.validate()));
+    /// assert_eq!(Err(Error::EmptyField("key")), kv1.validate());
     ///
     /// let kv2 = KeyValuePair::new("K2", std::f64::NAN);
     /// assert_eq!(
-    ///     r#"Err(InvalidField { field: "value", value: "NaN", description: "NaN is not a supported value" })"#,
-    ///     format!("{:?}", kv2.validate())
+    ///     Err(Error::InvalidField {
+    ///         field: "value",
+    ///         value: "NaN".into(),
+    ///         description: "NaN is not a supported value".into()
+    ///     }),
+    ///     kv2.validate()
     /// );
     /// ~~~
     ///
@@ -291,8 +296,7 @@ impl<K: AsRef<str>> KeyValuePair<K, f64> {
     ///
     pub fn validate(&self) -> ValidationResult {
         check_str_empty(&self.key, "key")?;
-        check_f64(self.value, "value")?;
-        Ok(())
+        check_f64(self.value, "value")
     }
 }
 
@@ -360,12 +364,13 @@ impl<'a> StateValues<'a> {
     ///
     /// ~~~
     /// # use ichen_openprotocol::*;
+    /// # use std::borrow::Cow;
     /// let state = StateValues::new_with_all(OpMode::Automatic, JobMode::ID02, Some(123), None, Some("M001"));
     /// assert_eq!(OpMode::Automatic, state.op_mode);
     /// assert_eq!(JobMode::ID02, state.job_mode);
     /// assert_eq!(Some(ID::from_u32(123)), state.operator_id);
     /// assert_eq!(None, state.job_card_id);
-    /// assert_eq!(r#"Some("M001")"#, format!("{:?}", state.mold_id));
+    /// assert_eq!(Some(Cow::Borrowed("M001")), state.mold_id);
     /// ~~~
     pub fn new_with_all(
         op: OpMode,
@@ -394,7 +399,7 @@ impl<'a> StateValues<'a> {
     /// ~~~
     /// # use ichen_openprotocol::*;
     /// let state = StateValues::new_with_all(OpMode::Automatic, JobMode::ID02, Some(123), Some(""), None);
-    /// assert_eq!(r#"Err(EmptyField("job_card_id"))"#, format!("{:?}", state.validate()));
+    /// assert_eq!(Err(Error::EmptyField("job_card_id")), state.validate());
     /// ~~~
     ///
     /// [`OpenProtocolError::EmptyField`]: enum.OpenProtocolError.html#variant.EmptyField
@@ -905,7 +910,6 @@ impl<'a> Message<'a> {
     /// ~~~
     pub fn to_json_str(&self) -> Result<'_, String> {
         self.validate()?;
-
         serde_json::to_string(self).map_err(Error::JsonError)
     }
 
@@ -928,17 +932,17 @@ impl<'a> Message<'a> {
     /// ~~~
     /// # use ichen_openprotocol::*;
     /// let msg = Message::new_join("MyPassword", Filters::Status + Filters::Cycle);
-    /// match msg {
+    /// assert_eq!(
     ///     Message::Join {
     ///         org_id: None,
     ///         version: Message::PROTOCOL_VERSION,
     ///         password: "MyPassword",
     ///         language: Message::DEFAULT_LANGUAGE,
-    ///         filter,
-    ///         ..
-    ///     } if filter == Filters::Status + Filters::Cycle => (),
-    ///     _ => panic!("wrong message")
-    /// }
+    ///         filter: Filters::Status + Filters::Cycle,
+    ///         options: MessageOptions { id: None, sequence: 1, priority: 0 }
+    ///     },
+    ///     msg
+    /// );
     /// ~~~
     pub fn new_join(password: &'a str, filter: Filters) -> Self {
         Join {
@@ -958,17 +962,17 @@ impl<'a> Message<'a> {
     /// ~~~
     /// # use ichen_openprotocol::*;
     /// let msg = Message::new_join_with_org("MyPassword", Filters::Status + Filters::Cycle, "MyCompany");
-    /// match msg {
+    /// assert_eq!(
     ///     Message::Join {
     ///         org_id: Some("MyCompany"),
     ///         version: Message::PROTOCOL_VERSION,
     ///         password: "MyPassword",
     ///         language: Message::DEFAULT_LANGUAGE,
-    ///         filter,
-    ///         ..
-    ///     } if filter == Filters::Status + Filters::Cycle => (),
-    ///     _ => panic!("wrong message")
-    /// }
+    ///         filter: Filters::Status + Filters::Cycle,
+    ///         options: MessageOptions { id: None, sequence: 1, priority: 0 }
+    ///     },
+    ///     msg
+    /// );
     /// ~~~
     pub fn new_join_with_org(password: &'a str, filter: Filters, org: &'a str) -> Self {
         let mut msg = Self::new_join(password, filter);
@@ -1015,11 +1019,10 @@ impl<'a> Message<'a> {
     /// };
     ///
     /// // Validation should error because `state.mold_id` is not the same as the `mold_id` field.
-    /// match msg.validate()
-    /// {
-    ///     Err(Error::InconsistentState(ref field)) if field == "mold_id" => (),
-    ///     _ => panic!("wrong error")
-    /// }
+    /// assert_eq!(
+    ///     Err(Error::InconsistentState("mold_id")),
+    ///     msg.validate()
+    /// );
     /// ~~~
     pub fn validate(&self) -> BoundedValidationResult<'a> {
         match self {
@@ -1065,33 +1068,33 @@ impl<'a> Message<'a> {
 
                     // Check controller fields with specified fields
                     if display_name.is_some() && *display_name != Some(c.display_name) {
-                        return Err(Error::InconsistentField("display_name".into()));
+                        return Err(Error::InconsistentField("display_name"));
                     }
                     if op_mode.is_some() && *op_mode != Some(c.op_mode) {
-                        return Err(Error::InconsistentField("op_mode".into()));
+                        return Err(Error::InconsistentField("op_mode"));
                     }
                     if job_mode.is_some() && *job_mode != Some(c.job_mode) {
-                        return Err(Error::InconsistentField("job_mode".into()));
+                        return Err(Error::InconsistentField("job_mode"));
                     }
                     if operator_id.is_some()
                         && *operator_id != Some(c.operator.as_ref().map(|user| user.operator_id))
                     {
-                        return Err(Error::InconsistentField("operator_id".into()));
+                        return Err(Error::InconsistentField("operator_id"));
                     }
                     if operator_name.is_some()
                         && *operator_name
                             != Some(c.operator.as_ref().map(|u| u.operator_name).and_then(|n| n))
                     {
-                        return Err(Error::InconsistentField("operator_name".into()));
+                        return Err(Error::InconsistentField("operator_name"));
                     }
                     if let Some(jc) = job_card_id {
                         if *jc != c.job_card_id {
-                            return Err(Error::InconsistentField("job_card_id".into()));
+                            return Err(Error::InconsistentField("job_card_id"));
                         }
                     }
                     if let Some(m) = mold_id {
                         if *m != c.mold_id {
-                            return Err(Error::InconsistentField("mold_id".into()));
+                            return Err(Error::InconsistentField("mold_id"));
                         }
                     }
                 }
@@ -1100,19 +1103,19 @@ impl<'a> Message<'a> {
 
                 if let Some(x) = op_mode {
                     if *x != state.op_mode {
-                        return Err(Error::InconsistentState("op_mode".into()));
+                        return Err(Error::InconsistentState("op_mode"));
                     }
                 }
 
                 if let Some(x) = job_mode {
                     if *x != state.job_mode {
-                        return Err(Error::InconsistentState("job_mode".into()));
+                        return Err(Error::InconsistentState("job_mode"));
                     }
                 }
 
                 if let Some(x) = operator_id {
                     if *x != state.operator_id {
-                        return Err(Error::InconsistentState("operator_id".into()));
+                        return Err(Error::InconsistentState("operator_id"));
                     }
                 }
 
@@ -1124,7 +1127,7 @@ impl<'a> Message<'a> {
                     check_optional_str_whitespace(x, "job_card_id")?;
 
                     if *x != state.job_card_id {
-                        return Err(Error::InconsistentState("job_card_id".into()));
+                        return Err(Error::InconsistentState("job_card_id"));
                     }
                 }
 
@@ -1132,7 +1135,7 @@ impl<'a> Message<'a> {
                     check_optional_str_whitespace(x, "mold_id")?;
 
                     if *x != state.mold_id {
-                        return Err(Error::InconsistentState("mold_id".into()));
+                        return Err(Error::InconsistentState("mold_id"));
                     }
                 }
 
@@ -1158,7 +1161,7 @@ impl<'a> Message<'a> {
             }
             JobCardsList { options, data, .. } => {
                 if data.is_empty() {
-                    return Err(Error::EmptyField("data".into()));
+                    return Err(Error::EmptyField("data"));
                 }
                 data.iter().try_for_each(|jc| jc.1.validate())?;
                 options.validate()
@@ -1170,7 +1173,7 @@ impl<'a> Message<'a> {
                 // Check for invalid language
                 if *language == Language::Unknown {
                     return Err(Error::InvalidField {
-                        field: "language".into(),
+                        field: "language",
                         value: "Unknown".into(),
                         description: "language cannot be Unknown".into(),
                     });
@@ -1179,7 +1182,7 @@ impl<'a> Message<'a> {
             }
             MoldData { options, data, state, .. } => {
                 if data.is_empty() {
-                    return Err(Error::EmptyField("data".into()));
+                    return Err(Error::EmptyField("data"));
                 }
                 data.iter().try_for_each(|d| check_f64(*d.1, d.0))?;
                 check_optional_str_empty(&state.job_card_id, "job_card_id")?;

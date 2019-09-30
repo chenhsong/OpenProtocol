@@ -62,11 +62,10 @@ impl<'a> Operator<'a> {
     /// ~~~
     /// # use ichen_openprotocol::*;
     /// let op = Operator::new_with_name(ID::from_u32(12345), "");
-    /// match op.validate()
-    /// {
-    ///     Err(Error::EmptyField(ref field)) if field == "operator_name" => (),
-    ///     _ => panic!("wrong error")
-    /// }
+    /// assert_eq!(
+    ///     Err(Error::EmptyField("operator_name")),
+    ///     op.validate()
+    /// );
     /// ~~~
     ///
     /// [`OpenProtocolError::EmptyField`]: enum.OpenProtocolError.html#variant.EmptyField
@@ -130,23 +129,20 @@ impl GeoLocation {
     /// ~~~
     /// # use ichen_openprotocol::*;
     /// let geo1 = GeoLocation::new(23.456, std::f64::NEG_INFINITY);
-    /// match geo1.validate()
-    /// {
-    ///     Err(Error::InvalidField { ref field, ref value, ref description }) if
-    ///         field == "geo_longitude"
-    ///         && value == "-inf"
-    ///         && description == "Infinity is not a supported value"
-    ///     => {},
-    ///     _ => panic!("wrong error")
-    /// }
+    /// assert_eq!(
+    ///     Err(Error::InvalidField {
+    ///         field: "geo_longitude",
+    ///         value: "-inf".into(),
+    ///         description: "Infinity is not a supported value".into()
+    ///     }),
+    ///     geo1.validate()
+    /// );
     ///
     /// let geo2 = GeoLocation::new(123.456, 987.654);
-    /// match geo2.validate()
-    /// {
-    ///     Err(Error::ConstraintViolated(ref err))
-    ///         if err == "latitude (123.456) must be between -90 and 90" => (),
-    ///     _ => panic!("wrong error")
-    /// }
+    /// assert_eq!(
+    ///     Err(Error::ConstraintViolated("latitude out-of-bounds: 123.456 (must be between -90 and 90)".into())),
+    ///     geo2.validate()
+    /// );
     /// ~~~
     ///
     /// [`OpenProtocolError::InvalidField`]: enum.OpenProtocolError.html#variant.InvalidField
@@ -157,7 +153,11 @@ impl GeoLocation {
 
         if !(-90.0..=90.0).contains(&self.geo_latitude) {
             return Err(Error::ConstraintViolated(
-                format!("latitude ({}) must be between -90 and 90", self.geo_latitude).into(),
+                format!(
+                    "latitude out-of-bounds: {} (must be between -90 and 90)",
+                    self.geo_latitude
+                )
+                .into(),
             ));
         }
 
@@ -165,7 +165,11 @@ impl GeoLocation {
 
         if !(-180.0..=180.0).contains(&self.geo_longitude) {
             return Err(Error::ConstraintViolated(
-                format!("longitude ({}) must be between -180 and 180", self.geo_longitude).into(),
+                format!(
+                    "longitude out-of-bounds: {} (must be between -180 and 180)",
+                    self.geo_longitude
+                )
+                .into(),
             ));
         }
 
@@ -283,15 +287,14 @@ impl<'a> Controller<'a> {
     ///
     /// // 1.02.003.004:0 - should error because port cannot be zero if IP address is not zero
     /// c.address = "1.02.003.004:0";
-    /// match c.validate()
-    /// {
-    ///     Err(Error::InvalidField { ref field, ref value, ref description }) if
-    ///         field == "ip[port]"
-    ///         && value == "0"
-    ///         && description == "IP port cannot be zero"
-    ///     => (),
-    ///     _ => panic!("wrong error")
-    /// }
+    /// assert_eq!(
+    ///     Err(Error::InvalidField {
+    ///         field: "ip[port]",
+    ///         value: "0".into(),
+    ///         description: "IP port cannot be zero".into()
+    ///     }),
+    ///     c.validate()
+    /// );
     ///
     /// // 0.0.0.0:0 - OK because both IP address and port are zero
     /// c.address = "0.0.0.0:0";
@@ -299,15 +302,14 @@ impl<'a> Controller<'a> {
     ///
     /// // 0.0.0.0:123 - should error because port must be zero if IP address is zero
     /// c.address = "0.0.0.0:123";
-    /// match c.validate()
-    /// {
-    ///     Err(Error::InvalidField { ref field, ref value, ref description }) if
-    ///         field == "ip[port]"
-    ///         && value == "123"
-    ///         && description == "null IP must have zero port number"
-    ///     => (),
-    ///     _ => panic!("wrong error")
-    /// }
+    /// assert_eq!(
+    ///     Err(Error::InvalidField {
+    ///         field: "ip[port]",
+    ///         value: "123".into(),
+    ///         description: "null IP must have zero port number".into()
+    ///     }),
+    ///     c.validate()
+    /// );
     ///
     /// // COM123
     /// c.address = "COM123";
@@ -350,23 +352,23 @@ impl<'a> Controller<'a> {
 
         if !IP_REGEX.is_match(self.address) {
             if !TTY_REGEX.is_match(self.address) && !COM_REGEX.is_match(self.address) {
-                return Err(Error::InvalidField {
-                    field: "ip".into(),
+                Err(Error::InvalidField {
+                    field: "ip",
                     value: self.address.into(),
                     description: "".into(),
-                });
+                })
+            } else {
+                Ok(())
             }
         } else {
             // Check IP address validity
             let (address, port) = self.address.split_at(self.address.find(':').unwrap());
 
-            let unspecified: bool;
-
-            match IpAddr::from_str(address) {
-                Ok(addr) => unspecified = addr.is_unspecified(),
+            let unspecified = match IpAddr::from_str(address) {
+                Ok(addr) => addr.is_unspecified(),
                 Err(err) => {
                     return Err(Error::InvalidField {
-                        field: "ip[address]".into(),
+                        field: "ip[address]",
                         value: address.into(),
                         description: {
                             use std::error::Error;
@@ -374,41 +376,47 @@ impl<'a> Controller<'a> {
                         },
                     })
                 }
-            }
+            };
 
-            // Allow port 0 on unspecified addresses only
+            // Check port
             let port = &port[1..];
 
             match u16::from_str(port) {
-                Ok(n) => {
-                    if n == 0 && !unspecified {
-                        return Err(Error::InvalidField {
-                            field: "ip[port]".into(),
+                // Allow port 0 on unspecified addresses only
+                Ok(0) => {
+                    if !unspecified {
+                        Err(Error::InvalidField {
+                            field: "ip[port]",
                             value: port.into(),
                             description: "IP port cannot be zero".into(),
-                        });
-                    } else if n > 0 && unspecified {
-                        return Err(Error::InvalidField {
-                            field: "ip[port]".into(),
-                            value: port.into(),
-                            description: "null IP must have zero port number".into(),
-                        });
+                        })
+                    } else {
+                        Ok(())
                     }
                 }
-                Err(err) => {
-                    return Err(Error::InvalidField {
-                        field: "ip[port]".into(),
-                        value: port.into(),
-                        description: {
-                            use std::error::Error;
-                            err.description().to_string().into()
-                        },
-                    })
+                // Port must be 0 on unspecified addresses
+                Ok(_) => {
+                    if unspecified {
+                        Err(Error::InvalidField {
+                            field: "ip[port]",
+                            value: port.into(),
+                            description: "null IP must have zero port number".into(),
+                        })
+                    } else {
+                        Ok(())
+                    }
                 }
+                // Other errors
+                Err(err) => Err(Error::InvalidField {
+                    field: "ip[port]",
+                    value: port.into(),
+                    description: {
+                        use std::error::Error;
+                        err.description().to_string().into()
+                    },
+                }),
             }
         }
-
-        Ok(())
     }
 }
 

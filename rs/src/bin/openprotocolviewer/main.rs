@@ -82,13 +82,8 @@ fn display_message(prefix: &str, msg: &Message) {
         Message::ControllerAction { controller_id, action_id, options, .. } => {
             println!("ControllerAction({}, [{}], {})", controller_id, action_id, options.sequence)
         }
-        m => {
-            if prefix.is_empty() {
-                println!("{:#?}", m);
-            } else {
-                println!("\n{:#?}", m)
-            }
-        }
+        m if prefix.is_empty() => println!("{:#?}", m),
+        m => println!("\n{:#?}", m),
     }
 }
 
@@ -96,21 +91,19 @@ fn display_message(prefix: &str, msg: &Message) {
 // to send back to the server.
 //
 fn process_incoming_message<'a>(json: &'a str, builtin: &'a Constants<'a>) -> Option<Message<'a>> {
-    let message;
-
     // Parse message
-    match Message::parse_from_json_str(json) {
+    let message = match Message::parse_from_json_str(json) {
         // Valid Open Protocol message.
         Ok(m) => {
             display_message(">>> ", &m);
-            message = m;
+            m
         }
         // Invalid message for Open Protocol!
         Err(err) => {
             eprintln!("Error parsing message: {}", err);
             return None;
         }
-    }
+    };
 
     match message {
         // Send an `ALIVE` when received an `ALIVE` from the server
@@ -130,9 +123,10 @@ fn process_incoming_message<'a>(json: &'a str, builtin: &'a Constants<'a>) -> Op
         }),
         //
         // MIS/MES integration - User login
-        Message::LoginOperator { controller_id, password, .. } => {
-            // Find password in built-in list
-            if let Some((level, name)) = builtin.users.get(password) {
+        // Find password in built-in list
+        Message::LoginOperator { controller_id, password, .. } => match builtin.users.get(password)
+        {
+            Some((level, name)) => {
                 println!("User found: password=[{}], access level={}.", password, level);
 
                 // Return access level
@@ -144,7 +138,8 @@ fn process_incoming_message<'a>(json: &'a str, builtin: &'a Constants<'a>) -> Op
                     level: *level,
                     options: Default::default(),
                 })
-            } else {
+            }
+            None => {
                 println!("No user found with password: [{}].", password);
 
                 // Return no access
@@ -157,7 +152,7 @@ fn process_incoming_message<'a>(json: &'a str, builtin: &'a Constants<'a>) -> Op
                     options: Default::default(),
                 })
             }
-        }
+        },
         //
         // MIS/MES integration - request list of jobs
         Message::RequestJobCardsList { controller_id, .. } => Some(Message::JobCardsList {
@@ -173,27 +168,21 @@ fn process_incoming_message<'a>(json: &'a str, builtin: &'a Constants<'a>) -> Op
 
 fn send(client: &mut Client, message: &OwnedMessage) -> WebSocketResult<()> {
     match client.send_message(message) {
-        Ok(()) => match message {
-            OwnedMessage::Close(data) => {
-                // If it's a Close command, just send it and then terminate the send loop
-                if let Some(d) = data {
-                    println!("Closing WebSocket connection: ({}) {}", d.status_code, d.reason);
-                } else {
-                    println!("Closing WebSocket connection...");
-                }
-                return Ok(());
+        Ok(_) => match message {
+            OwnedMessage::Close(Some(data)) => {
+                println!("Closing WebSocket connection: ({}) {}", data.status_code, data.reason)
             }
+            OwnedMessage::Close(None) => println!("Closing WebSocket connection..."),
             OwnedMessage::Text(json) => println!("Sent [{}]: {}", json.len(), json),
             OwnedMessage::Binary(data) => println!("Sent data: {} byte(s)", data.len()),
             _ => (),
         },
+        // Error when sending message to the WebSocket
         Err(err) => {
-            // Error when sending message to the WebSocket
-            // Log the error, send Close command and terminate the send loop
+            // Log the error, send Close command
             eprintln!("Error sending message: {}", err);
             client.send_message(&websocket::Message::close())?;
             println!("Closing WebSocket connection...");
-            return Ok(());
         }
     }
 
@@ -204,39 +193,40 @@ fn run(mut client: Client, builtin: &Constants<'_>) -> WebSocketResult<()> {
     loop {
         let message = match client.recv_message() {
             Ok(msg) => msg,
+            // Error when receiving message from the WebSocket
             Err(err) => {
-                // Error when receiving message from the WebSocket
-                // Log the error, send Close command and terminate the receive loop
+                // Log the error, send Close command
                 eprintln!("Error receiving message: {}", err);
-                send(
-                    &mut client,
-                    &OwnedMessage::Close(Some(CloseData::new(
-                        1,
-                        format!("Error receiving message: {}", err),
-                    ))),
-                )?;
+                let data = CloseData::new(1, format!("Error receiving message: {}", err));
+                send(&mut client, &OwnedMessage::Close(Some(data)))?;
+                // Terminate the receive loop
                 return Ok(());
             }
         };
 
         match message {
-            OwnedMessage::Close(data) => {
-                // Got a Close command, so send a Close command back and terminate the receive loop
-                if let Some(d) = data {
-                    println!("WebSocket closed: ({}) {}", d.status_code, d.reason);
-                } else {
-                    println!("WebSocket closed.");
-                }
+            // Close command received
+            OwnedMessage::Close(Some(data)) => {
+                println!("WebSocket closed: ({}) {}", data.status_code, data.reason);
+                // Terminate the receive loop
                 return Ok(());
             }
+            // Close command received
+            OwnedMessage::Close(None) => {
+                println!("WebSocket closed.");
+                // Terminate the receive loop
+                return Ok(());
+            }
+            // Ping-Pong
             OwnedMessage::Ping(data) => send(&mut client, &OwnedMessage::Pong(data))?,
+            // Display received text to screen
             OwnedMessage::Text(json) => {
-                // Display received text to screen
                 println!("Received [{}]: {}", json.len(), json);
+
                 // Process the message, get reply message (if any)
                 if let Some(msg) = process_incoming_message(&json, &builtin) {
+                    // Serialize reply message to JSON and send it to the send loop
                     match msg.to_json_str() {
-                        // Serialize reply message to JSON and send it to the send loop
                         Ok(resp) => {
                             send(&mut client, &OwnedMessage::Text(resp))?;
                             display_message("<<< ", &msg);
@@ -245,10 +235,8 @@ fn run(mut client: Client, builtin: &Constants<'_>) -> WebSocketResult<()> {
                     }
                 }
             }
-            OwnedMessage::Binary(data) => {
-                // Display info if binary data received
-                println!("Received binary data: {} byte(s)", data.len())
-            }
+            // Display info if binary data received
+            OwnedMessage::Binary(data) => println!("Received binary data: {} byte(s)", data.len()),
             // Everything else
             _ => println!("Received: {:#?}", message),
         }
@@ -292,26 +280,22 @@ fn main() {
     // Build connection to WebSocket server
     println!("Connecting to iChen Server at {}...", conn);
 
-    let mut ws_builder;
-
-    match ClientBuilder::new(conn) {
-        Ok(b) => ws_builder = b,
+    let mut ws_builder = match ClientBuilder::new(conn) {
+        Ok(b) => b,
         Err(err) => {
             eprintln!("Invalid URL: {}", err);
             return;
         }
-    }
-
-    let mut client;
+    };
 
     // Attempt to connect
-    match ws_builder.connect(None) {
-        Ok(c) => client = c,
+    let mut client = match ws_builder.connect(None) {
+        Ok(c) => c,
         Err(err) => {
             eprintln!("Connect connect to server: {}", &err);
             eprintln!(
                 "{}",
-                match &err {
+                match err {
                     // Errors with text string messages
                     WebSocketError::ProtocolError(e)
                     | WebSocketError::RequestError(e)
@@ -337,7 +321,7 @@ fn main() {
             );
             return;
         }
-    }
+    };
 
     println!("Connection to iChen Server established.");
 
@@ -350,7 +334,7 @@ fn main() {
         ]
         .iter()
         .enumerate()
-        .map(|(index, value)| (*value, (index as u8, format!("MISUser{}", index))))
+        .map(|(index, &value)| (value, (index as u8, format!("MISUser{}", index))))
         .collect(),
         //
         // Mock job scheduling system
@@ -365,10 +349,9 @@ fn main() {
     // Display built-in's
     println!("=================================================");
     println!("Built-in Users for Testing:");
-    builtin
-        .users
-        .iter()
-        .for_each(|(u, (a, n))| println!("> Name={}, Password={}, Level={}", n, u, a));
+    builtin.users.iter().for_each(|(user, (level, name))| {
+        println!("> Name={}, Password={}, Level={}", name, user, level)
+    });
     println!("=================================================");
     println!("Built-in Job Cards for Testing:");
     builtin.jobs.iter().for_each(|j| {
@@ -400,10 +383,11 @@ fn main() {
     let msg = Message::new_join(password, Filters::All + Filters::JobCards + Filters::Operators);
 
     match msg.to_json_str() {
-        Ok(m) => match send(&mut client, &OwnedMessage::Text(m)) {
-            Ok(_) => (),
-            Err(err) => eprintln!("Error when sending JOIN message: {}", err),
-        },
+        Ok(m) => {
+            if let Err(err) = send(&mut client, &OwnedMessage::Text(m)) {
+                eprintln!("Error when sending JOIN message: {}", err);
+            }
+        }
         Err(err) => eprintln!("Error in JOIN message: {}", err),
     }
 
