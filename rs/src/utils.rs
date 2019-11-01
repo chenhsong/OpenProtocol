@@ -169,10 +169,9 @@ where
     T: HasInvalidValue + Serialize,
     T::Marker: PartialEq + Serialize,
 {
-    if let Some(None) = value {
-        Serialize::serialize(&T::invalid(), s)
-    } else {
-        Serialize::serialize(value, s)
+    match value {
+        Some(None) => Serialize::serialize(&T::invalid(), s),
+        val => Serialize::serialize(val, s),
     }
 }
 
