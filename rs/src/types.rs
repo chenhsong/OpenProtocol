@@ -2,7 +2,7 @@ use derive_more::*;
 use serde::{Deserialize, Serialize};
 use std::cmp::{Ordering, PartialEq, PartialOrd};
 use std::convert::TryFrom;
-use std::fmt::{Debug, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 use std::num::NonZeroU32;
 
 /// Supported UI languages for the controller's HMI.
@@ -11,9 +11,7 @@ use std::num::NonZeroU32;
 ///
 /// [this document]: https://github.com/chenhsong/OpenProtocol/blob/master/doc/enums.md#languages
 ///
-#[derive(
-    Debug, Display, Ord, PartialOrd, PartialEq, Eq, Hash, Serialize, Deserialize, Copy, Clone,
-)]
+#[derive(Debug, Ord, PartialOrd, PartialEq, Eq, Hash, Serialize, Deserialize, Copy, Clone)]
 pub enum Language {
     /// Unknown language.
     Unknown,
@@ -60,15 +58,34 @@ impl Default for Language {
     }
 }
 
+impl Display for Language {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::Unknown => "Unknown",
+                Self::EN => "English",
+                Self::B5 => "䌓體中文",
+                Self::GB => "简体中文",
+                Self::FR => "Français",
+                Self::DE => "Deutsch",
+                Self::IT => "Italiano",
+                Self::ES => "Español",
+                Self::PT => "Português",
+                Self::JA => "日本語",
+            }
+        )
+    }
+}
+
 /// Operating modes of the controller.
 ///
 /// See [this document] for details.
 ///
 /// [this document]: https://github.com/chenhsong/OpenProtocol/blob/master/doc/enums.md#opmodes
 ///
-#[derive(
-    Debug, Display, Ord, PartialOrd, PartialEq, Eq, Hash, Serialize, Deserialize, Copy, Clone,
-)]
+#[derive(Debug, Ord, PartialOrd, PartialEq, Eq, Hash, Serialize, Deserialize, Copy, Clone)]
 pub enum OpMode {
     /// Unknown operation mode.
     Unknown,
@@ -161,6 +178,16 @@ impl Default for OpMode {
     }
 }
 
+impl Display for OpMode {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::SemiAutomatic => write!(f, "Semi-Automatic"),
+            Self::Offline => write!(f, "Off-Line"),
+            _ => Debug::fmt(self, f),
+        }
+    }
+}
+
 /// Job modes of the controller.
 ///
 /// On some controller models, job modes 1-15 (`ID01` - `ID15`) can be user-defined.
@@ -169,9 +196,7 @@ impl Default for OpMode {
 ///
 /// [this document]: https://github.com/chenhsong/OpenProtocol/blob/master/doc/enums.md#jobmodes
 ///
-#[derive(
-    Debug, Display, Ord, PartialOrd, PartialEq, Eq, Hash, Serialize, Deserialize, Copy, Clone,
-)]
+#[derive(Debug, Ord, PartialOrd, PartialEq, Eq, Hash, Serialize, Deserialize, Copy, Clone)]
 pub enum JobMode {
     /// Unknown job mode.
     Unknown,
@@ -249,6 +274,15 @@ impl Default for JobMode {
     /// Default value for `JobMode`.
     fn default() -> Self {
         JobMode::Unknown
+    }
+}
+
+impl Display for JobMode {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Offline => write!(f, "Off-Line"),
+            _ => Debug::fmt(self, f),
+        }
     }
 }
 
@@ -372,18 +406,18 @@ impl PartialEq<u32> for ID {
 
 impl PartialEq<ID> for u32 {
     fn eq(&self, other: &ID) -> bool {
-        other.0.get() == *self
+        other == self
     }
 }
 
 impl PartialOrd<u32> for ID {
     fn partial_cmp(&self, other: &u32) -> Option<Ordering> {
-        PartialOrd::partial_cmp(&self.0.get(), other)
+        self.0.get().partial_cmp(other)
     }
 }
 
 impl PartialOrd<ID> for u32 {
     fn partial_cmp(&self, other: &ID) -> Option<Ordering> {
-        PartialOrd::partial_cmp(self, &other.0.get())
+        other.partial_cmp(self)
     }
 }
