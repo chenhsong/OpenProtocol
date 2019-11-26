@@ -96,43 +96,41 @@ impl FromStr for Filters {
     /// ~~~
     fn from_str(text: &str) -> Result<Self, Self::Err> {
         let text = text.trim();
-        if text == "None" || text.is_empty() {
-            return Ok(Filters::None);
-        }
 
-        let filters = text
-            .split(',')
-            .map(|t| match t.trim() {
-                "Status" => Filters::Status,
-                "Cycle" => Filters::Cycle,
-                "Mold" => Filters::Mold,
-                "Actions" => Filters::Actions,
-                "Alarms" => Filters::Alarms,
-                "Audit" => Filters::Audit,
-                "All" => Filters::All,
-                "JobCards" => Filters::JobCards,
-                "Operators" => Filters::Operators,
-                "OPCUA" => Filters::OPCUA,
-                _ => Filters::None,
-            })
-            .fold(Filters::None, |f, x| f | x);
-
-        Ok(filters)
+        Ok(if text == "None" || text.is_empty() {
+            Filters::None
+        } else {
+            text.split(',')
+                .map(|t| match t.trim() {
+                    "Status" => Filters::Status,
+                    "Cycle" => Filters::Cycle,
+                    "Mold" => Filters::Mold,
+                    "Actions" => Filters::Actions,
+                    "Alarms" => Filters::Alarms,
+                    "Audit" => Filters::Audit,
+                    "All" => Filters::All,
+                    "JobCards" => Filters::JobCards,
+                    "Operators" => Filters::Operators,
+                    "OPCUA" => Filters::OPCUA,
+                    _ => Filters::None,
+                })
+                .fold(Filters::None, |f, x| f | x)
+        })
     }
 }
 
-impl From<&str> for Filters {
+impl<T: AsRef<str>> From<T> for Filters {
     /// Call `Filters::from_str` to parse a filters value from a comma-delimited string.
-    fn from(s: &str) -> Self {
+    fn from(s: T) -> Self {
         // `Filters::from_str` does not fail.
-        Self::from_str(s).unwrap()
+        Self::from_str(s.as_ref()).unwrap()
     }
 }
 
 impl From<Filters> for String {
     /// Convert filters value into a comma-delimited list.
     fn from(f: Filters) -> Self {
-        format!("{}", f)
+        f.to_string()
     }
 }
 
@@ -184,35 +182,29 @@ impl Display for Filters {
     /// Display filters value as comma-delimited list.
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         let text = format!("{:?}", self);
-        let mut slice = text.trim();
+        let mut text = text.trim();
 
         // Remove redundant flags when All is present
-        if slice.starts_with(ALL) {
-            slice = text[ALL.len() - 3..].trim();
+        if text.starts_with(ALL) {
+            text = text[ALL.len() - 3..].trim();
         }
 
         if text.is_empty() {
-            write!(f, "None")
+            f.write_str("None")
         } else {
-            write!(f, "{}", slice.replace(" | ", ", "))
+            f.write_str(text.replace(" | ", ", ").as_ref())
         }
     }
 }
 
 impl Serialize for Filters {
-    fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
+    fn serialize<S: Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         s.serialize_str(&self.to_string())
     }
 }
 
 impl<'de> Deserialize<'de> for Filters {
-    fn deserialize<D>(d: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
+    fn deserialize<D: Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         let s = Deserialize::deserialize(d).map_err(serde::de::Error::custom)?;
         Filters::from_str(s).map_err(serde::de::Error::custom)
     }

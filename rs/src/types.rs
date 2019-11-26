@@ -60,22 +60,18 @@ impl Default for Language {
 
 impl Display for Language {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Self::Unknown => "Unknown",
-                Self::EN => "English",
-                Self::B5 => "䌓體中文",
-                Self::GB => "简体中文",
-                Self::FR => "Français",
-                Self::DE => "Deutsch",
-                Self::IT => "Italiano",
-                Self::ES => "Español",
-                Self::PT => "Português",
-                Self::JA => "日本語",
-            }
-        )
+        f.write_str(match self {
+            Self::Unknown => "Unknown",
+            Self::EN => "English",
+            Self::B5 => "䌓體中文",
+            Self::GB => "简体中文",
+            Self::FR => "Français",
+            Self::DE => "Deutsch",
+            Self::IT => "Italiano",
+            Self::ES => "Español",
+            Self::PT => "Português",
+            Self::JA => "日本語",
+        })
     }
 }
 
@@ -99,7 +95,10 @@ pub enum OpMode {
     Others,
     /// The controller is off-line.
     ///
-    /// When the controller is off-line, both its operating mode and job mode should be `Offline`.
+    /// When the controller is off-line, both its operating mode and [job mode] should be `Offline`.
+    ///
+    /// [job mode]: enum.JobMode.html
+    ///
     Offline,
 }
 
@@ -181,8 +180,8 @@ impl Default for OpMode {
 impl Display for OpMode {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::SemiAutomatic => write!(f, "Semi-Automatic"),
-            Self::Offline => write!(f, "Off-Line"),
+            Self::SemiAutomatic => f.write_str("Semi-Automatic"),
+            Self::Offline => f.write_str("Off-Line"),
             _ => Debug::fmt(self, f),
         }
     }
@@ -217,7 +216,10 @@ pub enum JobMode {
     ID15,
     /// The controller is off-line.
     ///
-    /// When the controller is off-line, both its operating mode and job mode should be `Offline`.
+    /// When the controller is off-line, both its [operating mode] and job mode should be `Offline`.
+    ///
+    /// [operating mode]: enum.OpMode.html
+    ///
     Offline,
 }
 
@@ -280,7 +282,7 @@ impl Default for JobMode {
 impl Display for JobMode {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Offline => write!(f, "Off-Line"),
+            Self::Offline => f.write_str("Off-Line"),
             _ => Debug::fmt(self, f),
         }
     }

@@ -34,12 +34,11 @@
 
 use std::collections::HashMap;
 use std::convert::TryInto;
-use std::error::Error;
 use std::io::{stdin, Write};
 
 // This program uses the `websocket` crate for connection.
 use websocket::client::ClientBuilder;
-use websocket::{CloseData, OwnedMessage, WebSocketError, WebSocketResult};
+use websocket::{CloseData, OwnedMessage, WebSocketResult};
 type Client = websocket::client::sync::Client<
     std::boxed::Box<dyn websocket::stream::sync::NetworkStream + std::marker::Send>,
 >;
@@ -260,7 +259,8 @@ fn main() {
         return;
     } else if !conn.starts_with("ws://") && !conn.starts_with("wss://") {
         eprintln!(
-            "Invalid WebSocket URL format.  Should be: ws://x.x.x.x:port or wss://x.x.x.x:port"
+            "Invalid WebSocket URL format.  \
+             Should be: ws://x.x.x.x:port or wss://x.x.x.x:port"
         );
         return;
     }
@@ -293,32 +293,7 @@ fn main() {
         Ok(c) => c,
         Err(err) => {
             eprintln!("Connect connect to server: {}", &err);
-            eprintln!(
-                "{}",
-                match err {
-                    // Errors with text string messages
-                    WebSocketError::ProtocolError(e)
-                    | WebSocketError::RequestError(e)
-                    | WebSocketError::ResponseError(e)
-                    | WebSocketError::DataFrameError(e) => e.to_string(),
-                    //
-                    // Errors with embedded error types
-                    WebSocketError::IoError(e) => e.description().to_string(),
-                    WebSocketError::HttpError(e) => e.description().to_string(),
-                    WebSocketError::UrlError(e) => e.description().to_string(),
-                    WebSocketError::TlsError(e) => e.description().to_string(),
-                    WebSocketError::Utf8Error(e) => e.description().to_string(),
-                    WebSocketError::WebSocketUrlError(e) => e.description().to_string(),
-                    //
-                    // Errors with status code
-                    WebSocketError::StatusCodeError(code) => format!("status code = {}", code),
-                    //
-                    // Errors with no more information
-                    WebSocketError::NoDataAvailable
-                    | WebSocketError::TlsHandshakeFailure
-                    | WebSocketError::TlsHandshakeInterruption => "".to_string(),
-                }
-            );
+            eprintln!("{}", err);
             return;
         }
     };
@@ -334,7 +309,7 @@ fn main() {
         ]
         .iter()
         .enumerate()
-        .map(|(index, &value)| (value, (index as u8, format!("MISUser{}", index))))
+        .map(|(i, &v)| (v, (i as u8, format!("MISUser{}", i))))
         .collect(),
         //
         // Mock job scheduling system

@@ -41,10 +41,13 @@ impl std::error::Error for OpenProtocolError<'_> {
             Self::JsonError(err) => err.description(),
             //
             // Invalid field value
-            Self::InvalidField { description, .. } if description.is_empty() => {
-                "invalid field value"
+            Self::InvalidField { description, .. } => {
+                if description.is_empty() {
+                    "invalid field value"
+                } else {
+                    description
+                }
             }
-            Self::InvalidField { description, .. } => description,
             //
             // Constraint violation
             Self::ConstraintViolated(err) => err,
@@ -82,11 +85,15 @@ impl Display for OpenProtocolError<'_> {
             Self::JsonError(err) => err.fmt(f),
             //
             // Invalid field value
-            Self::InvalidField { field, value, description } if description.is_empty() => {
-                write!(f, "value [{}] is invalid for the field {}", value, field)
-            }
             Self::InvalidField { field, value, description } => {
-                write!(f, "value [{}] is invalid for the field {}: {}", value, field, description)
+                write!(f, "value [{}] is invalid for the field {}", value, field)?;
+
+                if description.is_empty() {
+                    f.write_str(": ")?;
+                    f.write_str(description)
+                } else {
+                    Ok(())
+                }
             }
             //
             // Constraint violation
