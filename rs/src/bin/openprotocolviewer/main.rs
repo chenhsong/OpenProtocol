@@ -8,10 +8,18 @@
 //! This program also acts as a user authentication and job cards provider to test out
 //! the operator login and job card features.
 //!
+//! WebSocket Client
+//! ----------------
+//!
+//! For this example, the WebSocket client in the [`websocket`](https://crates.io/crates/websocket)
+//! crate is used to connect to the iChen® server.
+//! In a production environment, other WebSocket implementations may be used instead.
+//! Open Protocol™ does not depend on the particular WebSocket implementation employed.
+//!
 //! How to Use
 //! ----------
 //!
-//! Build the project. This will automatically build all example programs as well.
+//! First build the project. This automatically builds all example programs as well.
 //! The program executable will be under the `target/debug` or `target/release` directory.
 //!
 //! Run the executable (e.g. `openprotocolviewer.exe` on Windows) and enter the following
