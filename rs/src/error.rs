@@ -1,36 +1,46 @@
+use derive_more::*;
 use std::borrow::Cow;
-use std::fmt::{Display, Formatter};
 
 /// Result error type.
 ///
-#[derive(Debug)]
+#[derive(Debug, Display)]
 pub enum OpenProtocolError<'a> {
     /// The value of a field is the empty string `""` or containing all white-spaces,
     /// which is not allowed as value of that field.
+    #[display(fmt = "field {} cannot be empty or all whitespace", _0)]
     EmptyField(&'a str),
     //
     /// The value of a field is not valid.
+    #[display(fmt = "value [{}] is invalid for the field {} - {}", value, field, description)]
     InvalidField { field: &'a str, value: Cow<'a, str>, description: Cow<'a, str> },
     //
     /// The value of a field is not consistent with the matching value in the [`state`].
     ///
     /// [`state`]: struct.StateValues.html
     ///
+    #[display(fmt = "value of field {} is not the same as the matching field in the state", _0)]
     InconsistentState(&'a str),
     //
     /// The value of a field is not consistent with the matching value in the
     /// [`Controller`] structure.
     ///
     /// [`Controller`]: struct.Controller.html
+    #[display(
+        fmt = "value of field {} is not the same as the matching field in the Controller",
+        _0
+    )]
     InconsistentField(&'a str),
     //
     /// An enforced constraint is broken.
+    #[display(fmt = "{}", _0)]
     ConstraintViolated(Cow<'a, str>),
     //
     /// Error when serializing/deserializing JSON.
+    #[display(fmt = "{}", _0)]
     JsonError(serde_json::Error),
     //
     /// An unexpected system error.
+    #[display(fmt = "{}", _0)]
     SystemError(Cow<'a, str>),
 }
 
@@ -74,52 +84,6 @@ impl std::error::Error for OpenProtocolError<'_> {
         match self {
             Self::JsonError(err) => Some(err),
             _ => None,
-        }
-    }
-}
-
-impl Display for OpenProtocolError<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
-        match self {
-            // JSON error
-            Self::JsonError(err) => err.fmt(f),
-            //
-            // Invalid field value
-            Self::InvalidField { field, value, description } => {
-                write!(f, "value [{}] is invalid for the field {}", value, field)?;
-
-                if description.is_empty() {
-                    f.write_str(": ")?;
-                    f.write_str(description)
-                } else {
-                    Ok(())
-                }
-            }
-            //
-            // Constraint violation
-            Self::ConstraintViolated(err) => err.fmt(f),
-            //
-            // System error
-            Self::SystemError(err) => err.fmt(f),
-            //
-            // Inconsistent field value
-            Self::InconsistentField(field) => write!(
-                f,
-                "value of field {} is not the same as the matching field in the Controller",
-                field
-            ),
-            //
-            // Inconsistent state value
-            Self::InconsistentState(field) => write!(
-                f,
-                "value of field {} is not the same as the matching field in the state",
-                field
-            ),
-            //
-            // Field empty
-            Self::EmptyField(field) => {
-                write!(f, "field {} cannot be empty or all whitespace", field)
-            }
         }
     }
 }
