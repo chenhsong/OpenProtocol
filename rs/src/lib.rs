@@ -29,6 +29,7 @@
 #![doc(html_root_url = "https://docs.rs/ichen-openprotocol")]
 
 // Modules
+mod address;
 mod controller;
 mod error;
 mod filters;
@@ -46,6 +47,7 @@ type BoundedValidationResult<'a> = Result<'a, ()>;
 pub type Error<'a> = OpenProtocolError<'a>;
 
 // Re-exports
+pub use address::Address;
 pub use controller::{Controller, GeoLocation, Operator};
 pub use error::OpenProtocolError;
 pub use filters::Filters;

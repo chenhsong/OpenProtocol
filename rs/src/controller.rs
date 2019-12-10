@@ -1,17 +1,14 @@
 use super::utils::*;
-use super::{BoundedValidationResult, Error, JobMode, OpMode, ValidationResult, ID};
+use super::{Address, BoundedValidationResult, Error, JobMode, OpMode, ValidationResult, ID};
 use chrono::{DateTime, FixedOffset};
-use lazy_static::*;
-use regex::Regex;
+use derive_more::*;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::collections::HashMap;
-use std::net::IpAddr;
-use std::str::FromStr;
 
 /// A data structure containing information on a single user on the system.
 ///
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Operator<'a> {
     /// Unique user ID, which cannot be zero.
@@ -87,8 +84,9 @@ impl<'a> Operator<'a> {
 
 /// A data structure containing a single physical geo-location.
 ///
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Display, PartialEq, Clone, Copy, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[display(fmt = "({}, {})", geo_latitude, geo_longitude)]
 pub struct GeoLocation {
     /// Latitude
     pub geo_latitude: f64,
@@ -210,7 +208,9 @@ pub struct Controller<'a> {
     ///
     /// For a serial-connected controller, this is usually the serial port device name, such as `COM1`, `ttyS0`.
     #[serde(rename = "IP")]
-    pub address: &'a str,
+    #[serde(serialize_with = "serialize_to_string")]
+    #[serde(deserialize_with = "deserialize_with_try_from")]
+    pub address: Address<'a>,
     //
     /// Physical geo-location of the controller (if any).
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -264,59 +264,11 @@ impl<'a> Controller<'a> {
     ///
     /// # Examples
     ///
-    /// ## Default values should pass validation
     /// ~~~
     /// # use ichen_openprotocol::*;
     /// # fn main() -> std::result::Result<(), Error<'static>> {
+    /// // Default values should pass validation
     /// let c: Controller = Default::default();
-    /// c.validate()?;
-    /// # Ok(())
-    /// # }
-    /// ~~~
-    ///
-    /// ## Address validation
-    /// ~~~
-    /// # use ichen_openprotocol::*;
-    /// # fn main() -> std::result::Result<(), Error<'static>> {
-    /// // 1.02.003.004:05
-    /// let mut c = Controller {
-    ///     address: "1.02.003.004:05",
-    ///     .. Default::default()
-    /// };
-    /// c.validate()?;
-    ///
-    /// // 1.02.003.004:0 - should error because port cannot be zero if IP address is not zero
-    /// c.address = "1.02.003.004:0";
-    /// assert_eq!(
-    ///     Err(Error::InvalidField {
-    ///         field: "ip[port]",
-    ///         value: "0".into(),
-    ///         description: "IP port cannot be zero".into()
-    ///     }),
-    ///     c.validate()
-    /// );
-    ///
-    /// // 0.0.0.0:0 - OK because both IP address and port are zero
-    /// c.address = "0.0.0.0:0";
-    /// c.validate()?;
-    ///
-    /// // 0.0.0.0:123 - should error because port must be zero if IP address is zero
-    /// c.address = "0.0.0.0:123";
-    /// assert_eq!(
-    ///     Err(Error::InvalidField {
-    ///         field: "ip[port]",
-    ///         value: "123".into(),
-    ///         description: "null IP must have zero port number".into()
-    ///     }),
-    ///     c.validate()
-    /// );
-    ///
-    /// // COM123
-    /// c.address = "COM123";
-    /// c.validate()?;
-    ///
-    /// // ttyABC
-    /// c.address = "ttyABC";
     /// c.validate()?;
     /// # Ok(())
     /// # }
@@ -340,83 +292,7 @@ impl<'a> Controller<'a> {
             op.validate()?;
         }
 
-        // Check IP address
-        check_str_empty(self.address, "address")?;
-
-        lazy_static! {
-            static ref IP_REGEX: Regex =
-                Regex::new(r#"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,5}$"#).unwrap();
-            static ref TTY_REGEX: Regex = Regex::new(r#"^tty\w+$"#).unwrap();
-            static ref COM_REGEX: Regex = Regex::new(r#"^COM(\d+)$"#).unwrap();
-        }
-
-        if !IP_REGEX.is_match(self.address) {
-            if !TTY_REGEX.is_match(self.address) && !COM_REGEX.is_match(self.address) {
-                Err(Error::InvalidField {
-                    field: "ip",
-                    value: self.address.into(),
-                    description: "".into(),
-                })
-            } else {
-                Ok(())
-            }
-        } else {
-            // Check IP address validity
-            let (address, port) = self.address.split_at(self.address.find(':').unwrap());
-
-            let unspecified = match IpAddr::from_str(address) {
-                Ok(addr) => addr.is_unspecified(),
-                Err(err) => {
-                    return Err(Error::InvalidField {
-                        field: "ip[address]",
-                        value: address.into(),
-                        description: {
-                            use std::error::Error;
-                            format!("{} ({})", address, err.description()).into()
-                        },
-                    })
-                }
-            };
-
-            // Check port
-            let port = &port[1..];
-
-            match u16::from_str(port) {
-                // Allow port 0 on unspecified addresses only
-                Ok(0) => {
-                    if !unspecified {
-                        Err(Error::InvalidField {
-                            field: "ip[port]",
-                            value: port.into(),
-                            description: "IP port cannot be zero".into(),
-                        })
-                    } else {
-                        Ok(())
-                    }
-                }
-                // Port must be 0 on unspecified addresses
-                Ok(_) => {
-                    if unspecified {
-                        Err(Error::InvalidField {
-                            field: "ip[port]",
-                            value: port.into(),
-                            description: "null IP must have zero port number".into(),
-                        })
-                    } else {
-                        Ok(())
-                    }
-                }
-                // Other errors
-                Err(err) => Err(Error::InvalidField {
-                    field: "ip[port]",
-                    value: port.into(),
-                    description: {
-                        use std::error::Error;
-                        err.description().to_string().into()
-                    },
-                }),
-            }
-        }
+        Ok(())
     }
 }
 
@@ -424,7 +300,6 @@ impl Default for Controller<'_> {
     /// Default value for `Controller`.
     ///
     /// `controller_id` is set to 1 because zero is not allowed.  
-    /// `address` is set to `0.0.0.0:0` which is allowed as an empty address.  
     /// All other fields are set to `Unknown` or empty.
     ///
     fn default() -> Self {
@@ -434,7 +309,7 @@ impl Default for Controller<'_> {
             controller_type: "Unknown",
             version: "Unknown",
             model: "Unknown",
-            address: "0.0.0.0:0", // Address can be either a valid IP address/port or all-zero
+            address: Address::Unknown,
             geo_location: None,
             op_mode: OpMode::Unknown,
             job_mode: JobMode::Unknown,
@@ -478,7 +353,7 @@ mod test {
         c.validate()?;
 
         assert_eq!(
-            r#"Controller { controller_id: 1, display_name: "Hello", controller_type: "Unknown", version: "Unknown", model: "Unknown", address: "127.0.0.1:123", geo_location: None, op_mode: Automatic, job_mode: ID02, last_cycle_data: {}, variables: {}, last_connection_time: None, operator: Some(Operator { operator_id: 123, operator_name: Some("John") }), job_card_id: None, mold_id: None }"#,
+            r#"Controller { controller_id: 1, display_name: "Hello", controller_type: "Unknown", version: "Unknown", model: "Unknown", address: IPv4(127.0.0.1, 123), geo_location: None, op_mode: Automatic, job_mode: ID02, last_cycle_data: {}, variables: {}, last_connection_time: None, operator: Some(Operator { operator_id: 123, operator_name: Some("John") }), job_card_id: None, mold_id: None }"#,
             format!("{:?}", &c));
 
         Ok(())
