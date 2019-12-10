@@ -1,7 +1,7 @@
 use super::{BoundedValidationResult, Error, ValidationResult, ID};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::HashMap;
-use std::convert::TryInto;
+use std::convert::{TryFrom, TryInto};
 use std::fmt::Display;
 use std::hash::Hash;
 use std::num::NonZeroU32;
@@ -224,4 +224,18 @@ where
 
     let dict: HashMap<Wrapper<K>, T> = Deserialize::deserialize(d)?;
     Ok(dict.into_iter().map(|(Wrapper(k), v)| (k, v)).collect())
+}
+
+pub fn serialize_to_string<S: Serializer, T: Display>(value: T, s: S) -> Result<S::Ok, S::Error> {
+    Serialize::serialize(&value.to_string(), s)
+}
+
+pub fn deserialize_with_try_from<'de, D, T>(d: D) -> Result<T, D::Error>
+where
+    D: Deserializer<'de>,
+    T: TryFrom<&'de str>,
+    T::Error: Display,
+{
+    let s: &str = Deserialize::deserialize(d).map_err(serde::de::Error::custom)?;
+    T::try_from(s).map_err(serde::de::Error::custom)
 }
