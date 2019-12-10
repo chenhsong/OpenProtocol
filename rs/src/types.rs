@@ -2,7 +2,7 @@ use derive_more::*;
 use serde::{Deserialize, Serialize};
 use std::cmp::{Ordering, PartialEq, PartialOrd};
 use std::convert::TryFrom;
-use std::fmt::{Debug, Display, Formatter};
+use std::fmt::{Debug, Formatter};
 use std::num::NonZeroU32;
 
 /// Supported UI languages for the controller's HMI.
@@ -11,27 +11,39 @@ use std::num::NonZeroU32;
 ///
 /// [this document]: https://github.com/chenhsong/OpenProtocol/blob/master/doc/enums.md#languages
 ///
-#[derive(Debug, Ord, PartialOrd, PartialEq, Eq, Hash, Serialize, Deserialize, Copy, Clone)]
+#[derive(
+    Debug, Display, Ord, PartialOrd, PartialEq, Eq, Hash, Serialize, Deserialize, Copy, Clone,
+)]
 pub enum Language {
     /// Unknown language.
+    #[display(fmt = "Unknown")]
     Unknown,
     /// English (en)
+    #[display(fmt = "English")]
     EN,
     /// Traditional Chinese (zh-tw)
+    #[display(fmt = "䌓體中文")]
     B5,
     /// Simplified Chinese (zh-cn)
+    #[display(fmt = "简体中文")]
     GB,
     /// French (fr)
+    #[display(fmt = "Français")]
     FR,
     /// German (de)
+    #[display(fmt = "Deutsch")]
     DE,
     /// Italian (it)
+    #[display(fmt = "Italiano")]
     IT,
     /// Spanish (es)
+    #[display(fmt = "Español")]
     ES,
     /// Portuguese (pt)
+    #[display(fmt = "Português")]
     PT,
     /// Japanese (ja)
+    #[display(fmt = "日本語")]
     JA,
 }
 
@@ -58,36 +70,22 @@ impl Default for Language {
     }
 }
 
-impl Display for Language {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str(match self {
-            Self::Unknown => "Unknown",
-            Self::EN => "English",
-            Self::B5 => "䌓體中文",
-            Self::GB => "简体中文",
-            Self::FR => "Français",
-            Self::DE => "Deutsch",
-            Self::IT => "Italiano",
-            Self::ES => "Español",
-            Self::PT => "Português",
-            Self::JA => "日本語",
-        })
-    }
-}
-
 /// Operating modes of the controller.
 ///
 /// See [this document] for details.
 ///
 /// [this document]: https://github.com/chenhsong/OpenProtocol/blob/master/doc/enums.md#opmodes
 ///
-#[derive(Debug, Ord, PartialOrd, PartialEq, Eq, Hash, Serialize, Deserialize, Copy, Clone)]
+#[derive(
+    Debug, Display, Ord, PartialOrd, PartialEq, Eq, Hash, Serialize, Deserialize, Copy, Clone,
+)]
 pub enum OpMode {
     /// Unknown operation mode.
     Unknown,
     /// Manual mode.
     Manual,
     /// Semi-Automatic mode.
+    #[display(fmt = "Semi-Automataic")]
     SemiAutomatic,
     /// Automatic mode.
     Automatic,
@@ -99,6 +97,7 @@ pub enum OpMode {
     ///
     /// [job mode]: enum.JobMode.html
     ///
+    #[display(fmt = "Off-Line")]
     Offline,
 }
 
@@ -177,16 +176,6 @@ impl Default for OpMode {
     }
 }
 
-impl Display for OpMode {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::SemiAutomatic => f.write_str("Semi-Automatic"),
-            Self::Offline => f.write_str("Off-Line"),
-            _ => Debug::fmt(self, f),
-        }
-    }
-}
-
 /// Job modes of the controller.
 ///
 /// On some controller models, job modes 1-15 (`ID01` - `ID15`) can be user-defined.
@@ -195,7 +184,9 @@ impl Display for OpMode {
 ///
 /// [this document]: https://github.com/chenhsong/OpenProtocol/blob/master/doc/enums.md#jobmodes
 ///
-#[derive(Debug, Ord, PartialOrd, PartialEq, Eq, Hash, Serialize, Deserialize, Copy, Clone)]
+#[derive(
+    Debug, Display, Ord, PartialOrd, PartialEq, Eq, Hash, Serialize, Deserialize, Copy, Clone,
+)]
 pub enum JobMode {
     /// Unknown job mode.
     Unknown,
@@ -220,6 +211,7 @@ pub enum JobMode {
     ///
     /// [operating mode]: enum.OpMode.html
     ///
+    #[display(fmt = "Off-Line")]
     Offline,
 }
 
@@ -276,15 +268,6 @@ impl Default for JobMode {
     /// Default value for `JobMode`.
     fn default() -> Self {
         JobMode::Unknown
-    }
-}
-
-impl Display for JobMode {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Offline => f.write_str("Off-Line"),
-            _ => Debug::fmt(self, f),
-        }
     }
 }
 
