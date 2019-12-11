@@ -213,7 +213,7 @@ where
         S::Err: Display,
     {
         let s = Deserialize::deserialize(d).map_err(serde::de::Error::custom)?;
-        S::from_str(s).map_err(serde::de::Error::custom)
+        S::from_str(s).map_err(|err| serde::de::Error::custom(format!("{}: {}", err, s)))
     }
 
     #[derive(Deserialize, Hash, Eq, PartialEq)]
@@ -237,5 +237,5 @@ where
     T::Error: Display,
 {
     let s: &str = Deserialize::deserialize(d).map_err(serde::de::Error::custom)?;
-    T::try_from(s).map_err(serde::de::Error::custom)
+    T::try_from(s).map_err(|err| serde::de::Error::custom(format!("{}: {}", err, s)))
 }
