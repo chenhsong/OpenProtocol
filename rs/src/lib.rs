@@ -33,6 +33,7 @@ mod address;
 mod controller;
 mod error;
 mod filters;
+mod geo_location;
 mod messages;
 mod operator;
 mod types;
@@ -49,9 +50,10 @@ pub type Error<'a> = OpenProtocolError<'a>;
 
 // Re-exports
 pub use address::Address;
-pub use controller::{Controller, GeoLocation};
+pub use controller::Controller;
 pub use error::OpenProtocolError;
 pub use filters::Filters;
+pub use geo_location::GeoLocation;
 pub use messages::*;
 pub use operator::Operator;
 pub use types::{JobMode, Language, OpMode, ID};
