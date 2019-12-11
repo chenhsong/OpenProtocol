@@ -19,18 +19,57 @@ pub struct GeoLocation {
 impl GeoLocation {
     /// Create a new `GeoLocation`.
     ///
+    /// # Errors
+    ///
+    /// Returns `Err(&'static str)` if either the provided latitude or longitude
+    /// is invalid as a geo-location coordinate.
+    ///
+    /// ## Error Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// assert_eq!(
+    ///     Err("latitude must be between -90 and +90"),
+    ///     GeoLocation::new(123.456, -987.654)
+    /// );
+    /// assert_eq!(
+    ///     Err("longitude must be between -180 and +180"),
+    ///     GeoLocation::new(12.345, -987.654)
+    /// );
+    /// assert_eq!(
+    ///     Err("latitude must be between -90 and +90"),
+    ///     GeoLocation::new(std::f64::INFINITY, 0.0)
+    /// );
+    /// ~~~
+    ///
     /// # Examples
     ///
     /// ~~~
     /// # use ichen_openprotocol::*;
-    /// // Notice this is an invalid geo-location position, but still works
-    /// // To validate the data structure, call the `validate` method.
-    /// let geo = GeoLocation::new(123.456, -987.654);
-    /// assert_eq!(123.456, geo.geo_latitude);
-    /// assert_eq!(-987.654, geo.geo_longitude);
+    /// # fn main() -> std::result::Result<(), &'static str> {
+    /// let geo = GeoLocation::new(12.345, -98.765)?;
+    /// assert_eq!(12.345, geo.geo_latitude);
+    /// assert_eq!(-98.765, geo.geo_longitude);
+    /// # Ok(())
+    /// # }
     /// ~~~
-    pub fn new(latitude: f64, longitude: f64) -> Self {
-        GeoLocation { geo_latitude: latitude, geo_longitude: longitude }
+    pub fn new(latitude: f64, longitude: f64) -> std::result::Result<Self, &'static str> {
+        if latitude.is_nan()
+            || latitude.is_infinite()
+            || !latitude.is_normal()
+            || !(-90.0..=90.0).contains(&latitude)
+        {
+            return Err("latitude must be between -90 and +90");
+        }
+        if longitude.is_nan()
+            || longitude.is_infinite()
+            || !longitude.is_normal()
+            || !(-180.0..=180.0).contains(&longitude)
+        {
+            return Err("longitude must be between -180 and +180");
+        }
+
+        Ok(GeoLocation { geo_latitude: latitude, geo_longitude: longitude })
     }
 
     /// Validate the data structure.
@@ -47,7 +86,7 @@ impl GeoLocation {
     ///
     /// ~~~
     /// # use ichen_openprotocol::*;
-    /// let geo1 = GeoLocation::new(23.456, std::f64::NEG_INFINITY);
+    /// let geo1 = GeoLocation { geo_latitude: 23.456, geo_longitude: std::f64::NEG_INFINITY };
     /// assert_eq!(
     ///     Err(Error::InvalidField {
     ///         field: "geo_longitude",
@@ -57,7 +96,7 @@ impl GeoLocation {
     ///     geo1.validate()
     /// );
     ///
-    /// let geo2 = GeoLocation::new(123.456, 987.654);
+    /// let geo2 = GeoLocation { geo_latitude: 123.456, geo_longitude: 987.654 };
     /// assert_eq!(
     ///     Err(Error::ConstraintViolated("latitude out-of-bounds: 123.456 (must be between -90 and 90)".into())),
     ///     geo2.validate()
