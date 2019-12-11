@@ -122,6 +122,9 @@ impl<'a> Controller<'a> {
             op.validate()?;
         }
 
+        // Check Address
+        self.address.validate()?;
+
         Ok(())
     }
 }

@@ -1,3 +1,4 @@
+use super::{Error, ValidationResult};
 use derive_more::*;
 use lazy_static::*;
 use regex::Regex;
@@ -34,8 +35,189 @@ pub enum Address<'a> {
     TtyDevice(Cow<'a, str>),
 }
 
+impl Address<'_> {
+    /// Create a new `Address::IPv4` from an IP address string and port number.
+    ///
+    /// The IP address cannot be unspecified (e.g. `0.0.0.0`).
+    /// The IP port cannot be zero.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(&'static str)` if:
+    /// * The IP address string is invalid,
+    /// * The IP address is unspecified (e.g. `0.0.0.0`),
+    /// * The IP port is zero.
+    ///
+    /// ## Error Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// assert_eq!(Err("invalid IP address"), Address::new_ipv4("hello", 123));
+    /// assert_eq!(Err("IP port cannot be zero"), Address::new_ipv4("1.02.003.004", 0));
+    /// assert_eq!(Err("invalid null IP address"), Address::new_ipv4("0.00.000.0", 123));
+    /// ~~~
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// # use std::str::FromStr;
+    /// # use std::net::Ipv4Addr;
+    /// # use std::num::NonZeroU16;
+    /// # fn main() -> std::result::Result<(), &'static str> {
+    /// assert_eq!(
+    ///     Address::IPv4(Ipv4Addr::from_str("1.2.3.4").unwrap(), NonZeroU16::new(5).unwrap()),
+    ///     Address::new_ipv4("1.02.003.004", 5)?
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ~~~
+    pub fn new_ipv4(addr: &str, port: u16) -> Result<Self, &'static str> {
+        let addr = Ipv4Addr::from_str(addr).map_err(|_| "invalid IP address")?;
+
+        if !addr.is_unspecified() {
+            Ok(Self::IPv4(addr, NonZeroU16::new(port).ok_or("IP port cannot be zero")?))
+        } else {
+            Err("invalid null IP address")
+        }
+    }
+    //
+    /// Create a new `Address::ComPort` from a Windows serial port number.
+    ///
+    /// The COM port number cannot be zero.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(&'static str)` if the COM port number is zero.
+    ///
+    /// ## Error Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// assert_eq!(Err("COM port cannot be zero"), Address::new_com_port(0));
+    /// ~~~
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// # use std::num::NonZeroU8;
+    /// # fn main() -> std::result::Result<(), &'static str> {
+    /// assert_eq!(
+    ///     Address::ComPort(NonZeroU8::new(5).unwrap()),
+    ///     Address::new_com_port(5)?
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ~~~
+    pub fn new_com_port(port: u8) -> Result<Self, &'static str> {
+        Ok(Self::ComPort(NonZeroU8::new(port).ok_or("COM port cannot be zero")?))
+    }
+    //
+    /// Create a new `Address::TtyDevice` from a UNIX-style tty device name.
+    ///
+    /// The device name should start with `tty`.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(&'static str)` if the device name is not valid for a tty.
+    ///
+    /// ## Error Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// assert_eq!(Err("invalid tty device"), Address::new_tty_device("hello"));
+    /// ~~~
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// # fn main() -> std::result::Result<(), &'static str> {
+    /// # use std::borrow::Cow;
+    /// assert_eq!(
+    ///     Address::TtyDevice(Cow::Borrowed("ttyHello")),
+    ///     Address::new_tty_device("ttyHello")?
+    /// );
+    /// # Ok(())
+    /// # }
+    /// ~~~
+    pub fn new_tty_device(device: &str) -> Result<Self, &'static str> {
+        if TTY_REGEX.is_match(device) {
+            Ok(Address::TtyDevice(device.to_owned().into()))
+        } else {
+            Err("invalid tty device")
+        }
+    }
+    /// Validate the data structure.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(`[`OpenProtocolError::ConstraintViolated`]`)` if the address
+    /// is invalid.
+    ///
+    /// ## Error Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// # use std::net::Ipv4Addr;
+    /// # use std::num::NonZeroU16;
+    /// # use std::str::FromStr;
+    /// let address = Address::IPv4(Ipv4Addr::from_str("0.0.0.0").unwrap(), NonZeroU16::new(123).unwrap());
+    /// assert_eq!(
+    ///     Err(Error::ConstraintViolated("invalid null IP address".into())),
+    ///     address.validate()
+    /// );
+    ///
+    /// let address = Address::TtyDevice("hello".into());
+    /// assert_eq!(
+    ///     Err(Error::ConstraintViolated("invalid tty device: hello".into())),
+    ///     address.validate()
+    /// );
+    /// ~~~
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// # fn main() -> std::result::Result<(), Error<'static>> {
+    /// let address = Address::new_ipv4("12.23.34.45", 123).unwrap();
+    /// address.validate()?;
+    ///
+    /// let address = Address::new_com_port(123).unwrap();
+    /// address.validate()?;
+    ///
+    /// let address = Address::new_tty_device("ttyHello").unwrap();
+    /// address.validate()?;
+    /// # Ok(())
+    /// # }
+    /// ~~~
+    ///
+    /// [`OpenProtocolError::ConstraintViolated`]: enum.OpenProtocolError.html#variant.ConstraintViolated
+    ///
+    pub fn validate(&self) -> ValidationResult {
+        match self {
+            Self::Unknown => {}
+            Self::IPv4(addr, _) => {
+                if addr.is_unspecified() {
+                    return Err(Error::ConstraintViolated("invalid null IP address".into()));
+                }
+            }
+            Self::ComPort(_) => {}
+            Self::TtyDevice(ref device) => {
+                if !TTY_REGEX.is_match(device) {
+                    return Err(Error::ConstraintViolated(
+                        format!("invalid tty device: {}", device).into(),
+                    ));
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
 impl<'a> TryFrom<&'a str> for Address<'a> {
-    type Error = String;
+    type Error = &'static str;
 
     /// Parse a text string into an `Address`.
     ///
@@ -50,13 +232,13 @@ impl<'a> TryFrom<&'a str> for Address<'a> {
     /// # use std::convert::TryFrom;
     /// // The following should error because port cannot be zero if IP address is not zero
     /// assert_eq!(
-    ///     Err("IP port cannot be zero".into()),
+    ///     Err("IP port cannot be zero"),
     ///     Address::try_from("1.02.003.004:0")
     /// );
     ///
     /// // The following should error because port must be zero if IP address is zero
     /// assert_eq!(
-    ///     Err("null IP must have zero port number".into()),
+    ///     Err("null IP must have zero port number"),
     ///     Address::try_from("0.0.0.0:123")
     /// );
     /// ~~~
@@ -66,12 +248,13 @@ impl<'a> TryFrom<&'a str> for Address<'a> {
     /// ~~~
     /// # use ichen_openprotocol::*;
     /// # use std::convert::TryFrom;
+    /// # use std::borrow::Cow;
     /// # use std::str::FromStr;
     /// # use std::num::{NonZeroU16, NonZeroU8};
     /// # use std::net::Ipv4Addr;
-    /// # fn main() -> std::result::Result<(), String> {
+    /// # fn main() -> std::result::Result<(), &'static str> {
     /// assert_eq!(
-    ///     Address::IP(Ipv4Addr::from_str("1.2.3.4").unwrap(), NonZeroU16::new(5).unwrap()),
+    ///     Address::IPv4(Ipv4Addr::from_str("1.2.3.4").unwrap(), NonZeroU16::new(5).unwrap()),
     ///     Address::try_from("1.02.003.004:05")?
     /// );
     ///
@@ -83,8 +266,10 @@ impl<'a> TryFrom<&'a str> for Address<'a> {
     ///     Address::try_from("COM123")?
     /// );
     ///
-    /// let addr = Address::try_from("ttyABC")?;
-    /// assert_eq!("ttyABC", addr.to_string());
+    /// assert_eq!(
+    ///     Address::TtyDevice(Cow::Borrowed("ttyABC")),
+    ///     Address::try_from("ttyABC")?
+    /// );
     /// # Ok(())
     /// # }
     /// ~~~
@@ -94,29 +279,27 @@ impl<'a> TryFrom<&'a str> for Address<'a> {
         Ok(match item {
             // Match COM port syntax
             text if text.starts_with(PREFIX_COM) => {
-                let port = u8::from_str(&text[PREFIX_COM.len()..])
-                    .map_err(|_| format!("invalid COM port: {}", text))?;
-                let port = NonZeroU8::new(port).ok_or("")?;
-                Address::ComPort(port)
+                let port =
+                    u8::from_str(&text[PREFIX_COM.len()..]).map_err(|_| "invalid COM port")?;
+                Address::new_com_port(port)?
             }
             //
             // Match tty syntax
-            text if TTY_REGEX.is_match(text) => Address::TtyDevice(text.into()),
+            text if TTY_REGEX.is_match(text) => Address::new_tty_device(text)?,
             //
             // Match IP:port syntax
             text if IP_REGEX.is_match(text) => {
                 // Check IP address validity
                 let (address, port) = text.split_at(text.find(':').unwrap());
 
-                let address = Ipv4Addr::from_str(address)
-                    .map_err(|_| format!("invalid IP address: {}", address))?;
+                let address = Ipv4Addr::from_str(address).map_err(|_| "invalid IP address")?;
 
                 // Check port
                 match u16::from_str(&port[1..]) {
                     // Allow port 0 on unspecified addresses only
                     Ok(0) => {
                         if !address.is_unspecified() {
-                            return Err("IP port cannot be zero".into());
+                            return Err("IP port cannot be zero");
                         } else {
                             Address::Unknown
                         }
@@ -124,17 +307,17 @@ impl<'a> TryFrom<&'a str> for Address<'a> {
                     // Port must be 0 on unspecified addresses
                     Ok(p) => {
                         if address.is_unspecified() {
-                            return Err("null IP must have zero port number".into());
+                            return Err("null IP must have zero port number");
                         } else {
                             Address::IPv4(address, NonZeroU16::new(p).unwrap())
                         }
                     }
                     // Other errors
-                    Err(_) => return Err(format!("invalid IP port: {}", port)),
+                    Err(_) => return Err("invalid IP port"),
                 }
             }
             // Failed to match any address type
-            text => return Err(format!("invalid address: {}", text)),
+            _ => return Err("invalid address"),
         })
     }
 }
