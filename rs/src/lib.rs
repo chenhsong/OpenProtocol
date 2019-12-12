@@ -56,4 +56,4 @@ pub use filters::Filters;
 pub use geo_location::GeoLocation;
 pub use messages::*;
 pub use operator::Operator;
-pub use types::{JobMode, Language, OpMode, ID};
+pub use types::{ActionID, JobMode, Language, OpMode, ID};

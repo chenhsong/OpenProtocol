@@ -1,7 +1,7 @@
 use super::filters::Filters;
 use super::utils::*;
 use super::{
-    BoundedValidationResult, Controller, Error, JobMode, Language, OpMode, Result,
+    ActionID, BoundedValidationResult, Controller, Error, JobMode, Language, OpMode, Result,
     ValidationResult, ID,
 };
 use chrono::{DateTime, FixedOffset};
@@ -451,7 +451,7 @@ pub enum Message<'a> {
         /// See [this document] for details.
         ///
         /// [this document]: https://github.com/chenhsong/OpenProtocol/blob/master/doc/actions.md
-        action_id: i32,
+        action_id: ActionID,
         //
         /// Time-stamp of the event.
         timestamp: DateTime<FixedOffset>,

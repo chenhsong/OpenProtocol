@@ -394,3 +394,53 @@ impl PartialOrd<ID> for u32 {
         other.partial_cmp(self)
     }
 }
+
+/// A 32-bit ID that represents a controller action.
+///
+#[derive(
+    Display,
+    Constructor,
+    Copy,
+    Clone,
+    Ord,
+    PartialOrd,
+    Eq,
+    PartialEq,
+    Hash,
+    From,
+    Into,
+    FromStr,
+    Serialize,
+    Deserialize,
+)]
+pub struct ActionID(i32);
+
+impl Debug for ActionID {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        Debug::fmt(&self.0, f)
+    }
+}
+
+impl PartialEq<i32> for ActionID {
+    fn eq(&self, other: &i32) -> bool {
+        self.0 == *other
+    }
+}
+
+impl PartialEq<ActionID> for i32 {
+    fn eq(&self, other: &ActionID) -> bool {
+        other.0 == *self
+    }
+}
+
+impl PartialOrd<i32> for ActionID {
+    fn partial_cmp(&self, other: &i32) -> Option<Ordering> {
+        self.0.partial_cmp(other)
+    }
+}
+
+impl PartialOrd<ActionID> for i32 {
+    fn partial_cmp(&self, other: &ActionID) -> Option<Ordering> {
+        other.partial_cmp(self)
+    }
+}
