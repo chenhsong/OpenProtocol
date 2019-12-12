@@ -371,18 +371,6 @@ impl From<ID> for u32 {
     }
 }
 
-impl AsRef<NonZeroU32> for ID {
-    fn as_ref(&self) -> &NonZeroU32 {
-        &self.0
-    }
-}
-
-impl AsMut<NonZeroU32> for ID {
-    fn as_mut(&mut self) -> &mut NonZeroU32 {
-        &mut self.0
-    }
-}
-
 impl PartialEq<u32> for ID {
     fn eq(&self, other: &u32) -> bool {
         self.0.get() == *other
