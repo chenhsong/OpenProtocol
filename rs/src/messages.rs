@@ -536,16 +536,16 @@ pub enum Message<'a> {
         ///
         /// [this document]: https://github.com/chenhsong/OpenProtocol/blob/master/doc/alarms.md
         #[serde(skip_serializing_if = "Option::is_none")]
-        alarm: Option<KeyValuePair<&'a str, bool>>,
+        alarm: Option<Box<KeyValuePair<&'a str, bool>>>,
         //
         /// Change of a setting (if any) on the controller for audit trail purpose
         /// (or `None` if not relevant).
         #[serde(skip_serializing_if = "Option::is_none")]
-        audit: Option<KeyValuePair<&'a str, f64>>,
+        audit: Option<Box<KeyValuePair<&'a str, f64>>>,
         //
         /// Change of a variable (if any) on the controller (or `None` if not relevant).
         #[serde(skip_serializing_if = "Option::is_none")]
-        variable: Option<KeyValuePair<&'a str, f64>>,
+        variable: Option<Box<KeyValuePair<&'a str, f64>>>,
         //
         /// Unique ID of the current logged-on user, `Some(None)` if a user has logged out
         /// (or `None` if not relevant).
@@ -1281,8 +1281,7 @@ mod test {
             serialized
         );
 
-        let m2: Message = serde_json::from_str(&serialized).map_err(|x| x.to_string())?;
-        m2.validate()?;
+        let m2 = Message::parse_from_json_str(&serialized).map_err(|x| x.to_string())?;
 
         assert_eq!(msg, m2);
 
@@ -1293,8 +1292,7 @@ mod test {
     fn test_message_controllers_list_from_json() -> Result<(), String> {
         let json = r#"{"$type":"ControllersList","data":{"12345":{"controllerId":12345,"displayName":"Hello","controllerType":"Ai12","version":"1.0.0","model":"JM128-Ai","IP":"192.168.5.1:123","opMode":"Manual","jobMode":"ID11","lastCycleData":{"Z_QDGODCNT":8567,"Z_QDCYCTIM":979,"Z_QDINJTIM":5450,"Z_QDPLSTIM":7156,"Z_QDINJENDPOS":8449,"Z_QDPLSENDPOS":2212,"Z_QDFLAG":8988,"Z_QDPRDCNT":65500,"Z_QDCOLTIM":4435,"Z_QDMLDOPNTIM":652,"Z_QDMLDCLSTIM":2908,"Z_QDVPPOS":4732,"Z_QDMLDOPNENDPOS":6677,"Z_QDMAXINJSPD":7133,"Z_QDMAXPLSRPM":641,"Z_QDNOZTEMP":6693,"Z_QDTEMPZ01":9964,"Z_QDTEMPZ02":7579,"Z_QDTEMPZ03":4035,"Z_QDTEMPZ04":5510,"Z_QDTEMPZ05":8460,"Z_QDTEMPZ06":9882,"Z_QDBCKPRS":2753,"Z_QDHLDTIM":9936},"lastConnectionTime":"2016-03-06T23:11:27.1442177+08:00"},"22334":{"controllerId":22334,"displayName":"World","controllerType":"Ai01","version":"1.0.0","model":"JM128-Ai","IP":"192.168.5.2:234","opMode":"SemiAutomatic","jobMode":"ID12","lastCycleData":{"Z_QDGODCNT":6031,"Z_QDCYCTIM":7526,"Z_QDINJTIM":4896,"Z_QDPLSTIM":5196,"Z_QDINJENDPOS":1250,"Z_QDPLSENDPOS":8753,"Z_QDFLAG":3314,"Z_QDPRDCNT":65500,"Z_QDCOLTIM":3435,"Z_QDMLDOPNTIM":7854,"Z_QDMLDCLSTIM":4582,"Z_QDVPPOS":7504,"Z_QDMLDOPNENDPOS":7341,"Z_QDMAXINJSPD":7322,"Z_QDMAXPLSRPM":6024,"Z_QDNOZTEMP":3406,"Z_QDTEMPZ01":3067,"Z_QDTEMPZ02":9421,"Z_QDTEMPZ03":2080,"Z_QDTEMPZ04":8845,"Z_QDTEMPZ05":4478,"Z_QDTEMPZ06":3126,"Z_QDBCKPRS":2807,"Z_QDHLDTIM":3928},"lastConnectionTime":"2016-03-06T23:11:27.149218+08:00"}},"sequence":68568}"#;
 
-        let msg: Message = serde_json::from_str(&json).map_err(|x| x.to_string())?;
-        msg.validate()?;
+        let msg = Message::parse_from_json_str(&json).map_err(|x| x.to_string())?;
 
         if let ControllersList { data, .. } = &msg {
             assert_eq!(2, data.len());
@@ -1310,8 +1308,7 @@ mod test {
     fn test_message_cycle_data_from_json() -> Result<(), String> {
         let json = r#"{"$type":"CycleData","timestamp":"2016-02-26T01:12:23+08:00","opMode":"Automatic","jobMode":"ID02","controllerId":123,"data":{"Z_QDGODCNT":123,"Z_QDCYCTIM":12.33,"Z_QDINJTIM":3,"Z_QDPLSTIM":4.4,"Z_QDINJENDPOS":30.1,"Z_QDPLSENDPOS":20.3,"Z_QDFLAG":1,"Z_QDPRDCNT":500,"Z_QDCOLTIM":12.12,"Z_QDMLDOPNTIM":2.1,"Z_QDMLDCLSTIM":1.3,"Z_QDVPPOS":12.11,"Z_QDMLDOPNENDPOS":130.1,"Z_QDMAXINJSPD":213.12,"Z_QDMAXPLSRPM":551,"Z_QDNOZTEMP":256,"Z_QDTEMPZ01":251,"Z_QDTEMPZ02":252,"Z_QDTEMPZ03":253,"Z_QDTEMPZ04":254,"Z_QDTEMPZ05":255,"Z_QDTEMPZ06":256,"Z_QDBCKPRS":54,"Z_QDHLDTIM":2.3,"Z_QDCPT01":231,"Z_QDCPT02":232,"Z_QDCPT03":233,"Z_QDCPT04":234,"Z_QDCPT05":235,"Z_QDCPT06":236,"Z_QDCPT07":237,"Z_QDCPT08":238,"Z_QDCPT09":239,"Z_QDCPT10":240,"Z_QDCPT11":241,"Z_QDCPT12":242,"Z_QDCPT13":243,"Z_QDCPT14":244,"Z_QDCPT15":245,"Z_QDCPT16":246,"Z_QDCPT17":247,"Z_QDCPT18":248,"Z_QDCPT19":249,"Z_QDCPT20":250,"Z_QDCPT21":251,"Z_QDCPT22":252,"Z_QDCPT23":253,"Z_QDCPT24":254,"Z_QDCPT25":255,"Z_QDCPT26":256,"Z_QDCPT27":257,"Z_QDCPT28":258,"Z_QDCPT29":259,"Z_QDCPT30":260,"Z_QDCPT31":261,"Z_QDCPT32":262,"Z_QDCPT33":263,"Z_QDCPT34":264,"Z_QDCPT35":265,"Z_QDCPT36":266,"Z_QDCPT37":267,"Z_QDCPT38":268,"Z_QDCPT39":269,"Z_QDCPT40":270},"sequence":1}"#;
 
-        let msg: Message = serde_json::from_str(&json).map_err(|x| x.to_string())?;
-        msg.validate()?;
+        let msg = Message::parse_from_json_str(&json).map_err(|x| x.to_string())?;
 
         if let CycleData { options, controller_id, data, .. } = msg {
             assert_eq!(0, options.priority);
@@ -1326,17 +1323,20 @@ mod test {
 
     #[test]
     fn test_message_controller_status_without_controller_from_json() -> Result<(), String> {
-        let json = r#"{"$type":"ControllerStatus","controllerId":123,"displayName":"Testing","opMode":"Automatic","jobMode":"ID05","jobCardId":"XYZ","moldId":"Mold-123","state":{"opMode":"Automatic","jobMode":"ID05","jobCardId":"XYZ","moldId":"Mold-123"},"sequence":1,"priority":50}"#;
+        let json = r#"{"$type":"ControllerStatus","controllerId":123,"displayName":"Testing","opMode":"Automatic","alarm":{"key":"hello","value":true},"jobMode":"ID05","jobCardId":"XYZ","moldId":"Mold-123","state":{"opMode":"Automatic","jobMode":"ID05","jobCardId":"XYZ","moldId":"Mold-123"},"sequence":1,"priority":50}"#;
 
-        let msg: Message = serde_json::from_str(&json).map_err(|x| x.to_string())?;
-        msg.validate()?;
+        let msg = Message::parse_from_json_str(&json).map_err(|x| x.to_string())?;
 
-        if let ControllerStatus { options, controller_id, display_name, controller, .. } = msg {
+        if let ControllerStatus {
+            options, controller_id, display_name, controller, alarm, ..
+        } = msg
+        {
             assert_eq!(50, options.priority);
             assert_eq!(1, options.sequence);
             assert_eq!(123, controller_id);
             assert_eq!(Some("Testing"), display_name);
             assert_eq!(None, controller);
+            assert_eq!(Some(Box::new(KeyValuePair::new("hello", true))), alarm);
             Ok(())
         } else {
             Err(format!("Expected ControllerStatus, got {:#?}", msg))
@@ -1347,8 +1347,7 @@ mod test {
     fn test_message_controller_status_with_controller_from_json() -> Result<(), String> {
         let json = r#"{"$type":"ControllerStatus","controllerId":123,"state":{"opMode":"Automatic","jobMode":"ID05"},"controller":{"controllerId":123,"displayName":"Testing","controllerType":"Ai02","version":"2.2","model":"JM138Ai","IP":"192.168.1.1:12345","geoLatitude":23.0,"geoLongitude":-121.0,"opMode":"Automatic","jobMode":"ID05","jobCardId":"XYZ","lastCycleData":{"INJ":5,"CLAMP":400},"moldId":"Mold-123"},"sequence":1}"#;
 
-        let msg: Message = serde_json::from_str(&json).map_err(|x| x.to_string())?;
-        msg.validate()?;
+        let msg = Message::parse_from_json_str(&json).map_err(|x| x.to_string())?;
 
         if let ControllerStatus {
             options, controller_id, display_name, state, controller, ..
@@ -1387,7 +1386,7 @@ mod test {
             operator_name: Some(None),
             variable: None,
             audit: None,
-            alarm: None,
+            alarm: Some(Box::new(KeyValuePair::new("hello", true))),
             controller: None,
             state: StateValues::new_with_all(
                 OpMode::Automatic,
@@ -1400,7 +1399,7 @@ mod test {
         };
 
         let msg = status.to_json_str()?;
-        assert_eq!(r#"{"$type":"ControllerStatus","controllerId":12345,"operatorId":123,"operatorName":null,"moldId":null,"state":{"opMode":"Automatic","jobMode":"ID02","operatorId":123},"sequence":1}"#, msg);
+        assert_eq!(r#"{"$type":"ControllerStatus","controllerId":12345,"alarm":{"key":"hello","value":true},"operatorId":123,"operatorName":null,"moldId":null,"state":{"opMode":"Automatic","jobMode":"ID02","operatorId":123},"sequence":1}"#, msg);
         Ok(())
     }
 
