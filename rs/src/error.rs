@@ -36,7 +36,7 @@ pub enum OpenProtocolError<'a> {
     ConstraintViolated(Cow<'a, str>),
     //
     /// Error when serializing/deserializing JSON.
-    #[display(fmt = "{}", _0)]
+    #[display(fmt = "[{:?}] {}", "_0.classify()", _0)]
     JsonError(serde_json::Error),
     //
     /// An unexpected system error.
