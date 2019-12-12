@@ -322,12 +322,12 @@ pub struct StateValues<'a> {
     /// Current active job ID (if any) on the controller.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(borrow)]
-    pub job_card_id: Option<Cow<'a, str>>,
+    pub job_card_id: Option<Box<Cow<'a, str>>>,
     //
     /// Unique ID of the set of mold data currently loaded (if any) on the controller.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(borrow)]
-    pub mold_id: Option<Cow<'a, str>>,
+    pub mold_id: Option<Box<Cow<'a, str>>>,
 }
 
 impl<'a> StateValues<'a> {
@@ -381,8 +381,8 @@ impl<'a> StateValues<'a> {
     ) -> Self {
         Self {
             operator_id: operator.map(ID::from_u32),
-            job_card_id: job_card.map(|j| j.into()),
-            mold_id: mold.map(|m| m.into()),
+            job_card_id: job_card.map(|j| j.into()).map(Box::new),
+            mold_id: mold.map(|m| m.into()).map(Box::new),
             ..Self::new(op, job)
         }
     }
@@ -516,7 +516,7 @@ pub enum Message<'a> {
         /// Human-friendly name for display (or `None` if not relevant).
         #[allow(clippy::option_option)]
         #[serde(skip_serializing_if = "Option::is_none")]
-        display_name: Option<&'a str>,
+        display_name: Option<Box<&'a str>>,
         //
         /// If true, the controller has disconnected from the iChen® Server.
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -562,7 +562,7 @@ pub enum Message<'a> {
         #[serde(deserialize_with = "deserialize_null_to_some_none")]
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(default)]
-        operator_name: Option<Option<&'a str>>,
+        operator_name: Option<Option<Box<&'a str>>>,
         //
         /// Unique ID of the current job card loaded, `Some(None)` if no job card is currently loaded
         /// (or `None` if not relevant).
@@ -571,7 +571,7 @@ pub enum Message<'a> {
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(default)]
         #[serde(borrow)]
-        job_card_id: Option<Option<Cow<'a, str>>>,
+        job_card_id: Option<Option<Box<Cow<'a, str>>>>,
         //
         /// Unique ID of the current mold data set loaded, `Some(None)` if no mold data set is currently loaded
         /// (or `None` if not relevant).
@@ -580,7 +580,7 @@ pub enum Message<'a> {
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(default)]
         #[serde(borrow)]
-        mold_id: Option<Option<Cow<'a, str>>>,
+        mold_id: Option<Option<Box<Cow<'a, str>>>>,
         //
         /// Snapshot of the current known states of the controller.
         state: StateValues<'a>,
@@ -711,7 +711,7 @@ pub enum Message<'a> {
         /// A message (mostly likely an error message in case of failure), if any.
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(borrow)]
-        message: Option<Cow<'a, str>>,
+        message: Option<Box<Cow<'a, str>>>,
         //
         /// Message configuration options.
         #[serde(flatten)]
@@ -1067,7 +1067,9 @@ impl<'a> Message<'a> {
                     c.validate()?;
 
                     // Check controller fields with specified fields
-                    if display_name.is_some() && *display_name != Some(c.display_name) {
+                    if display_name.is_some()
+                        && display_name.as_ref().unwrap().as_ref() != &c.display_name
+                    {
                         return Err(Error::InconsistentField("display_name"));
                     }
                     if op_mode.is_some() && *op_mode != Some(c.op_mode) {
@@ -1082,8 +1084,8 @@ impl<'a> Message<'a> {
                         return Err(Error::InconsistentField("operator_id"));
                     }
                     if operator_name.is_some()
-                        && *operator_name
-                            != Some(c.operator.as_ref().map(|u| u.operator_name).and_then(|n| n))
+                        && operator_name.as_ref().unwrap().as_ref().map(|x| *x.as_ref())
+                            != c.operator.as_ref().map(|u| u.operator_name).and_then(|n| n)
                     {
                         return Err(Error::InconsistentField("operator_name"));
                     }
@@ -1101,40 +1103,40 @@ impl<'a> Message<'a> {
 
                 check_optional_str_empty(display_name, "display_name")?;
 
-                if let Some(x) = op_mode {
-                    if *x != state.op_mode {
+                if let Some(op) = op_mode {
+                    if *op != state.op_mode {
                         return Err(Error::InconsistentState("op_mode"));
                     }
                 }
 
-                if let Some(x) = job_mode {
-                    if *x != state.job_mode {
+                if let Some(job) = job_mode {
+                    if *job != state.job_mode {
                         return Err(Error::InconsistentState("job_mode"));
                     }
                 }
 
-                if let Some(x) = operator_id {
-                    if *x != state.operator_id {
+                if let Some(opr) = operator_id {
+                    if *opr != state.operator_id {
                         return Err(Error::InconsistentState("operator_id"));
                     }
                 }
 
-                if let Some(x) = operator_name {
-                    check_optional_str_whitespace(x, "operator_name")?;
+                if let Some(opr) = operator_name {
+                    check_optional_str_whitespace(opr, "operator_name")?;
                 }
 
-                if let Some(x) = job_card_id {
-                    check_optional_str_whitespace(x, "job_card_id")?;
+                if let Some(jc) = job_card_id {
+                    check_optional_str_whitespace(jc, "job_card_id")?;
 
-                    if *x != state.job_card_id {
+                    if *jc != state.job_card_id {
                         return Err(Error::InconsistentState("job_card_id"));
                     }
                 }
 
-                if let Some(x) = mold_id {
-                    check_optional_str_whitespace(x, "mold_id")?;
+                if let Some(m) = mold_id {
+                    check_optional_str_whitespace(m, "mold_id")?;
 
-                    if *x != state.mold_id {
+                    if *m != state.mold_id {
                         return Err(Error::InconsistentState("mold_id"));
                     }
                 }
@@ -1334,7 +1336,7 @@ mod test {
             assert_eq!(50, options.priority);
             assert_eq!(1, options.sequence);
             assert_eq!(123, controller_id);
-            assert_eq!(Some("Testing"), display_name);
+            assert_eq!(Some(Box::new("Testing")), display_name);
             assert_eq!(None, controller);
             assert_eq!(Some(Box::new(KeyValuePair::new("hello", true))), alarm);
             Ok(())
@@ -1412,7 +1414,7 @@ mod test {
             op_mode: None,
             job_mode: None,
             job_card_id: Some(None),
-            mold_id: Some(Some("Test".into())),
+            mold_id: Some(Some(Box::new("Test".into()))),
             operator_id: Some(None),
             operator_name: Some(None),
             variable: None,

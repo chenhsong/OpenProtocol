@@ -75,12 +75,12 @@ pub struct Controller<'a> {
     /// Active job ID (if any) on the controller.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(borrow)]
-    pub job_card_id: Option<Cow<'a, str>>,
+    pub job_card_id: Option<Box<Cow<'a, str>>>,
     //
     /// ID of the set of mold data currently loaded (if any) on the controller.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(borrow)]
-    pub mold_id: Option<Cow<'a, str>>,
+    pub mold_id: Option<Box<Cow<'a, str>>>,
 }
 
 impl<'a> Controller<'a> {

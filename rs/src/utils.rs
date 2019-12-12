@@ -5,6 +5,7 @@ use std::convert::{TryFrom, TryInto};
 use std::fmt::Display;
 use std::hash::Hash;
 use std::num::NonZeroU32;
+use std::ops::Deref;
 use std::str::FromStr;
 
 /// A trait to specify different _invalid_ values for a type for serialization purposes
@@ -67,7 +68,10 @@ pub fn is_zero(num: &i32) -> bool {
 ///
 /// [`OpenProtocolError::EmptyField`]: enum.OpenProtocolError.html#variant.EmptyField
 ///
-pub fn check_str_empty<S: AsRef<str>>(text: S, field: &'static str) -> ValidationResult {
+pub fn check_str_empty<S: Deref>(text: S, field: &'static str) -> ValidationResult
+where
+    S::Target: AsRef<str>,
+{
     match text.as_ref().trim() {
         "" => Err(Error::EmptyField(field)),
         _ => Ok(()),
@@ -83,10 +87,10 @@ pub fn check_str_empty<S: AsRef<str>>(text: S, field: &'static str) -> Validatio
 ///
 /// [`OpenProtocolError::EmptyField`]: enum.OpenProtocolError.html#variant.EmptyField
 ///
-pub fn check_optional_str_empty<S: AsRef<str>>(
-    opt: &Option<S>,
-    field: &'static str,
-) -> ValidationResult {
+pub fn check_optional_str_empty<S: Deref>(opt: &Option<S>, field: &'static str) -> ValidationResult
+where
+    S::Target: AsRef<str>,
+{
     match opt {
         Some(text) if text.as_ref().trim().is_empty() => Err(Error::EmptyField(field)),
         _ => Ok(()),
@@ -102,10 +106,13 @@ pub fn check_optional_str_empty<S: AsRef<str>>(
 ///
 /// [`OpenProtocolError::EmptyField`]: enum.OpenProtocolError.html#variant.EmptyField
 ///
-pub fn check_optional_str_whitespace<S: AsRef<str>>(
+pub fn check_optional_str_whitespace<S: Deref>(
     opt: &Option<S>,
     field: &'static str,
-) -> ValidationResult {
+) -> ValidationResult
+where
+    S::Target: AsRef<str>,
+{
     match opt {
         Some(text) if !text.as_ref().is_empty() && text.as_ref().trim().is_empty() => {
             Err(Error::EmptyField(field))
