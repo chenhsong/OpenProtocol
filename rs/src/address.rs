@@ -81,7 +81,7 @@ impl Address<'_> {
             Err("invalid null IP address")
         }
     }
-    //
+
     /// Create a new `Address::ComPort` from a Windows serial port number.
     ///
     /// The COM port number cannot be zero.
@@ -113,7 +113,7 @@ impl Address<'_> {
     pub fn new_com_port(port: u8) -> Result<Self, &'static str> {
         Ok(Self::ComPort(NonZeroU8::new(port).ok_or("COM port cannot be zero")?))
     }
-    //
+
     /// Create a new `Address::TtyDevice` from a UNIX-style tty device name.
     ///
     /// The device name should start with `tty`.
@@ -149,6 +149,7 @@ impl Address<'_> {
             Err("invalid tty device")
         }
     }
+
     /// Validate the data structure.
     ///
     /// # Errors
@@ -212,6 +213,7 @@ impl Address<'_> {
                 }
             }
         }
+
         Ok(())
     }
 }
