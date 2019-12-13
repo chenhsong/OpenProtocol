@@ -11,6 +11,10 @@ repository = "https://github.com/chenhsong/OpenProtocol/tree/master/rs"
 readme = "README.md"
 license = "MIT"
 
+[profile.release]
+lto = true
+codegen-units = 1
+
 [dependencies]
 derive_more = "0.*"
 serde = { version = "1.0.*", features = ["derive"] }
