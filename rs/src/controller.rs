@@ -123,9 +123,7 @@ impl<'a> Controller<'a> {
         }
 
         // Check Address
-        self.address.validate()?;
-
-        Ok(())
+        self.address.validate()
     }
 }
 

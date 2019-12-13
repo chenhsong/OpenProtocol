@@ -48,7 +48,7 @@ pub enum Language {
 }
 
 impl Language {
-    /// Returns true if Language::Unknown.
+    /// Returns true if `Unknown`.
     ///
     /// # Examples
     ///

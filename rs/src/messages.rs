@@ -16,7 +16,7 @@ static SEQ: AtomicU64 = AtomicU64::new(1);
 
 /// Common options of an Open Protocol message.
 ///
-#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
+#[derive(Debug, PartialEq, Serialize, Deserialize, Hash, Copy, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct MessageOptions<'a> {
     /// Unique ID (if any) of the message for tracking and storage retrieval purposes.
@@ -94,8 +94,7 @@ impl<'a> MessageOptions<'a> {
     /// [`OpenProtocolError::EmptyField`]: enum.OpenProtocolError.html#variant.EmptyField
     ///
     pub fn validate(&self) -> ValidationResult {
-        check_optional_str_empty(&self.id, "id")?;
-        Ok(())
+        check_optional_str_empty(&self.id, "id")
     }
 }
 
