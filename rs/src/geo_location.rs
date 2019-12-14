@@ -10,10 +10,10 @@ use serde::{Deserialize, Serialize};
 #[display(fmt = "({}, {})", geo_latitude, geo_longitude)]
 pub struct GeoLocation {
     /// Latitude
-    pub geo_latitude: f64,
+    pub geo_latitude: f32,
     //
     /// Longitude
-    pub geo_longitude: f64,
+    pub geo_longitude: f32,
 }
 
 impl GeoLocation {
@@ -38,7 +38,7 @@ impl GeoLocation {
     /// );
     /// assert_eq!(
     ///     Err("latitude must be between -90 and +90"),
-    ///     GeoLocation::new(std::f64::INFINITY, 0.0)
+    ///     GeoLocation::new(std::f32::INFINITY, 0.0)
     /// );
     /// ~~~
     ///
@@ -53,7 +53,7 @@ impl GeoLocation {
     /// # Ok(())
     /// # }
     /// ~~~
-    pub fn new(latitude: f64, longitude: f64) -> std::result::Result<Self, &'static str> {
+    pub fn new(latitude: f32, longitude: f32) -> std::result::Result<Self, &'static str> {
         if latitude.is_nan()
             || latitude.is_infinite()
             || !latitude.is_normal()
@@ -86,7 +86,7 @@ impl GeoLocation {
     ///
     /// ~~~
     /// # use ichen_openprotocol::*;
-    /// let geo1 = GeoLocation { geo_latitude: 23.456, geo_longitude: std::f64::NEG_INFINITY };
+    /// let geo1 = GeoLocation { geo_latitude: 23.456, geo_longitude: std::f32::NEG_INFINITY };
     /// assert_eq!(
     ///     Err(Error::InvalidField {
     ///         field: "geo_longitude",
@@ -106,8 +106,8 @@ impl GeoLocation {
     /// [`OpenProtocolError::InvalidField`]: enum.OpenProtocolError.html#variant.InvalidField
     /// [`OpenProtocolError::ConstraintViolated`]: enum.OpenProtocolError.html#variant.ConstraintViolated
     ///
-    pub fn validate(&self) -> ValidationResult {
-        check_f64(self.geo_latitude, "geo_latitude")?;
+    pub fn validate(self) -> ValidationResult {
+        check_f64(self.geo_latitude.into(), "geo_latitude")?;
 
         if !(-90.0..=90.0).contains(&self.geo_latitude) {
             return Err(Error::ConstraintViolated(
@@ -119,7 +119,7 @@ impl GeoLocation {
             ));
         }
 
-        check_f64(self.geo_longitude, "geo_longitude")?;
+        check_f64(self.geo_longitude.into(), "geo_longitude")?;
 
         if !(-180.0..=180.0).contains(&self.geo_longitude) {
             return Err(Error::ConstraintViolated(
