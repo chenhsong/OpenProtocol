@@ -1,9 +1,9 @@
 use super::utils::*;
 use super::{Address, BoundedValidationResult, GeoLocation, JobMode, OpMode, Operator, ID};
 use chrono::{DateTime, FixedOffset};
+use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
-use std::collections::HashMap;
 
 /// A data structure containing the current known status of a controller.
 ///
@@ -54,14 +54,14 @@ pub struct Controller<'a> {
     pub job_mode: JobMode,
     //
     /// Last set of cycle data (if any) received from the controller.
-    #[serde(skip_serializing_if = "HashMap::is_empty")]
+    #[serde(skip_serializing_if = "IndexMap::is_empty")]
     #[serde(default)]
-    pub last_cycle_data: HashMap<&'a str, f64>,
+    pub last_cycle_data: IndexMap<&'a str, f64>,
     //
     /// Last-known states (if any) of controller variables.
-    #[serde(skip_serializing_if = "HashMap::is_empty")]
+    #[serde(skip_serializing_if = "IndexMap::is_empty")]
     #[serde(default)]
-    pub variables: HashMap<&'a str, f64>,
+    pub variables: IndexMap<&'a str, f64>,
     //
     /// Time of last connection.
     #[serde(skip_serializing_if = "Option::is_none")]

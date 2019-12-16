@@ -5,9 +5,9 @@ use super::{
     OpMode, Result, StateValues, ValidationResult, ID,
 };
 use chrono::{DateTime, FixedOffset};
+use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
-use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use Message::*;
 
@@ -192,8 +192,8 @@ pub enum Message<'a> {
         //
         // Custom deserialization of string into integer key.
         // No need for custom serialization because ID to string is fine.
-        #[serde(deserialize_with = "deserialize_hashmap")]
-        data: HashMap<ID, Controller<'a>>,
+        #[serde(deserialize_with = "deserialize_indexmap")]
+        data: IndexMap<ID, Controller<'a>>,
         //
         /// Message configuration options.
         #[serde(flatten)]
@@ -310,7 +310,7 @@ pub enum Message<'a> {
         /// See [this document] for examples.
         ///
         /// [this document]: https://github.com/chenhsong/OpenProtocol/blob/master/doc/cycledata.md
-        data: HashMap<&'a str, f64>,
+        data: IndexMap<&'a str, f64>,
         //
         /// Time-stamp of the event.
         timestamp: DateTime<FixedOffset>,
@@ -351,7 +351,7 @@ pub enum Message<'a> {
         controller_id: ID,
         //
         /// A data dictionary containing a set of `JobCard` data structures.
-        data: HashMap<&'a str, JobCard<'a>>,
+        data: IndexMap<&'a str, JobCard<'a>>,
         //
         /// Message configuration options.
         #[serde(flatten)]
@@ -442,7 +442,7 @@ pub enum Message<'a> {
         controller_id: ID,
         //
         /// A data dictionary containing a set of mold settings.
-        data: HashMap<&'a str, f64>,
+        data: IndexMap<&'a str, f64>,
         //
         /// Time-stamp of the event.
         timestamp: DateTime<FixedOffset>,
@@ -948,7 +948,7 @@ mod test {
 
     #[test]
     fn test_message_mold_data_to_json() -> Result<(), String> {
-        let mut map = HashMap::<&str, f64>::new();
+        let mut map: IndexMap<&str, f64> = IndexMap::new();
 
         map.insert("Hello", 123.0);
         map.insert("World", -987.6543);
@@ -975,7 +975,7 @@ mod test {
         let serialized = serde_json::to_string(&msg).map_err(|x| x.to_string())?;
 
         assert_eq!(
-            r#"{"$type":"MoldData","controllerId":123,"data":{"foo":0.0,"Hello":123.0,"World":-987.6543},"timestamp":"2019-02-26T02:03:04+08:00","jobCardId":"Hello World!","operatorId":42,"opMode":"SemiAutomatic","jobMode":"Offline","sequence":999,"priority":-20}"#,
+            r#"{"$type":"MoldData","controllerId":123,"data":{"Hello":123.0,"World":-987.6543,"foo":0.0},"timestamp":"2019-02-26T02:03:04+08:00","opMode":"SemiAutomatic","jobMode":"Offline","operatorId":42,"jobCardId":"Hello World!","sequence":999,"priority":-20}"#,
             serialized
         );
 

@@ -1,6 +1,6 @@
 use super::{BoundedValidationResult, Error, ValidationResult, ID};
+use indexmap::IndexMap;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::collections::HashMap;
 use std::convert::{TryFrom, TryInto};
 use std::fmt::Display;
 use std::hash::Hash;
@@ -200,13 +200,13 @@ where
     }
 }
 
-/// Deserialize a `HashMap` with keys that are not `String` (but is of a type
+/// Deserialize an `IndexMap` with keys that are not `String` (but is of a type
 /// that implements `FromStr`).
 ///
 /// Serialization is usually not a problem because `serde_json` automatically calls
 /// `to_string()` (for key types that implement `Display`) when serializing.
 ///
-pub fn deserialize_hashmap<'de, D, K, T>(d: D) -> Result<HashMap<K, T>, D::Error>
+pub fn deserialize_indexmap<'de, D, K, T>(d: D) -> Result<IndexMap<K, T>, D::Error>
 where
     D: Deserializer<'de>,
     K: FromStr + Eq + Hash,
@@ -229,7 +229,7 @@ where
         S: FromStr,
         S::Err: Display;
 
-    let dict: HashMap<Wrapper<K>, T> = Deserialize::deserialize(d)?;
+    let dict: IndexMap<Wrapper<K>, T> = Deserialize::deserialize(d)?;
     Ok(dict.into_iter().map(|(Wrapper(k), v)| (k, v)).collect())
 }
 
