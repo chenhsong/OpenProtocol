@@ -51,8 +51,8 @@ crate in `Cargo.toml`, and also a WebSocket client crate (such as `websocket`):
 
 ~~~toml
 [dependencies]
-ichen-openprotocol = "0.4.0"
-websocket = "0.23.*"
+ichen-openprotocol = "*"
+websocket = "*"
 ~~~
 
 Import the namespaces:
