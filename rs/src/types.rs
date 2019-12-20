@@ -4,6 +4,7 @@ use std::cmp::{Ordering, PartialEq, PartialOrd};
 use std::convert::TryFrom;
 use std::fmt::{Debug, Formatter};
 use std::num::NonZeroU32;
+use std::ops::Deref;
 
 /// Supported UI languages for the controller's HMI.
 ///
@@ -310,7 +311,7 @@ impl ID {
     pub fn new(value: u32) -> std::result::Result<Self, &'static str> {
         Self::try_from(value)
     }
-    //
+
     /// Create a new ID from a `u32` value.
     ///
     /// # Panics
@@ -329,10 +330,26 @@ impl ID {
     /// ~~~
     /// # use ichen_openprotocol::*;
     /// let id = ID::from_u32(42);
-    /// assert_eq!(42, u32::from(id));
+    /// assert_eq!(42, id.get());
     /// ~~~
     pub fn from_u32(value: u32) -> Self {
         Self::try_from(value).unwrap()
+    }
+
+    /// Convert an ID into a `u32` value.
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// # fn main() -> std::result::Result<(), &'static str> {
+    /// let id = ID::new(42)?;
+    /// assert_eq!(42, id.get());
+    /// # Ok(())
+    /// # }
+    /// ~~~
+    pub fn get(self) -> u32 {
+        self.0.get()
     }
 }
 
@@ -367,35 +384,37 @@ impl TryFrom<u32> for ID {
 
 impl From<ID> for u32 {
     fn from(id: ID) -> Self {
-        id.0.get()
+        id.get()
     }
 }
 
 impl PartialEq<u32> for ID {
     fn eq(&self, other: &u32) -> bool {
-        self.0.get() == *other
+        self.get() == *other
     }
 }
 
 impl PartialEq<ID> for u32 {
     fn eq(&self, other: &ID) -> bool {
-        other == self
+        *self == other.get()
     }
 }
 
 impl PartialOrd<u32> for ID {
     fn partial_cmp(&self, other: &u32) -> Option<Ordering> {
-        self.0.get().partial_cmp(other)
+        self.get().partial_cmp(other)
     }
 }
 
 impl PartialOrd<ID> for u32 {
     fn partial_cmp(&self, other: &ID) -> Option<Ordering> {
-        other.partial_cmp(self)
+        self.partial_cmp(&other.get())
     }
 }
 
 /// A 32-bit ID that represents a controller action.
+///
+/// It `Deref`s into a `i32`.
 ///
 #[derive(
     Display,
@@ -415,6 +434,14 @@ impl PartialOrd<ID> for u32 {
 )]
 pub struct ActionID(i32);
 
+impl Deref for ActionID {
+    type Target = i32;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 impl Debug for ActionID {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         Debug::fmt(&self.0, f)
@@ -429,7 +456,7 @@ impl PartialEq<i32> for ActionID {
 
 impl PartialEq<ActionID> for i32 {
     fn eq(&self, other: &ActionID) -> bool {
-        other.0 == *self
+        *self == other.0
     }
 }
 
@@ -441,6 +468,6 @@ impl PartialOrd<i32> for ActionID {
 
 impl PartialOrd<ActionID> for i32 {
     fn partial_cmp(&self, other: &ActionID) -> Option<Ordering> {
-        other.partial_cmp(self)
+        self.partial_cmp(&other.0)
     }
 }
