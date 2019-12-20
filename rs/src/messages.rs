@@ -697,7 +697,7 @@ impl<'a> Message<'a> {
     ///     op_mode: None,
     ///     job_mode: None,
     ///     job_card_id: Some(None),
-    ///     mold_id: Some(Some("Test-123".into())),     // Value is "Test-123"
+    ///     mold_id: Some(Some(Box::new("Test-123".into()))),     // Value is "Test-123"
     ///     operator_id: None,
     ///     operator_name: None,
     ///     variable: None,
@@ -1097,7 +1097,10 @@ mod test {
         };
 
         let msg = status.to_json_str()?;
-        assert_eq!(r#"{"$type":"ControllerStatus","controllerId":12345,"alarm":{"key":"hello","value":true},"operatorId":123,"operatorName":null,"moldId":null,"state":{"opMode":"Automatic","jobMode":"ID02","operatorId":123},"sequence":1}"#, msg);
+        assert_eq!(
+            r#"{"$type":"ControllerStatus","controllerId":12345,"alarm":{"key":"hello","value":true},"operatorId":123,"operatorName":null,"moldId":null,"state":{"opMode":"Automatic","jobMode":"ID02","operatorId":123},"sequence":1}"#,
+            msg
+        );
         Ok(())
     }
 
@@ -1128,7 +1131,10 @@ mod test {
         };
 
         let msg = status.to_json_str()?;
-        assert_eq!(r#"{"$type":"ControllerStatus","controllerId":12345,"isDisconnected":true,"operatorId":0,"operatorName":null,"jobCardId":null,"moldId":"Test","state":{"opMode":"Automatic","jobMode":"ID02","moldId":"Test"},"sequence":1}"#, msg);
+        assert_eq!(
+            r#"{"$type":"ControllerStatus","controllerId":12345,"isDisconnected":true,"operatorId":0,"operatorName":null,"jobCardId":null,"moldId":"Test","state":{"opMode":"Automatic","jobMode":"ID02","moldId":"Test"},"sequence":1}"#,
+            msg
+        );
         Ok(())
     }
 }

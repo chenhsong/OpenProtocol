@@ -73,7 +73,7 @@ impl<'a> StateValues<'a> {
     /// assert_eq!(JobMode::ID02, state.job_mode);
     /// assert_eq!(Some(ID::from_u32(123)), state.operator_id);
     /// assert_eq!(None, state.job_card_id);
-    /// assert_eq!(Some(Cow::Borrowed("M001")), state.mold_id);
+    /// assert_eq!(Some(Box::new(Cow::Borrowed("M001"))), state.mold_id);
     /// ~~~
     pub fn new_with_all(
         op: OpMode,
