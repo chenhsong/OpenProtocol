@@ -31,17 +31,22 @@ impl<'a> JobCard<'a> {
     /// ~~~
     /// # use ichen_openprotocol::*;
     /// let jobs = vec![
-    ///     JobCard::new("J001".into(), "Mold#001".into(), 0, 10000),
-    ///     JobCard::new("J002".into(), "Mold#002".into(), 1000, 5000),
-    ///     JobCard::new("J003".into(), "Mold#003".into(), 42, 1000),
-    ///     JobCard::new("J004".into(), "Mold#004".into(), 0, 0),
+    ///     JobCard::new("J001", "Mold#001", 0, 10000),
+    ///     JobCard::new("J002".to_string(), "Mold#002".to_string(), 1000, 5000),
+    ///     JobCard::new("J003", "Mold#003".to_string(), 42, 1000),
+    ///     JobCard::new("J004".to_string(), "Mold#004", 0, 0),
     /// ];
     ///
     /// assert_eq!(4, jobs.len());
     /// assert_eq!("J002", jobs[1].job_card_id);
     /// assert_eq!(1000, jobs[2].total);
     /// ~~~
-    pub fn new(id: &'a str, mold: &'a str, progress: u32, total: u32) -> Self {
+    pub fn new<S: Into<Cow<'a, str>>, T: Into<Cow<'a, str>>>(
+        id: S,
+        mold: T,
+        progress: u32,
+        total: u32,
+    ) -> Self {
         Self { job_card_id: id.into(), mold_id: mold.into(), progress, total }
     }
 
@@ -59,9 +64,9 @@ impl<'a> JobCard<'a> {
     ///
     /// ~~~
     /// # use ichen_openprotocol::*;
-    /// let job1 = JobCard::new("".into(), "M1".into(), 0, 10000);
-    /// let job2 = JobCard::new("J2".into(), "   ".into(), 0, 10000);
-    /// let job3 = JobCard::new("J3".into(), "M3".into(), 50000, 10000);
+    /// let job1 = JobCard::new("", "M1", 0, 10000);
+    /// let job2 = JobCard::new("J2", "   ", 0, 10000);
+    /// let job3 = JobCard::new("J3", "M3", 50000, 10000);
     ///
     /// assert_eq!(Err(Error::EmptyField("job_card_id")), job1.validate());
     /// assert_eq!(Err(Error::EmptyField("mold_id")), job2.validate());

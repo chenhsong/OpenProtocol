@@ -704,7 +704,7 @@ impl<'a> Message<'a> {
     ///     audit: None,
     ///     alarm: None,
     ///     controller: None,
-    ///     state: StateValues::new_with_all(
+    ///     state: StateValues::new_with_all::<&str, _>(
     ///         OpMode::Automatic,
     ///         JobMode::ID02,
     ///         None,
@@ -781,7 +781,10 @@ impl<'a> Message<'a> {
                     }
                     if operator_name.is_some()
                         && operator_name.as_ref().unwrap().as_ref().map(|x| *x.as_ref())
-                            != c.operator.as_ref().map(|u| u.operator_name).and_then(|n| n)
+                            != c.operator
+                                .as_ref()
+                                .map(|u| u.operator_name.as_ref().map(|u| u.as_ref()))
+                                .and_then(|n| n)
                     {
                         return Err(Error::InconsistentField("operator_name"));
                     }
@@ -961,7 +964,7 @@ mod test {
             timestamp: DateTime::parse_from_rfc3339("2019-02-26T02:03:04+08:00")
                 .map_err(|x| x.to_string())?,
 
-            state: StateValues::new_with_all(
+            state: StateValues::new_with_all::<_, &str>(
                 OpMode::SemiAutomatic,
                 JobMode::Offline,
                 Some(42),
@@ -1072,7 +1075,7 @@ mod test {
 
     #[test]
     fn test_message_controller_status_to_json() -> Result<(), String> {
-        let status = ControllerStatus {
+        let status: Message = ControllerStatus {
             controller_id: ID::from_u32(12345),
             display_name: None,
             is_disconnected: None,
@@ -1086,7 +1089,7 @@ mod test {
             audit: None,
             alarm: Some(Box::new(KeyValuePair::new("hello", true))),
             controller: None,
-            state: StateValues::new_with_all(
+            state: StateValues::new_with_all::<&str, &str>(
                 OpMode::Automatic,
                 JobMode::ID02,
                 Some(123),
@@ -1120,7 +1123,7 @@ mod test {
             audit: None,
             alarm: None,
             controller: None,
-            state: StateValues::new_with_all(
+            state: StateValues::new_with_all::<&str, _>(
                 OpMode::Automatic,
                 JobMode::ID02,
                 None,
