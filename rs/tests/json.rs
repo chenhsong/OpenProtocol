@@ -3,19 +3,19 @@ use Message::*;
 
 #[test]
 fn integration_test_serialize_to_json() -> Result<(), String> {
-    let mut msg = Message::new_join(
+    let msg = Message::new_join(
         "hello",
         Filters::Status + Filters::All + Filters::Cycle + Filters::Operators,
     );
-    if let Join { options, .. } = &mut msg {
-        options.sequence = 999;
-    }
 
     let json = msg.to_json_str()?;
-    assert_eq!(
-        r#"{"$type":"Join","version":"4.0","password":"hello","language":"EN","filter":"All, Operators","sequence":999}"#,
-        json
+
+    let check = format!(
+        r#"{{"$type":"Join","version":"4.0","password":"hello","language":"EN","filter":"All, Operators","sequence":{}}}"#,
+        msg.sequence()
     );
+
+    assert_eq!(check, json);
 
     Ok(())
 }
@@ -29,8 +29,8 @@ fn integration_test_deserialize_from_json() -> Result<(), String> {
     if let Join { version, password, filter, options, .. } = msg {
         assert_eq!("1.0.0", version);
         assert_eq!("hello", password);
-        assert_eq!(42, options.sequence);
-        assert_eq!(10, options.priority);
+        assert_eq!(42, options.sequence());
+        assert_eq!(10, options.priority());
         assert!(filter.has(Filters::Cycle));
         assert!(filter.has(Filters::Mold));
         assert!(!filter.has(Filters::Alarms));

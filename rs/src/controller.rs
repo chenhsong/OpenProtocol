@@ -166,26 +166,29 @@ mod test {
         let c = Controller {
             op_mode: OpMode::Automatic,
             job_mode: JobMode::ID02,
-            operator: Some(Operator::new_with_name(ID::from_u32(123), "John")),
+            operator: Some(Operator::new_with_name(ID::from_u32(123), "John")?),
+            geo_location: Some(GeoLocation::new(88.0, 123.0)?),
             ..Default::default()
         };
         c.validate()?;
         let serialized = serde_json::to_string(&c).map_err(|x| x.to_string())?;
         assert_eq!(
-            r#"{"controllerId":1,"displayName":"Unknown","controllerType":"Unknown","version":"Unknown","model":"Unknown","IP":"0.0.0.0:0","opMode":"Automatic","jobMode":"ID02","operatorId":123,"operatorName":"John"}"#,
-            serialized);
+            r#"{"controllerId":1,"displayName":"Unknown","controllerType":"Unknown","version":"Unknown","model":"Unknown","IP":"0.0.0.0:0","geoLatitude":88.0,"geoLongitude":123.0,"opMode":"Automatic","jobMode":"ID02","operatorId":123,"operatorName":"John"}"#,
+            serialized
+        );
 
         Ok(())
     }
 
     #[test]
     fn test_controller_from_json() -> Result<(), String> {
-        let c: Controller = serde_json::from_str(r#"{"controllerId":1,"displayName":"Hello","controllerType":"Unknown","version":"Unknown","model":"Unknown","IP":"127.0.0.1:123","opMode":"Automatic","jobMode":"ID02","operatorId":123,"operatorName":"John"}"#).map_err(|x| x.to_string())?;
+        let c: Controller = serde_json::from_str(r#"{"controllerId":1,"geoLatitude":88,"geoLongitude":-123,"displayName":"Hello","controllerType":"Unknown","version":"Unknown","model":"Unknown","IP":"127.0.0.1:123","opMode":"Automatic","jobMode":"ID02","operatorId":123,"operatorName":"John"}"#).map_err(|x| x.to_string())?;
         c.validate()?;
 
         assert_eq!(
-            r#"Controller { controller_id: 1, display_name: "Hello", controller_type: "Unknown", version: "Unknown", model: "Unknown", address: IPv4(127.0.0.1, 123), geo_location: None, op_mode: Automatic, job_mode: ID02, last_cycle_data: {}, variables: {}, last_connection_time: None, operator: Some(Operator { operator_id: 123, operator_name: Some("John") }), job_card_id: None, mold_id: None }"#,
-            format!("{:?}", &c));
+            r#"Controller { controller_id: 1, display_name: "Hello", controller_type: "Unknown", version: "Unknown", model: "Unknown", address: IPv4(127.0.0.1, 123), geo_location: Some((88,-123)), op_mode: Automatic, job_mode: ID02, last_cycle_data: {}, variables: {}, last_connection_time: None, operator: Some(Operator { operator_id: 123, operator_name: Some("John") }), job_card_id: None, mold_id: None }"#,
+            format!("{:?}", &c)
+        );
 
         Ok(())
     }

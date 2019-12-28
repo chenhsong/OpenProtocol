@@ -24,20 +24,123 @@ pub struct MessageOptions<'a> {
     /// The iChen Server may tag certain messages with a unique tracking key that can be used to
     /// retrieve the message from persistent storage later.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<&'a str>,
+    pub(crate) id: Option<&'a str>,
     //
     /// Ever-increasing message sequence number.
     ///
     /// This number is usually auto-incremented with each message created, starting from 1.
-    pub sequence: u64,
+    pub(crate) sequence: u64,
     //
     /// Priority of the message, smaller number is higher priority.  Default = 0.
     #[serde(skip_serializing_if = "is_zero")]
     #[serde(default)]
-    pub priority: i32,
+    pub(crate) priority: i32,
 }
 
 impl<'a> MessageOptions<'a> {
+    /// Get the message ID, if any.
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// # fn main() -> std::result::Result<(), String> {
+    /// let mut opt = MessageOptions::new();
+    /// opt.set_id("hello")?;
+    /// assert_eq!(Some("hello"), opt.id());
+    /// opt.clear_id();
+    /// assert_eq!(None, opt.id());
+    /// # Ok(())
+    /// # }
+    /// ~~~
+    pub fn id(&self) -> Option<&'a str> {
+        self.id
+    }
+
+    // Get the message sequence number.
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// let opt1 = MessageOptions::new();
+    /// assert_eq!(1, opt1.sequence());
+    ///
+    /// let opt2 = MessageOptions::new();
+    /// assert_eq!(2, opt2.sequence());       // `sequence` auto-increments.
+    /// ~~~
+    pub fn sequence(&self) -> u64 {
+        self.sequence
+    }
+
+    /// Get the message priority.
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// let opt1 = MessageOptions::new_with_priority(100);
+    /// assert_eq!(100, opt1.priority());
+    ///
+    /// let opt2 = MessageOptions::new_with_priority(-42);
+    /// assert_eq!(-42, opt2.priority());
+    /// ~~~
+    pub fn priority(&self) -> i32 {
+        self.priority
+    }
+
+    /// Set the message ID.
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err(String)` if the ID string is empty or all-whitespace.
+    ///
+    /// ## Error Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// let mut opt = MessageOptions::new();
+    /// assert_eq!(Err("message ID cannot be empty or all whitespace".into()), opt.set_id(""));
+    /// ~~~
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// # fn main() -> std::result::Result<(), String> {
+    /// let mut opt = MessageOptions::new();
+    /// opt.set_id("hello")?;
+    /// assert_eq!(Some("hello"), opt.id());
+    /// opt.clear_id();
+    /// assert_eq!(None, opt.id());
+    /// # Ok(())
+    /// # }
+    /// ~~~
+    pub fn set_id(&mut self, id: &'a str) -> std::result::Result<(), String> {
+        check_str_empty(id, "id").map_err(|_| "message ID cannot be empty or all whitespace")?;
+        self.id = Some(id);
+        Ok(())
+    }
+
+    /// Set the message ID to `None`.
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// # fn main() -> std::result::Result<(), String> {
+    /// let mut opt = MessageOptions::new();
+    /// opt.set_id("hello")?;
+    /// assert_eq!(Some("hello"), opt.id());
+    /// opt.clear_id();
+    /// assert_eq!(None, opt.id());
+    /// # Ok(())
+    /// # }
+    /// ~~~
+    pub fn clear_id(&mut self) {
+        self.id = None;
+    }
+
     /// Create a `MessageOptions` with default values (for example, the `sequence` field
     /// auto-increments).
     ///
@@ -46,12 +149,12 @@ impl<'a> MessageOptions<'a> {
     /// ~~~
     /// # use ichen_openprotocol::*;
     /// let opt1 = MessageOptions::new();
-    /// assert_eq!(1, opt1.sequence);
-    /// assert_eq!(0, opt1.priority);
+    /// assert_eq!(1, opt1.sequence());
+    /// assert_eq!(0, opt1.priority());
     ///
     /// let opt2 = MessageOptions::new();
-    /// assert_eq!(2, opt2.sequence);       // `sequence` auto-increments.
-    /// assert_eq!(0, opt2.priority);
+    /// assert_eq!(2, opt2.sequence());       // `sequence` auto-increments.
+    /// assert_eq!(0, opt2.priority());
     /// ~~~
     pub fn new() -> Self {
         Default::default()
@@ -65,12 +168,12 @@ impl<'a> MessageOptions<'a> {
     /// ~~~
     /// # use ichen_openprotocol::*;
     /// let opt1 = MessageOptions::new_with_priority(100);
-    /// assert_eq!(1, opt1.sequence);
-    /// assert_eq!(100, opt1.priority);
+    /// assert_eq!(1, opt1.sequence());
+    /// assert_eq!(100, opt1.priority());
     ///
     /// let opt2 = MessageOptions::new_with_priority(-42);
-    /// assert_eq!(2, opt2.sequence);       // `sequence` auto-increments.
-    /// assert_eq!(-42, opt2.priority);
+    /// assert_eq!(2, opt2.sequence());       // `sequence` auto-increments.
+    /// assert_eq!(-42, opt2.priority());
     /// ~~~
     pub fn new_with_priority(priority: i32) -> Self {
         Self { priority, ..Self::new() }
@@ -83,17 +186,9 @@ impl<'a> MessageOptions<'a> {
     /// Returns `Err(`[`OpenProtocolError::EmptyField`]`)` if the `id` field is set to an empty string
     /// or is all whitespace.
     ///
-    /// ## Error Examples
-    ///
-    /// ~~~
-    /// # use ichen_openprotocol::*;
-    /// let opt1 = MessageOptions { id: Some(""), ..Default::default() };
-    /// assert_eq!(Err(Error::EmptyField("id")), opt1.validate());
-    /// ~~~
-    ///
     /// [`OpenProtocolError::EmptyField`]: enum.OpenProtocolError.html#variant.EmptyField
     ///
-    pub fn validate(&self) -> ValidationResult {
+    pub(crate) fn validate(&self) -> ValidationResult {
         check_optional_str_empty(&self.id, "id")
     }
 }
@@ -108,12 +203,12 @@ impl Default for MessageOptions<'_> {
     /// ~~~
     /// # use ichen_openprotocol::*;
     /// let opt1: MessageOptions = Default::default();
-    /// assert_eq!(1, opt1.sequence);
-    /// assert_eq!(0, opt1.priority);
+    /// assert_eq!(1, opt1.sequence());
+    /// assert_eq!(0, opt1.priority());
     ///
     /// let opt2: MessageOptions = Default::default();
-    /// assert_eq!(2, opt2.sequence);       // `sequence` auto-increments.
-    /// assert_eq!(0, opt2.priority);
+    /// assert_eq!(2, opt2.sequence());       // `sequence` auto-increments.
+    /// assert_eq!(0, opt2.priority());
     /// ~~~
     fn default() -> Self {
         Self { id: None, sequence: SEQ.fetch_add(1, Ordering::SeqCst), priority: 0 }
@@ -610,6 +705,20 @@ impl<'a> Message<'a> {
     }
 
     /// Create an `ALIVE` message.
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// let msg = Message::new_alive();
+    /// if let Message::Alive { options } = msg {
+    ///     assert_eq!(1, options.sequence());
+    ///     assert_eq!(0, options.priority());
+    ///     assert_eq!(None, options.id());
+    /// } else {
+    ///     panic!();
+    /// }
+    /// ~~~
     pub fn new_alive() -> Self {
         Alive { options: Default::default() }
     }
@@ -628,17 +737,18 @@ impl<'a> Message<'a> {
     /// ~~~
     /// # use ichen_openprotocol::*;
     /// let msg = Message::new_join("MyPassword", Filters::Status + Filters::Cycle);
-    /// assert_eq!(
-    ///     Message::Join {
-    ///         org_id: None,
-    ///         version: Message::PROTOCOL_VERSION,
-    ///         password: "MyPassword",
-    ///         language: Message::DEFAULT_LANGUAGE,
-    ///         filter: Filters::Status + Filters::Cycle,
-    ///         options: MessageOptions { id: None, sequence: 1, priority: 0 }
-    ///     },
-    ///     msg
-    /// );
+    /// if let Message::Join { org_id, version, password, language, filter, options } = msg {
+    ///     assert_eq!(None, org_id);
+    ///     assert_eq!(Message::PROTOCOL_VERSION, version);
+    ///     assert_eq!("MyPassword", password);
+    ///     assert_eq!(Message::DEFAULT_LANGUAGE, language);
+    ///     assert_eq!(Filters::Status + Filters::Cycle, filter);
+    ///     assert_eq!(1, options.sequence());
+    ///     assert_eq!(0, options.priority());
+    ///     assert_eq!(None, options.id());
+    /// } else {
+    ///     panic!();
+    /// }
     /// ~~~
     pub fn new_join(password: &'a str, filter: Filters) -> Self {
         Join {
@@ -658,17 +768,18 @@ impl<'a> Message<'a> {
     /// ~~~
     /// # use ichen_openprotocol::*;
     /// let msg = Message::new_join_with_org("MyPassword", Filters::Status + Filters::Cycle, "MyCompany");
-    /// assert_eq!(
-    ///     Message::Join {
-    ///         org_id: Some("MyCompany"),
-    ///         version: Message::PROTOCOL_VERSION,
-    ///         password: "MyPassword",
-    ///         language: Message::DEFAULT_LANGUAGE,
-    ///         filter: Filters::Status + Filters::Cycle,
-    ///         options: MessageOptions { id: None, sequence: 1, priority: 0 }
-    ///     },
-    ///     msg
-    /// );
+    /// if let Message::Join { org_id, version, password, language, filter, options } = msg {
+    ///     assert_eq!(Some("MyCompany"), org_id);
+    ///     assert_eq!(Message::PROTOCOL_VERSION, version);
+    ///     assert_eq!("MyPassword", password);
+    ///     assert_eq!(Message::DEFAULT_LANGUAGE, language);
+    ///     assert_eq!(Filters::Status + Filters::Cycle, filter);
+    ///     assert_eq!(1, options.sequence());
+    ///     assert_eq!(0, options.priority());
+    ///     assert_eq!(None, options.id());
+    /// } else {
+    ///     panic!();
+    /// }
     /// ~~~
     pub fn new_join_with_org(password: &'a str, filter: Filters, org: &'a str) -> Self {
         let mut msg = Self::new_join(password, filter);
@@ -676,6 +787,72 @@ impl<'a> Message<'a> {
             *org_id = Some(org)
         }
         msg
+    }
+
+    /// Get the optional message ID from the `options` field.
+    pub fn id(&self) -> Option<&'a str> {
+        match self {
+            Alive { options }
+            | ControllerAction { options, .. }
+            | RequestControllersList { options, .. }
+            | ControllersList { options, .. }
+            | ControllerStatus { options, .. }
+            | CycleData { options, .. }
+            | RequestJobCardsList { options, .. }
+            | JobCardsList { options, .. }
+            | Join { options, .. }
+            | JoinResponse { options, .. }
+            | RequestMoldData { options, .. }
+            | MoldData { options, .. }
+            | ReadMoldData { options, .. }
+            | MoldDataValue { options, .. }
+            | LoginOperator { options, .. }
+            | OperatorInfo { options, .. } => options.id(),
+        }
+    }
+
+    /// Get the message sequence number from the `options` field.
+    pub fn sequence(&self) -> u64 {
+        match self {
+            Alive { options }
+            | ControllerAction { options, .. }
+            | RequestControllersList { options, .. }
+            | ControllersList { options, .. }
+            | ControllerStatus { options, .. }
+            | CycleData { options, .. }
+            | RequestJobCardsList { options, .. }
+            | JobCardsList { options, .. }
+            | Join { options, .. }
+            | JoinResponse { options, .. }
+            | RequestMoldData { options, .. }
+            | MoldData { options, .. }
+            | ReadMoldData { options, .. }
+            | MoldDataValue { options, .. }
+            | LoginOperator { options, .. }
+            | OperatorInfo { options, .. } => options.sequence(),
+        }
+    }
+
+    /// Get the message priority from the `options` field.
+    pub fn priority(&self) -> i32 {
+        match self {
+            Alive { options }
+            | ControllerAction { options, .. }
+            | RequestControllersList { options, .. }
+            | ControllersList { options, .. }
+            | ControllerStatus { options, .. }
+            | CycleData { options, .. }
+            | RequestJobCardsList { options, .. }
+            | JobCardsList { options, .. }
+            | Join { options, .. }
+            | JoinResponse { options, .. }
+            | RequestMoldData { options, .. }
+            | MoldData { options, .. }
+            | ReadMoldData { options, .. }
+            | MoldDataValue { options, .. }
+            | LoginOperator { options, .. }
+            | OperatorInfo { options, .. } => options.priority(),
+        }
     }
 
     /// Validate the `Message` data structure.
@@ -710,7 +887,7 @@ impl<'a> Message<'a> {
     ///         None,
     ///         None,
     ///         Some("Test-FooBar"),    // Notice that this state value should be "Test-123"
-    ///     ),
+    ///     ).unwrap(),
     ///     options: Default::default(),
     /// };
     ///
@@ -781,10 +958,7 @@ impl<'a> Message<'a> {
                     }
                     if operator_name.is_some()
                         && operator_name.as_ref().unwrap().as_ref().map(|x| *x.as_ref())
-                            != c.operator
-                                .as_ref()
-                                .map(|u| u.operator_name.as_ref().map(|u| u.as_ref()))
-                                .and_then(|n| n)
+                            != c.operator.as_ref().map(|u| u.operator_name).and_then(|n| n)
                     {
                         return Err(Error::InconsistentField("operator_name"));
                     }
@@ -939,12 +1113,15 @@ mod test {
 
     #[test]
     fn test_message_alive_to_json() -> Result<(), String> {
-        let msg =
-            Alive { options: MessageOptions { id: Some("Hello"), sequence: 999, priority: 20 } };
+        let mut options = MessageOptions::new_with_priority(20);
+        options.sequence = 999;
+        options.set_id("hello")?;
+
+        let msg = Alive { options };
 
         let serialized = serde_json::to_string(&msg).map_err(|x| x.to_string())?;
 
-        assert_eq!(r#"{"$type":"Alive","id":"Hello","sequence":999,"priority":20}"#, serialized);
+        assert_eq!(r#"{"$type":"Alive","id":"hello","sequence":999,"priority":20}"#, serialized);
 
         Ok(())
     }
@@ -957,6 +1134,9 @@ mod test {
         map.insert("World", -987.6543);
         map.insert("foo", 0.0);
 
+        let mut options = MessageOptions::new_with_priority(-20);
+        options.sequence = 999;
+
         let msg = MoldData {
             controller_id: ID::from_u32(123),
             data: map,
@@ -967,12 +1147,12 @@ mod test {
             state: StateValues::new_with_all::<_, &str>(
                 OpMode::SemiAutomatic,
                 JobMode::Offline,
-                Some(42),
+                Some(ID::from_u32(42)),
                 Some("Hello World!"),
                 None,
-            ),
+            )?,
 
-            options: MessageOptions { id: None, sequence: 999, priority: -20 },
+            options,
         };
 
         let serialized = serde_json::to_string(&msg).map_err(|x| x.to_string())?;
@@ -1011,9 +1191,9 @@ mod test {
 
         let msg = Message::parse_from_json_str(&json).map_err(|x| x.to_string())?;
 
-        if let CycleData { options, controller_id, data, .. } = msg {
-            assert_eq!(0, options.priority);
-            assert_eq!(123, controller_id);
+        if let CycleData { controller_id, data, .. } = &msg {
+            assert_eq!(0, msg.priority());
+            assert_eq!(123, *controller_id);
             assert_eq!(64, data.len());
             assert!((*data.get("Z_QDCPT13").unwrap() - 243.0).abs() < std::f64::EPSILON);
             Ok(())
@@ -1028,16 +1208,13 @@ mod test {
 
         let msg = Message::parse_from_json_str(&json).map_err(|x| x.to_string())?;
 
-        if let ControllerStatus {
-            options, controller_id, display_name, controller, alarm, ..
-        } = msg
-        {
-            assert_eq!(50, options.priority);
-            assert_eq!(1, options.sequence);
-            assert_eq!(123, controller_id);
-            assert_eq!(Some(Box::new("Testing")), display_name);
-            assert_eq!(None, controller);
-            assert_eq!(Some(Box::new(KeyValuePair::new("hello", true))), alarm);
+        if let ControllerStatus { controller_id, display_name, controller, alarm, .. } = &msg {
+            assert_eq!(50, msg.priority());
+            assert_eq!(1, msg.sequence());
+            assert_eq!(123, *controller_id);
+            assert_eq!(Some(Box::new("Testing")), *display_name);
+            assert_eq!(None, *controller);
+            assert_eq!(Some(Box::new(KeyValuePair::new("hello", true))), *alarm);
             Ok(())
         } else {
             Err(format!("Expected ControllerStatus, got {:#?}", msg))
@@ -1050,20 +1227,17 @@ mod test {
 
         let msg = Message::parse_from_json_str(&json).map_err(|x| x.to_string())?;
 
-        if let ControllerStatus {
-            options, controller_id, display_name, state, controller, ..
-        } = msg
-        {
-            assert_eq!(0, options.priority);
-            assert_eq!(1, options.sequence);
-            assert_eq!(123, controller_id);
-            assert_eq!(None, display_name);
+        if let ControllerStatus { controller_id, display_name, state, controller, .. } = &msg {
+            assert_eq!(0, msg.priority());
+            assert_eq!(1, msg.sequence());
+            assert_eq!(123, *controller_id);
+            assert_eq!(None, *display_name);
             assert_eq!(OpMode::Automatic, state.op_mode);
             assert_eq!(JobMode::ID05, state.job_mode);
             assert_eq!(None, state.job_card_id);
-            let c = controller.unwrap();
+            let c = controller.as_ref().unwrap();
             assert_eq!("JM138Ai", c.model);
-            let d = c.last_cycle_data;
+            let d = &c.last_cycle_data;
             assert!(c.operator.is_none());
             assert_eq!(2, d.len());
             assert!((*d.get("INJ").unwrap() - 5.0).abs() < std::f64::EPSILON);
@@ -1092,10 +1266,10 @@ mod test {
             state: StateValues::new_with_all::<&str, &str>(
                 OpMode::Automatic,
                 JobMode::ID02,
-                Some(123),
+                Some(ID::from_u32(123)),
                 None,
                 None,
-            ),
+            )?,
             options: MessageOptions::default_new(),
         };
 
@@ -1129,7 +1303,7 @@ mod test {
                 None,
                 None,
                 Some("Test"),
-            ),
+            )?,
             options: MessageOptions::default_new(),
         };
 

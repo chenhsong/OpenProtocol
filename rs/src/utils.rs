@@ -1,4 +1,5 @@
 use super::{BoundedValidationResult, Error, ValidationResult, ID};
+use decorum::R32;
 use indexmap::IndexMap;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::convert::{TryFrom, TryInto};
@@ -245,4 +246,22 @@ where
 {
     let s: &str = Deserialize::deserialize(d).map_err(serde::de::Error::custom)?;
     T::try_from(s).map_err(|err| serde::de::Error::custom(format!("{}: {}", err, s)))
+}
+
+/// Serialize an `R32` value as a float.
+#[allow(clippy::trivially_copy_pass_by_ref)]
+pub fn serialize_r32<S>(value: &R32, s: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    Serialize::serialize(&value.into_inner(), s)
+}
+
+/// Deserialize an `R32` value from a float.
+pub fn deserialize_r32<'de, D>(d: D) -> Result<R32, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value: f32 = Deserialize::deserialize(d).map_err(serde::de::Error::custom)?;
+    Ok(value.into())
 }

@@ -67,27 +67,27 @@ fn display_message(prefix: &str, msg: &Message) {
     print!("{}", prefix);
 
     match msg {
-        Message::Alive { options, .. } => println!("Alive({})", options.sequence),
+        Message::Alive { options, .. } => println!("Alive({})", options.sequence()),
         Message::RequestControllersList { controller_id: None, options, .. } => {
-            println!("RequestControllersList({})", options.sequence)
+            println!("RequestControllersList({})", options.sequence())
         }
         Message::RequestControllersList { controller_id: Some(id), options, .. } => {
-            println!("RequestControllersList({}, {})", id, options.sequence)
+            println!("RequestControllersList({}, {})", id, options.sequence())
         }
         Message::RequestJobCardsList { controller_id, options, .. } => {
-            println!("RequestJobCardsList({}, {})", controller_id, options.sequence)
+            println!("RequestJobCardsList({}, {})", controller_id, options.sequence())
         }
         Message::RequestMoldData { controller_id, options, .. } => {
-            println!("RequestMoldData({}, {})", controller_id, options.sequence)
+            println!("RequestMoldData({}, {})", controller_id, options.sequence())
         }
         Message::ReadMoldData { controller_id, field: None, options, .. } => {
-            println!("RequestMoldData({}, ALL, {})", controller_id, options.sequence)
+            println!("RequestMoldData({}, ALL, {})", controller_id, options.sequence())
         }
         Message::ReadMoldData { controller_id, field: Some(fld), options, .. } => {
-            println!("RequestMoldData({}, [{}], {})", controller_id, fld, options.sequence)
+            println!("RequestMoldData({}, [{}], {})", controller_id, fld, options.sequence())
         }
         Message::ControllerAction { controller_id, action_id, options, .. } => {
-            println!("ControllerAction({}, [{}], {})", controller_id, action_id, options.sequence)
+            println!("ControllerAction({}, [{}], {})", controller_id, action_id, options.sequence())
         }
         m if prefix.is_empty() => println!("{:#?}", m),
         m => println!("\n{:#?}", m),
