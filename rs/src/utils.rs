@@ -1,11 +1,10 @@
-use super::{Error, ValidationResult, ID};
+use super::ID;
 use indexmap::IndexMap;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::convert::TryInto;
 use std::fmt::Display;
 use std::hash::Hash;
 use std::num::NonZeroU32;
-use std::ops::Deref;
 use std::str::FromStr;
 
 /// A trait to specify different _invalid_ values for a type for serialization purposes
@@ -57,25 +56,6 @@ impl HasInvalidValue for f64 {
 #[allow(clippy::trivially_copy_pass_by_ref)]
 pub fn is_zero(num: &i32) -> bool {
     *num == 0
-}
-
-/// Check if an optional string is empty or contains all whitespace.
-///
-/// # Errors
-///
-/// Returns `Err(`[`OpenProtocolError::EmptyField`]`)` if `opt` is `Some` text which either
-/// is empty or contains all whitespace.
-///
-/// [`OpenProtocolError::EmptyField`]: enum.OpenProtocolError.html#variant.EmptyField
-///
-pub fn check_optional_str_empty<S: Deref>(opt: &Option<S>, field: &'static str) -> ValidationResult
-where
-    S::Target: AsRef<str>,
-{
-    match opt {
-        Some(text) if text.as_ref().trim().is_empty() => Err(Error::EmptyField(field)),
-        _ => Ok(()),
-    }
 }
 
 /// Check for non-numeric values of an `f32` field.
