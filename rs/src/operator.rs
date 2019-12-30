@@ -1,6 +1,6 @@
 use super::{TextName, ID};
 use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
+use std::convert::TryInto;
 
 /// A data structure containing information on a single user on the system.
 ///
@@ -72,7 +72,7 @@ impl<'a> Operator<'a> {
     /// ~~~
     /// # use ichen_openprotocol::*;
     /// let result = Operator::try_new_with_name(ID::from_u32(12345), "");
-    /// assert_eq!(Err("operator name cannot be empty or all whitespace".into()), result);
+    /// assert_eq!(Err("invalid value: a non-empty, non-whitespace string required for operator name".into()), result);
     /// ~~~
     ///
     /// # Examples
@@ -86,15 +86,9 @@ impl<'a> Operator<'a> {
     /// # Ok(())
     /// # }
     /// ~~~
-    pub fn try_new_with_name<N>(id: ID, name: N) -> std::result::Result<Self, String>
-    where
-        N: Into<Cow<'a, str>> + AsRef<str>,
-    {
+    pub fn try_new_with_name(id: ID, name: &'a str) -> std::result::Result<Self, String> {
         Ok(Self {
-            operator_name: Some(
-                TextName::new_from_str(name)
-                    .ok_or_else(|| "operator name cannot be empty or all whitespace".to_string())?,
-            ),
+            operator_name: Some(name.try_into().map_err(|e| format!("{} for operator name", e))?),
             ..Self::new(id)
         })
     }

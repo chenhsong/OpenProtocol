@@ -140,7 +140,7 @@ fn process_incoming_message<'a>(json: &'a str, builtin: &'a Constants) -> Option
                     controller_id,
                     operator_id: Some((u32::from(*level) + 1).try_into().unwrap()), // Cheap: Use the access level as the operator's ID
                     name: TextName::new_from_str(name).unwrap(),
-                    password: TextName::new_from_str(password).unwrap(),
+                    password: password.try_into().unwrap(),
                     level: *level,
                     options: Default::default(),
                 })
@@ -152,8 +152,8 @@ fn process_incoming_message<'a>(json: &'a str, builtin: &'a Constants) -> Option
                 Some(Message::OperatorInfo {
                     controller_id,
                     operator_id: None,
-                    name: TextName::new_from_str("Not Allowed").unwrap(),
-                    password: TextName::new_from_str(password).unwrap(),
+                    name: "Not Allowed".try_into().unwrap(),
+                    password: password.try_into().unwrap(),
                     level: 0,
                     options: Default::default(),
                 })
@@ -166,7 +166,7 @@ fn process_incoming_message<'a>(json: &'a str, builtin: &'a Constants) -> Option
             data: builtin
                 .jobs
                 .iter()
-                .map(|jc| (TextName::new_from_str(jc.job_card_id()).unwrap(), jc.clone()))
+                .map(|jc| (jc.job_card_id().try_into().unwrap(), jc.clone()))
                 .collect(), // Load jobs list
             options: Default::default(),
         }),

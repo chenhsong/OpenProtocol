@@ -1,6 +1,6 @@
 use super::TextName;
 use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
+use std::convert::TryInto;
 
 /// A data structure containing information on a production job (i.e. a *job card*).
 ///
@@ -98,12 +98,12 @@ impl<'a> JobCard<'a> {
     /// ~~~
     /// # use ichen_openprotocol::*;
     /// assert_eq!(
-    ///     Err("job card ID cannot be empty or all-whitespace".into()),
+    ///     Err("invalid value: a non-empty, non-whitespace string required for job card ID".into()),
     ///     JobCard::try_new("", "Mold#001", 0, 10000)
     /// );
     ///
     /// assert_eq!(
-    ///     Err("mold ID cannot be empty or all-whitespace".into()),
+    ///     Err("invalid value: a non-empty, non-whitespace string required for mold ID".into()),
     ///     JobCard::try_new("J001", "   ", 0, 10000)
     /// );
     ///
@@ -120,9 +120,9 @@ impl<'a> JobCard<'a> {
     /// # fn main() -> std::result::Result<(), String> {
     /// let jobs = vec![
     ///     JobCard::try_new("J001", "Mold#001", 0, 10000)?,
-    ///     JobCard::try_new("J002".to_string(), "Mold#002".to_string(), 1000, 5000)?,
-    ///     JobCard::try_new("J003", "Mold#003".to_string(), 42, 1000)?,
-    ///     JobCard::try_new("J004".to_string(), "Mold#004", 0, 0)?,
+    ///     JobCard::try_new("J002", "Mold#002", 1000, 5000)?,
+    ///     JobCard::try_new("J003", "Mold#003", 42, 1000)?,
+    ///     JobCard::try_new("J004", "Mold#004", 0, 0)?,
     /// ];
     ///
     /// assert_eq!(4, jobs.len());
@@ -131,9 +131,9 @@ impl<'a> JobCard<'a> {
     /// # Ok(())
     /// # }
     /// ~~~
-    pub fn try_new<S: Into<Cow<'a, str>>, T: Into<Cow<'a, str>>>(
-        id: S,
-        mold: T,
+    pub fn try_new(
+        id: &'a str,
+        mold: &'a str,
         progress: u32,
         total: u32,
     ) -> std::result::Result<Self, String> {
@@ -142,14 +142,8 @@ impl<'a> JobCard<'a> {
         }
 
         Ok(Self {
-            job_card_id: match TextName::new_from_str(id) {
-                Some(jc) => jc,
-                None => return Err("job card ID cannot be empty or all-whitespace".into()),
-            },
-            mold_id: match TextName::new_from_str(mold) {
-                Some(m) => m,
-                None => return Err("mold ID cannot be empty or all-whitespace".into()),
-            },
+            job_card_id: id.try_into().map_err(|e| format!("{} for job card ID", e))?,
+            mold_id: mold.try_into().map_err(|e| format!("{} for mold ID", e))?,
             progress,
             total,
         })

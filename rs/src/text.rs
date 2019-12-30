@@ -2,6 +2,7 @@ use derive_more::*;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::borrow::Cow;
 use std::cmp::{Ordering, PartialEq, PartialOrd};
+use std::convert::TryFrom;
 use std::fmt::{Debug, Formatter};
 use std::ops::Deref;
 
@@ -119,6 +120,18 @@ impl<T: AsRef<str>, C: TextConstraint> ConstrainedText<T, C> {
     /// ~~~
     pub fn get(&self) -> &str {
         self.0.as_ref()
+    }
+}
+
+impl<'a, T, C> TryFrom<&'a str> for ConstrainedText<T, C>
+where
+    T: AsRef<str> + From<&'a str>,
+    C: TextConstraint,
+{
+    type Error = String;
+
+    fn try_from(value: &'a str) -> Result<Self, Self::Error> {
+        Self::new(value.into()).ok_or_else(|| format!("invalid value: {} required", C::required()))
     }
 }
 

@@ -8,6 +8,7 @@ use chrono::{DateTime, FixedOffset};
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
+use std::convert::TryInto;
 use std::sync::atomic::{AtomicU64, Ordering};
 use Message::*;
 
@@ -101,7 +102,7 @@ impl<'a> MessageOptions<'a> {
     /// ~~~
     /// # use ichen_openprotocol::*;
     /// let mut opt = MessageOptions::new();
-    /// assert_eq!(Err("message ID cannot be empty or all whitespace".into()), opt.set_id(""));
+    /// assert_eq!(Err("invalid value: a non-empty, non-whitespace, all-ASCII string required".into()), opt.set_id(""));
     /// ~~~
     ///
     /// # Examples
@@ -118,7 +119,7 @@ impl<'a> MessageOptions<'a> {
     /// # }
     /// ~~~
     pub fn set_id(&mut self, id: &'a str) -> std::result::Result<(), String> {
-        self.id = Some(TextID::new(id).ok_or("message ID cannot be empty or all whitespace")?);
+        self.id = Some(id.try_into()?);
         Ok(())
     }
 
@@ -753,7 +754,7 @@ impl<'a> Message<'a> {
     pub fn new_join(password: &'a str, filter: Filters) -> Self {
         Join {
             org_id: None,
-            version: TextID::new(Self::PROTOCOL_VERSION).unwrap(),
+            version: Self::PROTOCOL_VERSION.try_into().unwrap(),
             password,
             language: Self::DEFAULT_LANGUAGE,
             filter,
@@ -773,7 +774,7 @@ impl<'a> Message<'a> {
     /// ~~~
     /// # use ichen_openprotocol::*;
     /// match Message::try_new_join_with_org("MyPassword", Filters::Status + Filters::Cycle, "") {
-    ///     Err(e) => assert_eq!("organization ID cannot be empty, all-whitespace or contain non-ASCII characters", e),
+    ///     Err(e) => assert_eq!("invalid value: a non-empty, non-whitespace, all-ASCII string required", e),
     ///     _ => ()
     /// }
     /// ~~~
@@ -808,10 +809,7 @@ impl<'a> Message<'a> {
         let mut msg = Self::new_join(password, filter);
 
         if let Join { ref mut org_id, .. } = msg {
-            *org_id = match TextID::new(org) {
-                None => return Err("organization ID cannot be empty, all-whitespace or contain non-ASCII characters".into()),
-                x => x,
-            };
+            *org_id = Some(org.try_into()?);
         }
 
         Ok(msg)
@@ -902,14 +900,14 @@ impl<'a> Message<'a> {
     ///     op_mode: None,
     ///     job_mode: None,
     ///     job_card_id: Some(None),
-    ///     mold_id: Some(Some(Box::new(TextName::new_from_str("Test-123").unwrap()))),     // Value is "Test-123"
+    ///     mold_id: Some(Some(Box::new(TextName::new("Test-123").unwrap()))),     // Value is "Test-123"
     ///     operator_id: None,
     ///     operator_name: None,
     ///     variable: None,
     ///     audit: None,
     ///     alarm: None,
     ///     controller: None,
-    ///     state: StateValues::try_new_with_all::<&str, _>(
+    ///     state: StateValues::try_new_with_all(
     ///         OpMode::Automatic,
     ///         JobMode::ID02,
     ///         None,
@@ -1106,9 +1104,9 @@ mod test {
     fn test_message_mold_data_to_json() -> Result<(), String> {
         let mut map: IndexMap<TextID, R32> = IndexMap::new();
 
-        map.insert(TextID::new("Hello").unwrap(), R32::new(123.0));
-        map.insert(TextID::new("World").unwrap(), R32::new(-987.6543));
-        map.insert(TextID::new("foo").unwrap(), R32::new(0.0));
+        map.insert("Hello".try_into().unwrap(), R32::new(123.0));
+        map.insert("World".try_into().unwrap(), R32::new(-987.6543));
+        map.insert("foo".try_into().unwrap(), R32::new(0.0));
 
         let mut options = MessageOptions::new_with_priority(-20);
         options.sequence = 999;
@@ -1120,7 +1118,7 @@ mod test {
             timestamp: DateTime::parse_from_rfc3339("2019-02-26T02:03:04+08:00")
                 .map_err(|x| x.to_string())?,
 
-            state: StateValues::try_new_with_all::<_, &str>(
+            state: StateValues::try_new_with_all(
                 OpMode::SemiAutomatic,
                 JobMode::Offline,
                 Some(ID::from_u32(42)),
@@ -1188,10 +1186,10 @@ mod test {
             assert_eq!(50, msg.priority());
             assert_eq!(1, msg.sequence());
             assert_eq!(123, *controller_id);
-            assert_eq!(Some(Box::new(TextName::new_from_str("Testing").unwrap())), *display_name);
+            assert_eq!(Some(Box::new("Testing".try_into().unwrap())), *display_name);
             assert!(controller.is_none());
             assert_eq!(
-                Some(Box::new(KeyValuePair::new(TextID::new("hello").unwrap(), true))),
+                Some(Box::new(KeyValuePair::new("hello".try_into().unwrap(), true))),
                 *alarm
             );
             Ok(())
@@ -1240,9 +1238,9 @@ mod test {
             operator_name: Some(None),
             variable: None,
             audit: None,
-            alarm: Some(Box::new(KeyValuePair::new(TextID::new("hello").unwrap(), true))),
+            alarm: Some(Box::new(KeyValuePair::new("hello".try_into().unwrap(), true))),
             controller: None,
-            state: StateValues::try_new_with_all::<&str, &str>(
+            state: StateValues::try_new_with_all(
                 OpMode::Automatic,
                 JobMode::ID02,
                 Some(ID::from_u32(123)),
@@ -1269,14 +1267,14 @@ mod test {
             op_mode: None,
             job_mode: None,
             job_card_id: Some(None),
-            mold_id: Some(Some(Box::new(TextName::new_from_str("Test").unwrap()))),
+            mold_id: Some(Some(Box::new("Test".try_into().unwrap()))),
             operator_id: Some(None),
             operator_name: Some(None),
             variable: None,
             audit: None,
             alarm: None,
             controller: None,
-            state: StateValues::try_new_with_all::<&str, _>(
+            state: StateValues::try_new_with_all(
                 OpMode::Automatic,
                 JobMode::ID02,
                 None,

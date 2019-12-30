@@ -1,11 +1,12 @@
 use super::{
-    Address, BoundedValidationResult, TextName, GeoLocation, JobMode, OpMode, Operator, TextID, ID,
+    Address, BoundedValidationResult, GeoLocation, JobMode, OpMode, Operator, TextID, TextName, ID,
     R32,
 };
 use chrono::{DateTime, FixedOffset};
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
+use std::convert::TryInto;
 
 /// A data structure containing the current known status of a controller.
 ///
@@ -118,10 +119,10 @@ impl Default for Controller<'_> {
     fn default() -> Self {
         Controller {
             controller_id: ID::from_u32(1),
-            display_name: TextName::new_from_str("Unknown").unwrap(),
-            controller_type: TextID::new("Unknown").unwrap(),
-            version: TextID::new("Unknown").unwrap(),
-            model: TextID::new("Unknown").unwrap(),
+            display_name: "Unknown".try_into().unwrap(),
+            controller_type: "Unknown".try_into().unwrap(),
+            version: "Unknown".try_into().unwrap(),
+            model: "Unknown".try_into().unwrap(),
             address: Address::Unknown,
             geo_location: None,
             op_mode: OpMode::Unknown,

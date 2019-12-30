@@ -1,6 +1,6 @@
 use super::{JobMode, OpMode, TextName, ID};
 use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
+use std::convert::TryInto;
 
 /// A data structure containing a snapshot of the current known states of the controller.
 ///
@@ -42,7 +42,7 @@ impl<'a> StateValues<'a> {
     /// # use ichen_openprotocol::*;
     /// # use std::borrow::Cow;
     /// # fn main() -> std::result::Result<(), String> {
-    /// let state = StateValues::try_new_with_all::<&str, _>(
+    /// let state = StateValues::try_new_with_all(
     ///     OpMode::Automatic,
     ///     JobMode::ID02,
     ///     Some(ID::from_u32(123)),
@@ -67,7 +67,7 @@ impl<'a> StateValues<'a> {
     /// # use ichen_openprotocol::*;
     /// # use std::borrow::Cow;
     /// # fn main() -> std::result::Result<(), String> {
-    /// let state = StateValues::try_new_with_all::<&str, _>(
+    /// let state = StateValues::try_new_with_all(
     ///     OpMode::Automatic,
     ///     JobMode::ID02,
     ///     Some(ID::from_u32(123)),
@@ -92,7 +92,7 @@ impl<'a> StateValues<'a> {
     /// # use ichen_openprotocol::*;
     /// # use std::borrow::Cow;
     /// # fn main() -> std::result::Result<(), String> {
-    /// let state = StateValues::try_new_with_all::<&str, _>(
+    /// let state = StateValues::try_new_with_all(
     ///     OpMode::Automatic,
     ///     JobMode::ID02,
     ///     Some(ID::from_u32(123)),
@@ -117,7 +117,7 @@ impl<'a> StateValues<'a> {
     /// # use ichen_openprotocol::*;
     /// # use std::borrow::Cow;
     /// # fn main() -> std::result::Result<(), String> {
-    /// let state = StateValues::try_new_with_all::<_, &str>(
+    /// let state = StateValues::try_new_with_all(
     ///     OpMode::Automatic,
     ///     JobMode::ID02,
     ///     Some(ID::from_u32(123)),
@@ -143,7 +143,7 @@ impl<'a> StateValues<'a> {
     /// # use ichen_openprotocol::*;
     /// # use std::borrow::Cow;
     /// # fn main() -> std::result::Result<(), String> {
-    /// let state = StateValues::try_new_with_all::<&str, _>(
+    /// let state = StateValues::try_new_with_all(
     ///     OpMode::Automatic,
     ///     JobMode::ID02,
     ///     Some(ID::from_u32(123)),
@@ -179,25 +179,6 @@ impl<'a> StateValues<'a> {
 
     /// Create a new `StateValues` with all fields set.
     ///
-    /// # Note
-    ///
-    /// If either `job_card_id` or `mold_id` is `None`, then you need to use the
-    /// turbo-fish syntax to specify the data type for the `None` parameter,
-    /// because the compiler won't be able to figure out the underlying type
-    /// if it doesn't exist!
-    ///
-    /// For example, if you pass a `Some(String)` to `job_card_id` and `None` to
-    /// `mold_id`, you need to call with:
-    ///
-    /// > `try_new_with_all::<String, String>` or `try_new_with_all::<_, String>`  
-    /// > `try_new_with_all::<String, &str>` or `try_new_with_all::<_, &str>`
-    ///
-    /// Any type will work fine, as long as it can be converted into `Cow<'_, str>`.
-    ///
-    /// However, avoid type combinations that are not used anywhere else in your
-    /// code, otherwise a new function will be unnecessarily instantiated just for
-    /// this constructor all.
-    ///
     /// # Errors
     ///
     /// Returns `Err(String)` if `job_card_id` or `mold_id` is set to an empty string
@@ -207,14 +188,14 @@ impl<'a> StateValues<'a> {
     ///
     /// ~~~
     /// # use ichen_openprotocol::*;
-    /// let sv = StateValues::try_new_with_all::<_, &str>(
+    /// let sv = StateValues::try_new_with_all(
     ///     OpMode::Automatic,
     ///     JobMode::ID02,
     ///     Some(ID::from_u32(123)),
     ///     Some(""),    // <-- Notice empty string for job_Card_id which is not allowed
     ///     None
     /// );
-    /// assert_eq!(Err("job_card_id cannot be empty or all whitespace".into()), sv);
+    /// assert_eq!(Err("invalid value: a non-empty, non-whitespace string required for job card ID".into()), sv);
     /// ~~~
     ///
     /// # Examples
@@ -223,7 +204,7 @@ impl<'a> StateValues<'a> {
     /// # use ichen_openprotocol::*;
     /// # use std::borrow::Cow;
     /// # fn main() -> std::result::Result<(), String> {
-    /// let state = StateValues::try_new_with_all::<&str, _>(
+    /// let state = StateValues::try_new_with_all(
     ///     OpMode::Automatic,
     ///     JobMode::ID02,
     ///     Some(ID::from_u32(123)),
@@ -242,31 +223,21 @@ impl<'a> StateValues<'a> {
     ///
     /// [`OpenProtocolError::EmptyField`]: enum.OpenProtocolError.html#variant.EmptyField
     ///
-    pub fn try_new_with_all<J, M>(
+    pub fn try_new_with_all(
         op: OpMode,
         job: JobMode,
         operator_id: Option<ID>,
-        job_card_id: Option<J>,
-        mold_id: Option<M>,
-    ) -> std::result::Result<Self, String>
-    where
-        J: Into<Cow<'a, str>> + AsRef<str>,
-        M: Into<Cow<'a, str>> + AsRef<str>,
-    {
+        job_card_id: Option<&'a str>,
+        mold_id: Option<&'a str>,
+    ) -> std::result::Result<Self, String> {
         let job_card_id = if let Some(jc) = job_card_id {
-            match TextName::new_from_str(jc).map(Box::new) {
-                None => return Err("job_card_id cannot be empty or all whitespace".into()),
-                x => x,
-            }
+            Some(jc.try_into().map(Box::new).map_err(|e| format!("{} for job card ID", e))?)
         } else {
             None
         };
 
         let mold_id = if let Some(m) = mold_id {
-            match TextName::new_from_str(m).map(Box::new) {
-                None => return Err("mold_id cannot be empty or all whitespace".into()),
-                x => x,
-            }
+            Some(m.try_into().map(Box::new).map_err(|e| format!("{} for mold ID", e))?)
         } else {
             None
         };
