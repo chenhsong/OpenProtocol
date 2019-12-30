@@ -930,11 +930,13 @@ impl<'a> Message<'a> {
             | RequestControllersList { options, .. }
             | RequestJobCardsList { options, .. }
             | JoinResponse { options, .. }
-            | RequestMoldData { options, .. } => options.validate(),
-            ControllersList { options, data, .. } => {
-                data.iter().try_for_each(|c| c.1.validate())?;
-                options.validate()
-            }
+            | RequestMoldData { options, .. }
+            | ControllersList { options, .. }
+            | CycleData { options, .. }
+            | ReadMoldData { options, .. }
+            | MoldDataValue { options, .. }
+            | LoginOperator { options, .. } => options.validate(),
+
             ControllerStatus {
                 options,
                 display_name,
@@ -963,7 +965,6 @@ impl<'a> Message<'a> {
                             "All other fields must be set to None if controller is present.".into(),
                         ));
                     }
-                    c.validate()?;
 
                     // Check controller fields with specified fields
                     if display_name.is_some()
@@ -1026,13 +1027,14 @@ impl<'a> Message<'a> {
 
                 options.validate()
             }
-            CycleData { options, .. } => options.validate(),
+
             JobCardsList { options, data, .. } => {
                 if data.is_empty() {
                     return Err(Error::EmptyField("data"));
                 }
                 options.validate()
             }
+
             Join { options, language, .. } => {
                 // Check for invalid language
                 if *language == Language::Unknown {
@@ -1044,15 +1046,14 @@ impl<'a> Message<'a> {
                 }
                 options.validate()
             }
+
             MoldData { options, data, .. } => {
                 if data.is_empty() {
                     return Err(Error::EmptyField("data"));
                 }
                 options.validate()
             }
-            ReadMoldData { options, .. } => options.validate(),
-            MoldDataValue { options, .. } => options.validate(),
-            LoginOperator { options, .. } => options.validate(),
+
             OperatorInfo { options, level, .. } => {
                 if *level > Self::MAX_OPERATOR_LEVEL {
                     return Err(Error::ConstraintViolated(

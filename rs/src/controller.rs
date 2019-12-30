@@ -1,7 +1,4 @@
-use super::{
-    Address, BoundedValidationResult, GeoLocation, JobMode, OpMode, Operator, TextID, TextName, ID,
-    R32,
-};
+use super::{Address, GeoLocation, JobMode, OpMode, Operator, TextID, TextName, ID, R32};
 use chrono::{DateTime, FixedOffset};
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
@@ -84,32 +81,6 @@ pub struct Controller<'a> {
     pub mold_id: Option<Box<Cow<'a, str>>>,
 }
 
-impl<'a> Controller<'a> {
-    /// Validate the data structure.
-    ///
-    /// # Errors
-    ///
-    /// Returns `Err(`[`OpenProtocolError`]`)` if there are any errors or inconsistencies.
-    ///
-    /// [`OpenProtocolError`]: enum.OpenProtocolError.html
-    ///
-    /// # Examples
-    ///
-    /// ~~~
-    /// # use ichen_openprotocol::*;
-    /// # fn main() -> std::result::Result<(), Error<'static>> {
-    /// // Default values should pass validation
-    /// let c: Controller = Default::default();
-    /// c.validate()?;
-    /// # Ok(())
-    /// # }
-    /// ~~~
-    pub fn validate(&self) -> BoundedValidationResult<'a> {
-        // Check Address
-        self.address.validate()
-    }
-}
-
 impl Default for Controller<'_> {
     /// Default value for `Controller`.
     ///
@@ -153,8 +124,8 @@ mod test {
             geo_location: Some(GeoLocation::new(88.0, 123.0)?),
             ..Default::default()
         };
-        c.validate()?;
         let serialized = serde_json::to_string(&c).map_err(|x| x.to_string())?;
+
         assert_eq!(
             r#"{"controllerId":1,"displayName":"Unknown","controllerType":"Unknown","version":"Unknown","model":"Unknown","IP":"0.0.0.0:0","geoLatitude":88.0,"geoLongitude":123.0,"opMode":"Automatic","jobMode":"ID02","operatorId":123,"operatorName":"John"}"#,
             serialized
@@ -166,7 +137,6 @@ mod test {
     #[test]
     fn test_controller_from_json() -> Result<(), String> {
         let c: Controller = serde_json::from_str(r#"{"controllerId":1,"geoLatitude":88,"geoLongitude":-123,"displayName":"Hello","controllerType":"Unknown","version":"Unknown","model":"Unknown","IP":"127.0.0.1:123","opMode":"Automatic","jobMode":"ID02","operatorId":123,"operatorName":"John"}"#).map_err(|x| x.to_string())?;
-        c.validate()?;
 
         assert_eq!(
             r#"Controller { controller_id: 1, display_name: "Hello", controller_type: "Unknown", version: "Unknown", model: "Unknown", address: IPv4(127.0.0.1, 123), geo_location: Some((88,-123)), op_mode: Automatic, job_mode: ID02, last_cycle_data: {}, variables: {}, last_connection_time: None, operator: Some(Operator { operator_id: 123, operator_name: Some("John") }), job_card_id: None, mold_id: None }"#,
