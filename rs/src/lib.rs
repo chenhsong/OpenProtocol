@@ -46,9 +46,6 @@ mod utils;
 /// Result type.
 pub type Result<'a, T> = std::result::Result<T, Error<'a>>;
 
-type ValidationResult = Result<'static, ()>;
-type BoundedValidationResult<'a> = Result<'a, ()>;
-
 /// Result error type.
 pub type Error<'a> = OpenProtocolError<'a>;
 

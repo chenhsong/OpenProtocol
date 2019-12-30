@@ -1,8 +1,8 @@
 use super::filters::Filters;
 use super::utils::*;
 use super::{
-    ActionID, BoundedValidationResult, Controller, Error, JobCard, JobMode, KeyValuePair, Language,
-    OpMode, Result, StateValues, TextID, TextName, ValidationResult, ID, R32,
+    ActionID, Controller, Error, JobCard, JobMode, KeyValuePair, Language, OpMode, Result,
+    StateValues, TextID, TextName, ID, R32,
 };
 use chrono::{DateTime, FixedOffset};
 use indexmap::IndexMap;
@@ -178,19 +178,6 @@ impl<'a> MessageOptions<'a> {
     /// ~~~
     pub fn new_with_priority(priority: i32) -> Self {
         Self { priority, ..Self::new() }
-    }
-
-    /// Validate the data structure.
-    ///
-    /// # Errors
-    ///
-    /// Returns `Err(`[`OpenProtocolError::EmptyField`]`)` if the `id` field is set to an empty string
-    /// or is all whitespace.
-    ///
-    /// [`OpenProtocolError::EmptyField`]: enum.OpenProtocolError.html#variant.EmptyField
-    ///
-    pub(crate) fn validate(&self) -> ValidationResult {
-        check_optional_str_empty(&self.id, "id")
     }
 }
 
@@ -671,12 +658,9 @@ impl<'a> Message<'a> {
     /// [`OpenProtocolError`]: enum.OpenProtocolError.html
     ///
     pub fn parse_from_json_str(json: &'a str) -> Result<'a, Self> {
-        match serde_json::from_str::<Message>(json) {
-            // Do validation check if successfully parsed
-            Ok(m) => m.validate().map(|_| m),
-            // Otherwise return error
-            Err(err) => Err(Error::JsonError(err)),
-        }
+        serde_json::from_str::<Message>(json)
+            .map_err(Error::JsonError)
+            .and_then(|m| m.validate().map(|_| m))
     }
 
     /// Validate all the fields in the `Message`, then serialize it into a JSON string.
@@ -862,7 +846,7 @@ impl<'a> Message<'a> {
     /// Get the message priority from the `options` field.
     pub fn priority(&self) -> i32 {
         match self {
-            Alive { options }
+            Alive { options, .. }
             | ControllerAction { options, .. }
             | RequestControllersList { options, .. }
             | ControllersList { options, .. }
@@ -900,7 +884,7 @@ impl<'a> Message<'a> {
     ///     op_mode: None,
     ///     job_mode: None,
     ///     job_card_id: Some(None),
-    ///     mold_id: Some(Some(Box::new(TextName::new("Test-123").unwrap()))),     // Value is "Test-123"
+    ///     mold_id: Some(Some(Box::new(TextName::new_from_str("Test-123").unwrap()))),     // Value is "Test-123"
     ///     operator_id: None,
     ///     operator_name: None,
     ///     variable: None,
@@ -923,22 +907,21 @@ impl<'a> Message<'a> {
     ///     msg.validate()
     /// );
     /// ~~~
-    pub fn validate(&self) -> BoundedValidationResult<'a> {
+    pub fn validate(&self) -> Result<'a, ()> {
         match self {
-            Alive { options, .. }
-            | ControllerAction { options, .. }
-            | RequestControllersList { options, .. }
-            | RequestJobCardsList { options, .. }
-            | JoinResponse { options, .. }
-            | RequestMoldData { options, .. }
-            | ControllersList { options, .. }
-            | CycleData { options, .. }
-            | ReadMoldData { options, .. }
-            | MoldDataValue { options, .. }
-            | LoginOperator { options, .. } => options.validate(),
+            Alive { .. }
+            | ControllerAction { .. }
+            | RequestControllersList { .. }
+            | RequestJobCardsList { .. }
+            | JoinResponse { .. }
+            | RequestMoldData { .. }
+            | ControllersList { .. }
+            | CycleData { .. }
+            | ReadMoldData { .. }
+            | MoldDataValue { .. }
+            | LoginOperator { .. } => (),
 
             ControllerStatus {
-                options,
                 display_name,
                 is_disconnected,
                 op_mode,
@@ -1024,18 +1007,15 @@ impl<'a> Message<'a> {
                 if mold_id.is_some() && Some(&state.mold_id) != mold_id.as_ref() {
                     return Err(Error::InconsistentState("mold_id"));
                 }
-
-                options.validate()
             }
 
-            JobCardsList { options, data, .. } => {
+            JobCardsList { data, .. } => {
                 if data.is_empty() {
                     return Err(Error::EmptyField("data"));
                 }
-                options.validate()
             }
 
-            Join { options, language, .. } => {
+            Join { language, .. } => {
                 // Check for invalid language
                 if *language == Language::Unknown {
                     return Err(Error::InvalidField {
@@ -1044,17 +1024,15 @@ impl<'a> Message<'a> {
                         description: "language cannot be Unknown".into(),
                     });
                 }
-                options.validate()
             }
 
-            MoldData { options, data, .. } => {
+            MoldData { data, .. } => {
                 if data.is_empty() {
                     return Err(Error::EmptyField("data"));
                 }
-                options.validate()
             }
 
-            OperatorInfo { options, level, .. } => {
+            OperatorInfo { level, .. } => {
                 if *level > Self::MAX_OPERATOR_LEVEL {
                     return Err(Error::ConstraintViolated(
                         format!(
@@ -1065,9 +1043,10 @@ impl<'a> Message<'a> {
                         .into(),
                     ));
                 }
-                options.validate()
             }
         }
+
+        Ok(())
     }
 }
 
