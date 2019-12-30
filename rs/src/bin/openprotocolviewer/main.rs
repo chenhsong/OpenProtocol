@@ -45,16 +45,16 @@ use std::convert::TryInto;
 use std::io::{stdin, Write};
 
 // This program uses the `websocket` crate for connection.
-use websocket::client::ClientBuilder;
+use websocket::client::{sync::Client, ClientBuilder};
+use websocket::stream::sync::NetworkStream;
 use websocket::{CloseData, OwnedMessage, WebSocketResult};
-type Client = websocket::client::sync::Client<
-    std::boxed::Box<dyn websocket::stream::sync::NetworkStream + std::marker::Send>,
->;
+
+type WebSocketClient = Client<Box<dyn NetworkStream + Send>>;
 
 // Pull in the `ichen_openprotocol` namespace.
 // Beware that `ichen_openprotocol::Message` will conflict with `websocket::Message`
 // so you'll need to alias on of them if you pull both into scope.
-use ichen_openprotocol::{Filters, JobCard, Message, TextName};
+use ichen_openprotocol::{Filters, JobCard, Message};
 
 struct Constants {
     users: HashMap<&'static str, (u8, String)>,
@@ -138,8 +138,9 @@ fn process_incoming_message<'a>(json: &'a str, builtin: &'a Constants) -> Option
                 // Return access level
                 Some(Message::OperatorInfo {
                     controller_id,
-                    operator_id: Some((u32::from(*level) + 1).try_into().unwrap()), // Cheap: Use the access level as the operator's ID
-                    name: TextName::new_from_str(name).unwrap(),
+                    // Cheap: Use the access level as the operator's ID
+                    operator_id: Some((u32::from(*level) + 1).try_into().unwrap()),
+                    name: name[..].try_into().unwrap(),
                     password: password.try_into().unwrap(),
                     level: *level,
                     options: Default::default(),
@@ -176,7 +177,7 @@ fn process_incoming_message<'a>(json: &'a str, builtin: &'a Constants) -> Option
     }
 }
 
-fn send(client: &mut Client, message: &OwnedMessage) -> WebSocketResult<()> {
+fn send(client: &mut WebSocketClient, message: &OwnedMessage) -> WebSocketResult<()> {
     match client.send_message(message) {
         Ok(_) => match message {
             OwnedMessage::Close(Some(data)) => {
@@ -199,7 +200,7 @@ fn send(client: &mut Client, message: &OwnedMessage) -> WebSocketResult<()> {
     Ok(())
 }
 
-fn run(mut client: Client, builtin: &Constants) -> WebSocketResult<()> {
+fn run(mut client: WebSocketClient, builtin: &Constants) -> WebSocketResult<()> {
     loop {
         let message = match client.recv_message() {
             Ok(msg) => msg,
