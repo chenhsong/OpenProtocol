@@ -4,7 +4,7 @@ use std::cmp::{Ordering, PartialEq, PartialOrd};
 use std::convert::TryFrom;
 use std::fmt::{Debug, Formatter};
 use std::num::NonZeroU32;
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 
 /// Supported UI languages for the controller's HMI.
 ///
@@ -294,11 +294,11 @@ impl Default for JobMode {
 pub struct ID(NonZeroU32);
 
 impl ID {
-    /// Create a new ID from a `u32` value.
+    /// Create a new `ID` from a `u32` value.
     ///
     /// # Errors
     ///
-    /// Returns `Err(&'static str)` if `value` is zero.
+    /// Returns `None` if `value` is zero.
     ///
     /// # Examples
     ///
@@ -306,13 +306,13 @@ impl ID {
     /// # use ichen_openprotocol::*;
     /// let id = ID::new(42).unwrap();
     /// assert_eq!(42, u32::from(id));
-    /// assert_eq!(Err("ID value cannot be zero."), ID::new(0));
+    /// assert_eq!(None, ID::new(0));
     /// ~~~
-    pub fn new(value: u32) -> std::result::Result<Self, &'static str> {
-        Self::try_from(value)
+    pub fn new(value: u32) -> Option<Self> {
+        Self::try_from(value).ok()
     }
 
-    /// Create a new ID from a `u32` value.
+    /// Create a new `ID` from a `u32` value.
     ///
     /// # Panics
     ///
@@ -343,7 +343,7 @@ impl ID {
     /// ~~~
     /// # use ichen_openprotocol::*;
     /// # fn main() -> std::result::Result<(), &'static str> {
-    /// let id = ID::new(42)?;
+    /// let id = ID::new(42).unwrap();
     /// assert_eq!(42, id.get());
     /// # Ok(())
     /// # }
@@ -362,7 +362,7 @@ impl Debug for ID {
 impl TryFrom<u32> for ID {
     type Error = &'static str;
 
-    /// Create a new ID from an integer value;
+    /// Create a new `ID` from an integer value;
     ///
     /// # Errors
     ///
@@ -414,7 +414,7 @@ impl PartialOrd<ID> for u32 {
 
 /// A 32-bit ID that represents a controller action.
 ///
-/// It `Deref`s into a `i32`.
+/// It `Deref`s into an `i32`.
 ///
 #[derive(
     Display,
@@ -439,6 +439,12 @@ impl Deref for ActionID {
 
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl DerefMut for ActionID {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 

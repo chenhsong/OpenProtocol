@@ -1,17 +1,18 @@
-use super::utils::*;
-use super::{ValidationResult, ID};
+use super::{TextName, ID};
 use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
 
 /// A data structure containing information on a single user on the system.
 ///
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Serialize, Deserialize)]
+#[derive(Debug, Eq, PartialEq, Hash, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Operator<'a> {
     /// Unique user ID, which cannot be zero.
     pub(crate) operator_id: ID,
     //
     /// Name of the user.
-    pub(crate) operator_name: Option<&'a str>,
+    #[serde(borrow)]
+    pub(crate) operator_name: Option<TextName<'a>>,
 }
 
 impl<'a> Operator<'a> {
@@ -35,13 +36,13 @@ impl<'a> Operator<'a> {
     /// ~~~
     /// # use ichen_openprotocol::*;
     /// # fn main() -> std::result::Result<(), String> {
-    /// let opr = Operator::new_with_name(ID::from_u32(12345), "John")?;
+    /// let opr = Operator::try_new_with_name(ID::from_u32(12345), "John")?;
     /// assert_eq!(Some("John"), opr.name());
     /// # Ok(())
     /// # }
     /// ~~~
-    pub fn name(&self) -> Option<&'a str> {
-        self.operator_name
+    pub fn name(&self) -> Option<&str> {
+        self.operator_name.as_ref().map(|name| name.as_ref())
     }
 
     /// Create an `Operator` with just an ID and no name.
@@ -70,7 +71,7 @@ impl<'a> Operator<'a> {
     ///
     /// ~~~
     /// # use ichen_openprotocol::*;
-    /// let result = Operator::new_with_name(ID::from_u32(12345), "");
+    /// let result = Operator::try_new_with_name(ID::from_u32(12345), "");
     /// assert_eq!(Err("operator name cannot be empty or all whitespace".into()), result);
     /// ~~~
     ///
@@ -79,26 +80,22 @@ impl<'a> Operator<'a> {
     /// ~~~
     /// # use ichen_openprotocol::*;
     /// # fn main() -> std::result::Result<(), String> {
-    /// let opr = Operator::new_with_name(ID::from_u32(12345), "John")?;
+    /// let opr = Operator::try_new_with_name(ID::from_u32(12345), "John")?;
     /// assert_eq!(12345, opr.id());
     /// assert_eq!(Some("John"), opr.name());
     /// # Ok(())
     /// # }
     /// ~~~
-    pub fn new_with_name(id: ID, name: &'a str) -> std::result::Result<Self, String> {
-        check_str_empty(name, "name")
-            .map_err(|_| "operator name cannot be empty or all whitespace")?;
-
-        Ok(Self { operator_name: Some(name), ..Self::new(id) })
-    }
-
-    /// Validate the data structure.
-    ///
-    /// # Errors
-    ///
-    /// Returns `Err(`[`OpenProtocolError::EmptyField`]`)` if the `operator_name` field is
-    /// set to an empty string or is all whitespace.
-    pub(crate) fn validate(&self) -> ValidationResult {
-        check_optional_str_empty(&self.operator_name, "operator_name")
+    pub fn try_new_with_name<N>(id: ID, name: N) -> std::result::Result<Self, String>
+    where
+        N: Into<Cow<'a, str>> + AsRef<str>,
+    {
+        Ok(Self {
+            operator_name: Some(
+                TextName::new_from_str(name)
+                    .ok_or_else(|| "operator name cannot be empty or all whitespace".to_string())?,
+            ),
+            ..Self::new(id)
+        })
     }
 }

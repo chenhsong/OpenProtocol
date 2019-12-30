@@ -2,6 +2,7 @@ use super::{Error, ValidationResult};
 use derive_more::*;
 use lazy_static::*;
 use regex::Regex;
+use serde::{Deserialize, Deserializer, Serialize};
 use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::net::Ipv4Addr;
@@ -16,7 +17,8 @@ lazy_static! {
 
 /// A data structure holding a controller's physical address.
 ///
-#[derive(Debug, Display, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
+#[derive(Debug, Display, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Serialize)]
+#[serde(into = "String")]
 pub enum Address<'a> {
     /// Address unknown.
     #[display(fmt = "0.0.0.0:0")]
@@ -321,5 +323,18 @@ impl<'a> TryFrom<&'a str> for Address<'a> {
             // Failed to match any address type
             _ => return Err("invalid address"),
         })
+    }
+}
+
+impl From<Address<'_>> for String {
+    fn from(value: Address) -> Self {
+        value.to_string()
+    }
+}
+
+impl<'a, 'de: 'a> Deserialize<'de> for Address<'a> {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let s: &str = Deserialize::deserialize(deserializer).map_err(serde::de::Error::custom)?;
+        Address::try_from(s).map_err(|err| serde::de::Error::custom(format!("{}: {}", err, s)))
     }
 }

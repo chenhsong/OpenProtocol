@@ -1,5 +1,7 @@
-use super::utils::*;
-use super::{Address, BoundedValidationResult, GeoLocation, JobMode, OpMode, Operator, ID};
+use super::{
+    Address, BoundedValidationResult, TextName, GeoLocation, JobMode, OpMode, Operator, TextID, ID,
+    R32,
+};
 use chrono::{DateTime, FixedOffset};
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
@@ -7,14 +9,14 @@ use std::borrow::Cow;
 
 /// A data structure containing the current known status of a controller.
 ///
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Controller<'a> {
     /// Unique ID of the controller, which cannot be zero.
     pub controller_id: ID,
     //
     /// User-specified human-friendly name for the machine.
-    pub display_name: &'a str,
+    pub display_name: TextName<'a>,
     //
     /// Controller type.
     ///
@@ -24,13 +26,13 @@ pub struct Controller<'a> {
     /// * `Ai12`
     /// * `CDC2000WIN`
     /// * `MPC7`
-    pub controller_type: &'a str,
+    pub controller_type: TextID<'a>,
     //
     /// Version of the controller's firmware.
-    pub version: &'a str,
+    pub version: TextID<'a>,
     //
     /// Machine model.
-    pub model: &'a str,
+    pub model: TextID<'a>,
     //
     /// Address of the controller.
     ///
@@ -38,8 +40,6 @@ pub struct Controller<'a> {
     ///
     /// For a serial-connected controller, this is usually the serial port device name, such as `COM1`, `ttyS0`.
     #[serde(rename = "IP")]
-    #[serde(serialize_with = "serialize_to_string")]
-    #[serde(deserialize_with = "deserialize_with_try_from")]
     pub address: Address<'a>,
     //
     /// Physical geo-location of the controller (if any).
@@ -56,12 +56,12 @@ pub struct Controller<'a> {
     /// Last set of cycle data (if any) received from the controller.
     #[serde(skip_serializing_if = "IndexMap::is_empty")]
     #[serde(default)]
-    pub last_cycle_data: IndexMap<&'a str, f64>,
+    pub last_cycle_data: IndexMap<TextID<'a>, R32>,
     //
     /// Last-known states (if any) of controller variables.
     #[serde(skip_serializing_if = "IndexMap::is_empty")]
     #[serde(default)]
-    pub variables: IndexMap<&'a str, f64>,
+    pub variables: IndexMap<TextID<'a>, R32>,
     //
     /// Time of last connection.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -104,24 +104,6 @@ impl<'a> Controller<'a> {
     /// # }
     /// ~~~
     pub fn validate(&self) -> BoundedValidationResult<'a> {
-        // String fields should not be empty
-        check_str_empty(self.controller_type, "controller_type")?;
-        check_str_empty(self.display_name, "display_name")?;
-        check_str_empty(self.version, "version")?;
-        check_str_empty(self.model, "version")?;
-        check_optional_str_empty(&self.job_card_id, "job_card_id")?;
-        check_optional_str_empty(&self.mold_id, "mold_id")?;
-
-        // Check Geo-location
-        if let Some(geo) = &self.geo_location {
-            geo.validate()?;
-        }
-
-        // Check Operator
-        if let Some(op) = &self.operator {
-            op.validate()?;
-        }
-
         // Check Address
         self.address.validate()
     }
@@ -136,10 +118,10 @@ impl Default for Controller<'_> {
     fn default() -> Self {
         Controller {
             controller_id: ID::from_u32(1),
-            display_name: "Unknown",
-            controller_type: "Unknown",
-            version: "Unknown",
-            model: "Unknown",
+            display_name: TextName::new_from_str("Unknown").unwrap(),
+            controller_type: TextID::new("Unknown").unwrap(),
+            version: TextID::new("Unknown").unwrap(),
+            model: TextID::new("Unknown").unwrap(),
             address: Address::Unknown,
             geo_location: None,
             op_mode: OpMode::Unknown,
@@ -166,7 +148,7 @@ mod test {
         let c = Controller {
             op_mode: OpMode::Automatic,
             job_mode: JobMode::ID02,
-            operator: Some(Operator::new_with_name(ID::from_u32(123), "John")?),
+            operator: Some(Operator::try_new_with_name(ID::from_u32(123), "John")?),
             geo_location: Some(GeoLocation::new(88.0, 123.0)?),
             ..Default::default()
         };

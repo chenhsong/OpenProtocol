@@ -54,12 +54,11 @@ type Client = websocket::client::sync::Client<
 // Pull in the `ichen_openprotocol` namespace.
 // Beware that `ichen_openprotocol::Message` will conflict with `websocket::Message`
 // so you'll need to alias on of them if you pull both into scope.
-use ichen_openprotocol::Message;
-use ichen_openprotocol::{Filters, JobCard};
+use ichen_openprotocol::{Filters, JobCard, Message, TextName};
 
-struct Constants<'a> {
-    users: HashMap<&'a str, (u8, String)>,
-    jobs: Vec<JobCard<'a>>,
+struct Constants {
+    users: HashMap<&'static str, (u8, String)>,
+    jobs: Vec<JobCard<'static>>,
 }
 
 // Format common messages nicely for display
@@ -97,7 +96,7 @@ fn display_message(prefix: &str, msg: &Message) {
 // Parse an Open Protocol message, act on it, and generate a response (if appropriate)
 // to send back to the server.
 //
-fn process_incoming_message<'a>(json: &'a str, builtin: &'a Constants<'a>) -> Option<Message<'a>> {
+fn process_incoming_message<'a>(json: &'a str, builtin: &'a Constants) -> Option<Message<'a>> {
     // Parse message
     let message = match Message::parse_from_json_str(json) {
         // Valid Open Protocol message.
@@ -140,8 +139,8 @@ fn process_incoming_message<'a>(json: &'a str, builtin: &'a Constants<'a>) -> Op
                 Some(Message::OperatorInfo {
                     controller_id,
                     operator_id: Some((u32::from(*level) + 1).try_into().unwrap()), // Cheap: Use the access level as the operator's ID
-                    name,
-                    password,
+                    name: TextName::new_from_str(name).unwrap(),
+                    password: TextName::new_from_str(password).unwrap(),
                     level: *level,
                     options: Default::default(),
                 })
@@ -153,8 +152,8 @@ fn process_incoming_message<'a>(json: &'a str, builtin: &'a Constants<'a>) -> Op
                 Some(Message::OperatorInfo {
                     controller_id,
                     operator_id: None,
-                    name: "Not Allowed",
-                    password,
+                    name: TextName::new_from_str("Not Allowed").unwrap(),
+                    password: TextName::new_from_str(password).unwrap(),
                     level: 0,
                     options: Default::default(),
                 })
@@ -164,7 +163,11 @@ fn process_incoming_message<'a>(json: &'a str, builtin: &'a Constants<'a>) -> Op
         // MIS/MES integration - request list of jobs
         Message::RequestJobCardsList { controller_id, .. } => Some(Message::JobCardsList {
             controller_id,
-            data: builtin.jobs.iter().map(|jc| (jc.job_card_id.as_ref(), jc.clone())).collect(), // Load jobs list
+            data: builtin
+                .jobs
+                .iter()
+                .map(|jc| (TextName::new_from_str(jc.job_card_id()).unwrap(), jc.clone()))
+                .collect(), // Load jobs list
             options: Default::default(),
         }),
         //
@@ -196,7 +199,7 @@ fn send(client: &mut Client, message: &OwnedMessage) -> WebSocketResult<()> {
     Ok(())
 }
 
-fn run(mut client: Client, builtin: &Constants<'_>) -> WebSocketResult<()> {
+fn run(mut client: Client, builtin: &Constants) -> WebSocketResult<()> {
     loop {
         let message = match client.recv_message() {
             Ok(msg) => msg,
@@ -322,10 +325,10 @@ fn main() {
         //
         // Mock job scheduling system
         jobs: vec![
-            JobCard::new("JOB_CARD_1", "ABC-123", 0, 8000),
-            JobCard::new("JOB_CARD_2", "M002", 2000, 10000),
-            JobCard::new("JOB_CARD_3", "MOULD_003", 888, 3333),
-            JobCard::new("JOB_CARD_4", "MOULD_004", 123, 45678),
+            JobCard::try_new("JOB_CARD_1", "ABC-123", 0, 8000).unwrap(),
+            JobCard::try_new("JOB_CARD_2", "M002", 2000, 10000).unwrap(),
+            JobCard::try_new("JOB_CARD_3", "MOULD_003", 888, 3333).unwrap(),
+            JobCard::try_new("JOB_CARD_4", "MOULD_004", 123, 45678).unwrap(),
         ],
     };
 
@@ -340,7 +343,10 @@ fn main() {
     builtin.jobs.iter().for_each(|j| {
         println!(
             "> Name={}, Mold={}, Quantity={}/{}",
-            j.job_card_id, j.mold_id, j.progress, j.total
+            j.job_card_id(),
+            j.mold_id(),
+            j.progress(),
+            j.total()
         )
     });
     println!("=================================================");

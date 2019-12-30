@@ -1,8 +1,7 @@
-use super::{BoundedValidationResult, Error, ValidationResult, ID};
-use decorum::R32;
+use super::{Error, ValidationResult, ID};
 use indexmap::IndexMap;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::convert::{TryFrom, TryInto};
+use std::convert::TryInto;
 use std::fmt::Display;
 use std::hash::Hash;
 use std::num::NonZeroU32;
@@ -60,25 +59,6 @@ pub fn is_zero(num: &i32) -> bool {
     *num == 0
 }
 
-/// Check if a string is empty or contains all whitespace.
-///
-/// # Errors
-///
-/// Returns `Err(`[`OpenProtocolError::EmptyField`]`)` if `text` is empty or contains
-/// all whitespace.
-///
-/// [`OpenProtocolError::EmptyField`]: enum.OpenProtocolError.html#variant.EmptyField
-///
-pub fn check_str_empty<S: Deref>(text: S, field: &'static str) -> ValidationResult
-where
-    S::Target: AsRef<str>,
-{
-    match text.as_ref().trim() {
-        "" => Err(Error::EmptyField(field)),
-        _ => Ok(()),
-    }
-}
-
 /// Check if an optional string is empty or contains all whitespace.
 ///
 /// # Errors
@@ -98,58 +78,20 @@ where
     }
 }
 
-/// Check if an optional string contains all whitespace (but is not empty).
+/// Check for non-numeric values of an `f32` field.
 ///
 /// # Errors
 ///
-/// Returns `Err(`[`OpenProtocolError::EmptyField`]`)` if `opt` is `Some` text which is
-/// not empty but contains all whitespace.
-///
-/// [`OpenProtocolError::EmptyField`]: enum.OpenProtocolError.html#variant.EmptyField
-///
-pub fn check_optional_str_whitespace<S: Deref>(
-    opt: &Option<S>,
-    field: &'static str,
-) -> ValidationResult
-where
-    S::Target: AsRef<str>,
-{
-    match opt {
-        Some(text) if !text.as_ref().is_empty() && text.as_ref().trim().is_empty() => {
-            Err(Error::EmptyField(field))
-        }
-        _ => Ok(()),
-    }
-}
-
-/// Check for non-numeric values of an `f64` field.
-///
-/// # Errors
-///
-/// Returns `Err(`[`OpenProtocolError::InvalidField`]`)` if `value` is not a normal number
+/// Returns `Err(&'static str)` if `value` is not a normal number
 /// (e.g. `NaN`, `Infinity`).
 ///
-/// [`OpenProtocolError::InvalidField`]: enum.OpenProtocolError.html#variant.InvalidField
-///
-pub fn check_f64(value: f64, field: &str) -> BoundedValidationResult {
+pub fn check_f32(value: f32) -> std::result::Result<(), &'static str> {
     if value.is_nan() {
-        Err(Error::InvalidField {
-            field,
-            value: "NaN".into(),
-            description: "NaN is not a supported value".into(),
-        })
+        Err("NaN is not a supported value")
     } else if value.is_infinite() {
-        Err(Error::InvalidField {
-            field,
-            value: value.to_string().into(),
-            description: "Infinity is not a supported value".into(),
-        })
+        Err("Infinity is not a supported value")
     } else if !value.is_normal() && value != 0.0 {
-        Err(Error::InvalidField {
-            field,
-            value: value.to_string().into(),
-            description: "sub-normal number is not a supported value".into(),
-        })
+        Err("sub-normal number is not a supported value")
     } else {
         Ok(())
     }
@@ -232,36 +174,4 @@ where
 
     let dict: IndexMap<Wrapper<K>, T> = Deserialize::deserialize(d)?;
     Ok(dict.into_iter().map(|(Wrapper(k), v)| (k, v)).collect())
-}
-
-pub fn serialize_to_string<S: Serializer, T: Display>(value: T, s: S) -> Result<S::Ok, S::Error> {
-    Serialize::serialize(&value.to_string(), s)
-}
-
-pub fn deserialize_with_try_from<'de, D, T>(d: D) -> Result<T, D::Error>
-where
-    D: Deserializer<'de>,
-    T: TryFrom<&'de str>,
-    T::Error: Display,
-{
-    let s: &str = Deserialize::deserialize(d).map_err(serde::de::Error::custom)?;
-    T::try_from(s).map_err(|err| serde::de::Error::custom(format!("{}: {}", err, s)))
-}
-
-/// Serialize an `R32` value as a float.
-#[allow(clippy::trivially_copy_pass_by_ref)]
-pub fn serialize_r32<S>(value: &R32, s: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    Serialize::serialize(&value.into_inner(), s)
-}
-
-/// Deserialize an `R32` value from a float.
-pub fn deserialize_r32<'de, D>(d: D) -> Result<R32, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let value: f32 = Deserialize::deserialize(d).map_err(serde::de::Error::custom)?;
-    Ok(value.into())
 }

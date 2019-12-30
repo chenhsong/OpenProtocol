@@ -1,23 +1,19 @@
 use super::utils::*;
-use super::{Error, ValidationResult};
-use decorum::R32;
+use super::R32;
 use derive_more::*;
 use serde::{Deserialize, Serialize};
+use std::convert::{TryFrom, TryInto};
 
 /// A data structure containing a single physical geo-location.
 ///
-#[derive(Display, Eq, PartialEq, Ord, PartialOrd, Hash, Clone, Copy, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Display, Eq, PartialEq, Hash, Clone, Copy, Serialize, Deserialize)]
 #[display(fmt = "({},{})", geo_latitude, geo_longitude)]
+#[serde(try_from = "GeoWrapper", into = "GeoWrapper")]
 pub struct GeoLocation {
     /// Latitude
-    #[serde(serialize_with = "serialize_r32")]
-    #[serde(deserialize_with = "deserialize_r32")]
     pub(crate) geo_latitude: R32,
     //
     /// Longitude
-    #[serde(serialize_with = "serialize_r32")]
-    #[serde(deserialize_with = "deserialize_r32")]
     pub(crate) geo_longitude: R32,
 }
 
@@ -94,47 +90,47 @@ impl GeoLocation {
     /// # }
     /// ~~~
     pub fn new(latitude: f32, longitude: f32) -> std::result::Result<Self, String> {
-        use std::error::Error;
+        check_f32(latitude).map_err(|e| format!("{} for latitude", e))?;
+        check_f32(longitude).map_err(|e| format!("{} for longitude", e))?;
 
-        check_f64(latitude.into(), "latitude")
-            .map_err(|e| format!("{} for latitude", e.description()))?;
+        Self::check_constraints(latitude, longitude)?;
 
-        check_f64(longitude.into(), "longitude")
-            .map_err(|e| format!("{} for longitude", e.description()))?;
-
-        let g = Self { geo_latitude: latitude.into(), geo_longitude: longitude.into() };
-        g.validate().map_err(|e| e.description().to_string())?;
-        Ok(g)
+        Ok(Self {
+            geo_latitude: latitude.try_into().unwrap(),
+            geo_longitude: longitude.try_into().unwrap(),
+        })
     }
 
-    /// Validate the data structure.
-    ///
-    /// # Errors
-    ///
-    /// Returns `Err(`[`OpenProtocolError::InvalidField`]`)` if either `geo_latitude` or `geo_longitude`
-    /// is not a valid floating-point number.
-    ///
-    /// Returns `Err(`[`OpenProtocolError::ConstraintViolated`]`)` if `geo_latitude` and `geo_longitude`
-    /// together does not represent a valid Geo-Location position.
-    ///
-    /// [`OpenProtocolError::InvalidField`]: enum.OpenProtocolError.html#variant.InvalidField
-    /// [`OpenProtocolError::ConstraintViolated`]: enum.OpenProtocolError.html#variant.ConstraintViolated
-    ///
-    pub(crate) fn validate(self) -> ValidationResult {
-        if !(-90.0..=90.0).contains(&self.geo_latitude.into_inner()) {
-            return Err(Error::ConstraintViolated(
-                format!("invalid latitude: {} (must be between -90 and 90)", self.geo_latitude)
-                    .into(),
-            ));
+    // Check if the latitude/longitude pair is with constraints.
+    fn check_constraints(latitude: f32, longitude: f32) -> Result<(), String> {
+        if !(-90.0..=90.0).contains(&latitude) {
+            Err(format!("invalid latitude: {} (must be between -90 and 90)", latitude))
+        } else if !(-180.0..=180.0).contains(&longitude) {
+            Err(format!("invalid longitude: {} (must be between -180 and 180)", longitude))
+        } else {
+            Ok(())
         }
+    }
+}
 
-        if !(-180.0..=180.0).contains(&self.geo_longitude.into_inner()) {
-            return Err(Error::ConstraintViolated(
-                format!("invalid longitude: {} (must be between -180 and 180)", self.geo_longitude)
-                    .into(),
-            ));
-        }
+// Wrapper for serialization/deserialization
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct GeoWrapper {
+    pub geo_latitude: f32,
+    pub geo_longitude: f32,
+}
 
-        Ok(())
+impl TryFrom<GeoWrapper> for GeoLocation {
+    type Error = String;
+
+    fn try_from(value: GeoWrapper) -> Result<Self, Self::Error> {
+        Self::new(value.geo_latitude, value.geo_longitude)
+    }
+}
+
+impl From<GeoLocation> for GeoWrapper {
+    fn from(value: GeoLocation) -> Self {
+        Self { geo_latitude: value.latitude(), geo_longitude: value.longitude() }
     }
 }

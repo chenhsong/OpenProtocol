@@ -2,7 +2,7 @@ use super::filters::Filters;
 use super::utils::*;
 use super::{
     ActionID, BoundedValidationResult, Controller, Error, JobCard, JobMode, KeyValuePair, Language,
-    OpMode, Result, StateValues, ValidationResult, ID,
+    OpMode, Result, StateValues, TextID, TextName, ValidationResult, ID, R32,
 };
 use chrono::{DateTime, FixedOffset};
 use indexmap::IndexMap;
@@ -16,7 +16,7 @@ static SEQ: AtomicU64 = AtomicU64::new(1);
 
 /// Common options of an Open Protocol message.
 ///
-#[derive(Debug, PartialEq, Serialize, Deserialize, Hash, Copy, Clone)]
+#[derive(Debug, Hash, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MessageOptions<'a> {
     /// Unique ID (if any) of the message for tracking and storage retrieval purposes.
@@ -24,7 +24,8 @@ pub struct MessageOptions<'a> {
     /// The iChen Server may tag certain messages with a unique tracking key that can be used to
     /// retrieve the message from persistent storage later.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) id: Option<&'a str>,
+    #[serde(borrow)]
+    pub(crate) id: Option<TextID<'a>>,
     //
     /// Ever-increasing message sequence number.
     ///
@@ -53,8 +54,8 @@ impl<'a> MessageOptions<'a> {
     /// # Ok(())
     /// # }
     /// ~~~
-    pub fn id(&self) -> Option<&'a str> {
-        self.id
+    pub fn id(&self) -> Option<&str> {
+        self.id.as_ref().map(|x| x.get())
     }
 
     // Get the message sequence number.
@@ -117,8 +118,7 @@ impl<'a> MessageOptions<'a> {
     /// # }
     /// ~~~
     pub fn set_id(&mut self, id: &'a str) -> std::result::Result<(), String> {
-        check_str_empty(id, "id").map_err(|_| "message ID cannot be empty or all whitespace")?;
-        self.id = Some(id);
+        self.id = Some(TextID::new(id).ok_or("message ID cannot be empty or all whitespace")?);
         Ok(())
     }
 
@@ -221,7 +221,7 @@ impl Default for MessageOptions<'_> {
 ///
 /// [this document]: https://github.com/chenhsong/OpenProtocol/blob/master/cs/doc/messages_reference.md
 ///
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "$type")]
 pub enum Message<'a> {
     /// The `ALIVE` message, sent periodically as the keep-alive mechanism.
@@ -307,7 +307,7 @@ pub enum Message<'a> {
         /// Human-friendly name for display (or `None` if not relevant).
         #[allow(clippy::option_option)]
         #[serde(skip_serializing_if = "Option::is_none")]
-        display_name: Option<Box<&'a str>>,
+        display_name: Option<Box<TextName<'a>>>,
         //
         /// If true, the controller has disconnected from the iChen® Server.
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -327,16 +327,16 @@ pub enum Message<'a> {
         ///
         /// [this document]: https://github.com/chenhsong/OpenProtocol/blob/master/doc/alarms.md
         #[serde(skip_serializing_if = "Option::is_none")]
-        alarm: Option<Box<KeyValuePair<&'a str, bool>>>,
+        alarm: Option<Box<KeyValuePair<TextID<'a>, bool>>>,
         //
         /// Change of a setting (if any) on the controller for audit trail purpose
         /// (or `None` if not relevant).
         #[serde(skip_serializing_if = "Option::is_none")]
-        audit: Option<Box<KeyValuePair<&'a str, f64>>>,
+        audit: Option<Box<KeyValuePair<TextID<'a>, R32>>>,
         //
         /// Change of a variable (if any) on the controller (or `None` if not relevant).
         #[serde(skip_serializing_if = "Option::is_none")]
-        variable: Option<Box<KeyValuePair<&'a str, f64>>>,
+        variable: Option<Box<KeyValuePair<TextID<'a>, R32>>>,
         //
         /// Unique ID of the current logged-on user, `Some(None)` if a user has logged out
         /// (or `None` if not relevant).
@@ -353,7 +353,7 @@ pub enum Message<'a> {
         #[serde(deserialize_with = "deserialize_null_to_some_none")]
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(default)]
-        operator_name: Option<Option<Box<&'a str>>>,
+        operator_name: Option<Option<Box<TextName<'a>>>>,
         //
         /// Unique ID of the current job card loaded, `Some(None)` if no job card is currently loaded
         /// (or `None` if not relevant).
@@ -362,7 +362,7 @@ pub enum Message<'a> {
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(default)]
         #[serde(borrow)]
-        job_card_id: Option<Option<Box<Cow<'a, str>>>>,
+        job_card_id: Option<Option<Box<TextName<'a>>>>,
         //
         /// Unique ID of the current mold data set loaded, `Some(None)` if no mold data set is currently loaded
         /// (or `None` if not relevant).
@@ -371,7 +371,7 @@ pub enum Message<'a> {
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(default)]
         #[serde(borrow)]
-        mold_id: Option<Option<Box<Cow<'a, str>>>>,
+        mold_id: Option<Option<Box<TextName<'a>>>>,
         //
         /// Snapshot of the current known states of the controller.
         state: StateValues<'a>,
@@ -405,7 +405,7 @@ pub enum Message<'a> {
         /// See [this document] for examples.
         ///
         /// [this document]: https://github.com/chenhsong/OpenProtocol/blob/master/doc/cycledata.md
-        data: IndexMap<&'a str, f64>,
+        data: IndexMap<TextID<'a>, R32>,
         //
         /// Time-stamp of the event.
         timestamp: DateTime<FixedOffset>,
@@ -446,7 +446,7 @@ pub enum Message<'a> {
         controller_id: ID,
         //
         /// A data dictionary containing a set of `JobCard` data structures.
-        data: IndexMap<&'a str, JobCard<'a>>,
+        data: IndexMap<TextName<'a>, JobCard<'a>>,
         //
         /// Message configuration options.
         #[serde(flatten)]
@@ -464,12 +464,12 @@ pub enum Message<'a> {
     Join {
         /// Organization ID (if any).
         #[serde(skip_serializing_if = "Option::is_none")]
-        org_id: Option<&'a str>,
+        org_id: Option<TextID<'a>>,
         //
         /// The maximum protocol version supported, in the format `x.x.x.x`.
         ///
         /// The current protocol version implemented is in the constant `PROTOCOL_VERSION`.
-        version: &'a str,
+        version: TextID<'a>,
         //
         /// Password to log onto the server.
         password: &'a str,
@@ -537,7 +537,7 @@ pub enum Message<'a> {
         controller_id: ID,
         //
         /// A data dictionary containing a set of mold settings.
-        data: IndexMap<&'a str, f64>,
+        data: IndexMap<TextID<'a>, R32>,
         //
         /// Time-stamp of the event.
         timestamp: DateTime<FixedOffset>,
@@ -571,7 +571,7 @@ pub enum Message<'a> {
         controller_id: ID,
         //
         /// Name of the mold setting to read, `None` for all.
-        field: Option<&'a str>,
+        field: Option<TextID<'a>>,
         //
         /// Message configuration options.
         #[serde(flatten)]
@@ -588,10 +588,10 @@ pub enum Message<'a> {
         controller_id: ID,
         //
         /// Name of the mold setting to read.
-        field: &'a str,
+        field: TextID<'a>,
         //
         /// Current cached value of the mold setting.
-        value: f64,
+        value: R32,
         //
         /// Message configuration options.
         #[serde(flatten)]
@@ -633,10 +633,10 @@ pub enum Message<'a> {
         operator_id: Option<ID>,
         //
         /// Name of the user.
-        name: &'a str,
+        name: TextName<'a>,
         //
         /// User password.
-        password: &'a str,
+        password: TextName<'a>,
         //
         /// Allowed access level for the user.
         ///
@@ -691,7 +691,7 @@ impl<'a> Message<'a> {
     /// ~~~
     /// # use ichen_openprotocol::*;
     /// # fn main() -> std::result::Result<(), String> {
-    /// let msg = Message::new_join_with_org("MyPassword", Filters::Status + Filters::Cycle, "MyCompany");
+    /// let msg = Message::try_new_join_with_org("MyPassword", Filters::Status + Filters::Cycle, "MyCompany")?;
     /// assert_eq!(
     ///     r#"{"$type":"Join","orgId":"MyCompany","version":"4.0","password":"MyPassword","language":"EN","filter":"Status, Cycle","sequence":1}"#,
     ///     msg.to_json_str()?
@@ -753,7 +753,7 @@ impl<'a> Message<'a> {
     pub fn new_join(password: &'a str, filter: Filters) -> Self {
         Join {
             org_id: None,
-            version: Self::PROTOCOL_VERSION,
+            version: TextID::new(Self::PROTOCOL_VERSION).unwrap(),
             password,
             language: Self::DEFAULT_LANGUAGE,
             filter,
@@ -763,14 +763,31 @@ impl<'a> Message<'a> {
 
     /// Create a `JOIN` message with non-default organization.
     ///
+    /// # Errors
+    ///
+    /// Returns `Err(String)` if the organization ID is empty or all-whitespace or contains
+    /// any non-ASCII characters.
+    ///
+    /// ## Error Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// match Message::try_new_join_with_org("MyPassword", Filters::Status + Filters::Cycle, "") {
+    ///     Err(e) => assert_eq!("organization ID cannot be empty, all-whitespace or contain non-ASCII characters", e),
+    ///     _ => ()
+    /// }
+    /// ~~~
+    ///
     /// # Examples
     ///
     /// ~~~
     /// # use ichen_openprotocol::*;
-    /// let msg = Message::new_join_with_org("MyPassword", Filters::Status + Filters::Cycle, "MyCompany");
+    /// # fn main() -> std::result::Result<(), String> {
+    /// let msg = Message::try_new_join_with_org("MyPassword", Filters::Status + Filters::Cycle, "MyCompany")?;
+    ///
     /// if let Message::Join { org_id, version, password, language, filter, options } = msg {
-    ///     assert_eq!(Some("MyCompany"), org_id);
-    ///     assert_eq!(Message::PROTOCOL_VERSION, version);
+    ///     assert_eq!(Some("MyCompany"), org_id.as_ref().map(|x| x.get()));
+    ///     assert_eq!(Message::PROTOCOL_VERSION, version.get());
     ///     assert_eq!("MyPassword", password);
     ///     assert_eq!(Message::DEFAULT_LANGUAGE, language);
     ///     assert_eq!(Filters::Status + Filters::Cycle, filter);
@@ -780,17 +797,28 @@ impl<'a> Message<'a> {
     /// } else {
     ///     panic!();
     /// }
+    /// # Ok(())
+    /// # }
     /// ~~~
-    pub fn new_join_with_org(password: &'a str, filter: Filters, org: &'a str) -> Self {
+    pub fn try_new_join_with_org(
+        password: &'a str,
+        filter: Filters,
+        org: &'a str,
+    ) -> std::result::Result<Self, String> {
         let mut msg = Self::new_join(password, filter);
+
         if let Join { ref mut org_id, .. } = msg {
-            *org_id = Some(org)
+            *org_id = match TextID::new(org) {
+                None => return Err("organization ID cannot be empty, all-whitespace or contain non-ASCII characters".into()),
+                x => x,
+            };
         }
-        msg
+
+        Ok(msg)
     }
 
     /// Get the optional message ID from the `options` field.
-    pub fn id(&self) -> Option<&'a str> {
+    pub fn id(&self) -> Option<&str> {
         match self {
             Alive { options }
             | ControllerAction { options, .. }
@@ -874,14 +902,14 @@ impl<'a> Message<'a> {
     ///     op_mode: None,
     ///     job_mode: None,
     ///     job_card_id: Some(None),
-    ///     mold_id: Some(Some(Box::new("Test-123".into()))),     // Value is "Test-123"
+    ///     mold_id: Some(Some(Box::new(TextName::new_from_str("Test-123").unwrap()))),     // Value is "Test-123"
     ///     operator_id: None,
     ///     operator_name: None,
     ///     variable: None,
     ///     audit: None,
     ///     alarm: None,
     ///     controller: None,
-    ///     state: StateValues::new_with_all::<&str, _>(
+    ///     state: StateValues::try_new_with_all::<&str, _>(
     ///         OpMode::Automatic,
     ///         JobMode::ID02,
     ///         None,
@@ -941,7 +969,7 @@ impl<'a> Message<'a> {
 
                     // Check controller fields with specified fields
                     if display_name.is_some()
-                        && display_name.as_ref().unwrap().as_ref() != &c.display_name
+                        && display_name.as_ref().map(|n| n.as_ref()) != Some(&c.display_name)
                     {
                         return Err(Error::InconsistentField("display_name"));
                     }
@@ -957,94 +985,57 @@ impl<'a> Message<'a> {
                         return Err(Error::InconsistentField("operator_id"));
                     }
                     if operator_name.is_some()
-                        && operator_name.as_ref().unwrap().as_ref().map(|x| *x.as_ref())
-                            != c.operator.as_ref().map(|u| u.operator_name).and_then(|n| n)
+                        && operator_name.as_ref().unwrap().as_ref().map(|x| x.as_ref())
+                            != c.operator.as_ref().map(|u| u.operator_name.as_ref()).flatten()
                     {
                         return Err(Error::InconsistentField("operator_name"));
                     }
-                    if let Some(jc) = job_card_id {
-                        if *jc != c.job_card_id {
+                    if let Some(ref jc) = job_card_id {
+                        if jc.as_ref().map(|x| x.get())
+                            != c.job_card_id.as_ref().map(|x| x.as_ref().as_ref())
+                        {
                             return Err(Error::InconsistentField("job_card_id"));
                         }
                     }
-                    if let Some(m) = mold_id {
-                        if *m != c.mold_id {
+                    if let Some(ref m) = mold_id {
+                        if m.as_ref().map(|x| x.get())
+                            != c.mold_id.as_ref().map(|x| x.as_ref().as_ref())
+                        {
                             return Err(Error::InconsistentField("mold_id"));
                         }
                     }
                 }
 
-                check_optional_str_empty(display_name, "display_name")?;
-
-                if let Some(op) = op_mode {
-                    if *op != state.op_mode {
-                        return Err(Error::InconsistentState("op_mode"));
-                    }
+                if op_mode.is_some() && Some(state.op_mode) != *op_mode {
+                    return Err(Error::InconsistentState("op_mode"));
                 }
 
-                if let Some(job) = job_mode {
-                    if *job != state.job_mode {
-                        return Err(Error::InconsistentState("job_mode"));
-                    }
+                if job_mode.is_some() && Some(state.job_mode) != *job_mode {
+                    return Err(Error::InconsistentState("job_mode"));
                 }
 
-                if let Some(opr) = operator_id {
-                    if *opr != state.operator_id {
-                        return Err(Error::InconsistentState("operator_id"));
-                    }
+                if operator_id.is_some() && Some(state.operator_id) != *operator_id {
+                    return Err(Error::InconsistentState("operator_id"));
                 }
 
-                if let Some(opr) = operator_name {
-                    check_optional_str_whitespace(opr, "operator_name")?;
+                if job_card_id.is_some() && Some(&state.job_card_id) != job_card_id.as_ref() {
+                    return Err(Error::InconsistentState("job_card_id"));
                 }
 
-                if let Some(jc) = job_card_id {
-                    check_optional_str_whitespace(jc, "job_card_id")?;
-
-                    if *jc != state.job_card_id {
-                        return Err(Error::InconsistentState("job_card_id"));
-                    }
-                }
-
-                if let Some(m) = mold_id {
-                    check_optional_str_whitespace(m, "mold_id")?;
-
-                    if *m != state.mold_id {
-                        return Err(Error::InconsistentState("mold_id"));
-                    }
-                }
-
-                state.validate()?;
-
-                if let Some(kv) = alarm {
-                    kv.validate()?;
-                }
-                if let Some(kv) = audit {
-                    kv.validate()?;
-                }
-                if let Some(kv) = variable {
-                    kv.validate()?;
+                if mold_id.is_some() && Some(&state.mold_id) != mold_id.as_ref() {
+                    return Err(Error::InconsistentState("mold_id"));
                 }
 
                 options.validate()
             }
-            CycleData { options, data, state, .. } => {
-                data.iter().try_for_each(|d| check_f64(*d.1, d.0))?;
-                check_optional_str_empty(&state.job_card_id, "job_card_id")?;
-                check_optional_str_empty(&state.mold_id, "mold_id")?;
-                options.validate()
-            }
+            CycleData { options, .. } => options.validate(),
             JobCardsList { options, data, .. } => {
                 if data.is_empty() {
                     return Err(Error::EmptyField("data"));
                 }
-                data.iter().try_for_each(|jc| jc.1.validate())?;
                 options.validate()
             }
-            Join { options, org_id, version, password, language, .. } => {
-                check_optional_str_empty(org_id, "org_id")?;
-                check_str_empty(version, "version")?;
-                check_str_empty(password, "password")?;
+            Join { options, language, .. } => {
                 // Check for invalid language
                 if *language == Language::Unknown {
                     return Err(Error::InvalidField {
@@ -1055,31 +1046,16 @@ impl<'a> Message<'a> {
                 }
                 options.validate()
             }
-            MoldData { options, data, state, .. } => {
+            MoldData { options, data, .. } => {
                 if data.is_empty() {
                     return Err(Error::EmptyField("data"));
                 }
-                data.iter().try_for_each(|d| check_f64(*d.1, d.0))?;
-                check_optional_str_empty(&state.job_card_id, "job_card_id")?;
-                check_optional_str_empty(&state.mold_id, "mold_id")?;
                 options.validate()
             }
-            ReadMoldData { options, field, .. } => {
-                check_optional_str_empty(field, "field")?;
-                options.validate()
-            }
-            MoldDataValue { options, field, value, .. } => {
-                check_str_empty(field, "field")?;
-                check_f64(*value, "value")?;
-                options.validate()
-            }
-            LoginOperator { options, password, .. } => {
-                check_str_empty(&password, "password")?;
-                options.validate()
-            }
-            OperatorInfo { options, name, password, level, .. } => {
-                check_str_empty(name, "name")?;
-                check_optional_str_whitespace(&Some(*password), "password")?;
+            ReadMoldData { options, .. } => options.validate(),
+            MoldDataValue { options, .. } => options.validate(),
+            LoginOperator { options, .. } => options.validate(),
+            OperatorInfo { options, level, .. } => {
                 if *level > Self::MAX_OPERATOR_LEVEL {
                     return Err(Error::ConstraintViolated(
                         format!(
@@ -1128,11 +1104,11 @@ mod test {
 
     #[test]
     fn test_message_mold_data_to_json() -> Result<(), String> {
-        let mut map: IndexMap<&str, f64> = IndexMap::new();
+        let mut map: IndexMap<TextID, R32> = IndexMap::new();
 
-        map.insert("Hello", 123.0);
-        map.insert("World", -987.6543);
-        map.insert("foo", 0.0);
+        map.insert(TextID::new("Hello").unwrap(), R32::new(123.0));
+        map.insert(TextID::new("World").unwrap(), R32::new(-987.6543));
+        map.insert(TextID::new("foo").unwrap(), R32::new(0.0));
 
         let mut options = MessageOptions::new_with_priority(-20);
         options.sequence = 999;
@@ -1144,7 +1120,7 @@ mod test {
             timestamp: DateTime::parse_from_rfc3339("2019-02-26T02:03:04+08:00")
                 .map_err(|x| x.to_string())?,
 
-            state: StateValues::new_with_all::<_, &str>(
+            state: StateValues::try_new_with_all::<_, &str>(
                 OpMode::SemiAutomatic,
                 JobMode::Offline,
                 Some(ID::from_u32(42)),
@@ -1164,7 +1140,7 @@ mod test {
 
         let m2 = Message::parse_from_json_str(&serialized).map_err(|x| x.to_string())?;
 
-        assert_eq!(msg, m2);
+        assert_eq!(format!("{:?}", msg), format!("{:?}", m2));
 
         Ok(())
     }
@@ -1195,7 +1171,7 @@ mod test {
             assert_eq!(0, msg.priority());
             assert_eq!(123, *controller_id);
             assert_eq!(64, data.len());
-            assert!((*data.get("Z_QDCPT13").unwrap() - 243.0).abs() < std::f64::EPSILON);
+            assert!(*data.get(&TextID::new("Z_QDCPT13").unwrap()).unwrap() == R32::new(243.0));
             Ok(())
         } else {
             Err(format!("Expected CycleData, got {:#?}", msg))
@@ -1212,9 +1188,12 @@ mod test {
             assert_eq!(50, msg.priority());
             assert_eq!(1, msg.sequence());
             assert_eq!(123, *controller_id);
-            assert_eq!(Some(Box::new("Testing")), *display_name);
-            assert_eq!(None, *controller);
-            assert_eq!(Some(Box::new(KeyValuePair::new("hello", true))), *alarm);
+            assert_eq!(Some(Box::new(TextName::new_from_str("Testing").unwrap())), *display_name);
+            assert!(controller.is_none());
+            assert_eq!(
+                Some(Box::new(KeyValuePair::new(TextID::new("hello").unwrap(), true))),
+                *alarm
+            );
             Ok(())
         } else {
             Err(format!("Expected ControllerStatus, got {:#?}", msg))
@@ -1240,7 +1219,7 @@ mod test {
             let d = &c.last_cycle_data;
             assert!(c.operator.is_none());
             assert_eq!(2, d.len());
-            assert!((*d.get("INJ").unwrap() - 5.0).abs() < std::f64::EPSILON);
+            assert!(*d.get(&TextID::new("INJ").unwrap()).unwrap() == R32::new(5.0));
             Ok(())
         } else {
             Err(format!("Expected ControllerStatus, got {:#?}", msg))
@@ -1261,9 +1240,9 @@ mod test {
             operator_name: Some(None),
             variable: None,
             audit: None,
-            alarm: Some(Box::new(KeyValuePair::new("hello", true))),
+            alarm: Some(Box::new(KeyValuePair::new(TextID::new("hello").unwrap(), true))),
             controller: None,
-            state: StateValues::new_with_all::<&str, &str>(
+            state: StateValues::try_new_with_all::<&str, &str>(
                 OpMode::Automatic,
                 JobMode::ID02,
                 Some(ID::from_u32(123)),
@@ -1290,14 +1269,14 @@ mod test {
             op_mode: None,
             job_mode: None,
             job_card_id: Some(None),
-            mold_id: Some(Some(Box::new("Test".into()))),
+            mold_id: Some(Some(Box::new(TextName::new_from_str("Test").unwrap()))),
             operator_id: Some(None),
             operator_name: Some(None),
             variable: None,
             audit: None,
             alarm: None,
             controller: None,
-            state: StateValues::new_with_all::<&str, _>(
+            state: StateValues::try_new_with_all::<&str, _>(
                 OpMode::Automatic,
                 JobMode::ID02,
                 None,

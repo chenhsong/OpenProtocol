@@ -39,6 +39,7 @@ mod key_value_pair;
 mod messages;
 mod operator;
 mod state_values;
+mod text;
 mod types;
 mod utils;
 
@@ -51,6 +52,9 @@ type BoundedValidationResult<'a> = Result<'a, ()>;
 /// Result error type.
 pub type Error<'a> = OpenProtocolError<'a>;
 
+/// 32-bit real floating-point number.
+pub type R32 = noisy_float::types::R32;
+
 // Re-exports
 pub use address::Address;
 pub use controller::Controller;
@@ -62,4 +66,5 @@ pub use key_value_pair::KeyValuePair;
 pub use messages::*;
 pub use operator::Operator;
 pub use state_values::StateValues;
+pub use text::{TextID, TextName};
 pub use types::{ActionID, JobMode, Language, OpMode, ID};

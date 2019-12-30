@@ -1,12 +1,10 @@
-use super::utils::*;
-use super::{JobMode, OpMode, ValidationResult, ID};
+use super::{JobMode, OpMode, TextName, ID};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
-use std::ops::Deref;
 
 /// A data structure containing a snapshot of the current known states of the controller.
 ///
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Eq, PartialEq, Clone, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StateValues<'a> {
     /// Current operating mold of the controller.
@@ -26,12 +24,12 @@ pub struct StateValues<'a> {
     /// Current active job ID (if any) on the controller.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(borrow)]
-    pub(crate) job_card_id: Option<Box<Cow<'a, str>>>,
+    pub(crate) job_card_id: Option<Box<TextName<'a>>>,
     //
     /// Unique ID of the set of mold data currently loaded (if any) on the controller.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(borrow)]
-    pub(crate) mold_id: Option<Box<Cow<'a, str>>>,
+    pub(crate) mold_id: Option<Box<TextName<'a>>>,
 }
 
 impl<'a> StateValues<'a> {
@@ -44,7 +42,7 @@ impl<'a> StateValues<'a> {
     /// # use ichen_openprotocol::*;
     /// # use std::borrow::Cow;
     /// # fn main() -> std::result::Result<(), String> {
-    /// let state = StateValues::new_with_all::<&str, _>(
+    /// let state = StateValues::try_new_with_all::<&str, _>(
     ///     OpMode::Automatic,
     ///     JobMode::ID02,
     ///     Some(ID::from_u32(123)),
@@ -69,7 +67,7 @@ impl<'a> StateValues<'a> {
     /// # use ichen_openprotocol::*;
     /// # use std::borrow::Cow;
     /// # fn main() -> std::result::Result<(), String> {
-    /// let state = StateValues::new_with_all::<&str, _>(
+    /// let state = StateValues::try_new_with_all::<&str, _>(
     ///     OpMode::Automatic,
     ///     JobMode::ID02,
     ///     Some(ID::from_u32(123)),
@@ -94,7 +92,7 @@ impl<'a> StateValues<'a> {
     /// # use ichen_openprotocol::*;
     /// # use std::borrow::Cow;
     /// # fn main() -> std::result::Result<(), String> {
-    /// let state = StateValues::new_with_all::<&str, _>(
+    /// let state = StateValues::try_new_with_all::<&str, _>(
     ///     OpMode::Automatic,
     ///     JobMode::ID02,
     ///     Some(ID::from_u32(123)),
@@ -119,21 +117,21 @@ impl<'a> StateValues<'a> {
     /// # use ichen_openprotocol::*;
     /// # use std::borrow::Cow;
     /// # fn main() -> std::result::Result<(), String> {
-    /// let state = StateValues::new_with_all::<&str, _>(
+    /// let state = StateValues::try_new_with_all::<_, &str>(
     ///     OpMode::Automatic,
     ///     JobMode::ID02,
     ///     Some(ID::from_u32(123)),
-    ///     None,
-    ///     Some("M001")
+    ///     Some("JC001"),
+    ///     None
     /// )?;
     ///
-    /// assert_eq!(None, state.job_card_id());
+    /// assert_eq!(Some("JC001"), state.job_card_id());
     /// # Ok(())
     /// # }
     /// ~~~
     #[allow(clippy::borrowed_box)]
-    pub fn job_card_id(&self) -> Option<&Box<Cow<'a, str>>> {
-        self.job_card_id.as_ref()
+    pub fn job_card_id(&self) -> Option<&str> {
+        self.job_card_id.as_ref().map(|jc| jc.get())
     }
 
     /// Get the mold ID, if any.
@@ -145,7 +143,7 @@ impl<'a> StateValues<'a> {
     /// # use ichen_openprotocol::*;
     /// # use std::borrow::Cow;
     /// # fn main() -> std::result::Result<(), String> {
-    /// let state = StateValues::new_with_all::<&str, _>(
+    /// let state = StateValues::try_new_with_all::<&str, _>(
     ///     OpMode::Automatic,
     ///     JobMode::ID02,
     ///     Some(ID::from_u32(123)),
@@ -153,13 +151,13 @@ impl<'a> StateValues<'a> {
     ///     Some("M001")
     /// )?;
     ///
-    /// assert_eq!(Some(&Box::new(Cow::Borrowed("M001"))), state.mold_id());
+    /// assert_eq!(Some("M001"), state.mold_id());
     /// # Ok(())
     /// # }
     /// ~~~
     #[allow(clippy::borrowed_box)]
-    pub fn mold_id(&self) -> Option<&Box<Cow<'a, str>>> {
-        self.mold_id.as_ref()
+    pub fn mold_id(&self) -> Option<&str> {
+        self.mold_id.as_ref().map(|m| m.get())
     }
 
     /// Create a new `StateValues` wth no operator ID, job card ID and mold ID.
@@ -191,8 +189,8 @@ impl<'a> StateValues<'a> {
     /// For example, if you pass a `Some(String)` to `job_card_id` and `None` to
     /// `mold_id`, you need to call with:
     ///
-    /// > `new_with_all::<String, String>` or `new_with_all::<_, String>`  
-    /// > `new_with_all::<String, &str>` or `new_with_all::<_, &str>`
+    /// > `try_new_with_all::<String, String>` or `try_new_with_all::<_, String>`  
+    /// > `try_new_with_all::<String, &str>` or `try_new_with_all::<_, &str>`
     ///
     /// Any type will work fine, as long as it can be converted into `Cow<'_, str>`.
     ///
@@ -209,14 +207,14 @@ impl<'a> StateValues<'a> {
     ///
     /// ~~~
     /// # use ichen_openprotocol::*;
-    /// let result = StateValues::new_with_all::<_, &str>(
+    /// let sv = StateValues::try_new_with_all::<_, &str>(
     ///     OpMode::Automatic,
     ///     JobMode::ID02,
     ///     Some(ID::from_u32(123)),
     ///     Some(""),    // <-- Notice empty string for job_Card_id which is not allowed
     ///     None
     /// );
-    /// assert_eq!(Err("job_card_id cannot be empty or all whitespace".into()), result);
+    /// assert_eq!(Err("job_card_id cannot be empty or all whitespace".into()), sv);
     /// ~~~
     ///
     /// # Examples
@@ -225,7 +223,7 @@ impl<'a> StateValues<'a> {
     /// # use ichen_openprotocol::*;
     /// # use std::borrow::Cow;
     /// # fn main() -> std::result::Result<(), String> {
-    /// let state = StateValues::new_with_all::<&str, _>(
+    /// let state = StateValues::try_new_with_all::<&str, _>(
     ///     OpMode::Automatic,
     ///     JobMode::ID02,
     ///     Some(ID::from_u32(123)),
@@ -237,52 +235,43 @@ impl<'a> StateValues<'a> {
     /// assert_eq!(JobMode::ID02, state.job_mode());
     /// assert_eq!(123, state.operator_id().unwrap());
     /// assert_eq!(None, state.job_card_id());
-    /// assert_eq!(Some(&Box::new(Cow::Borrowed("M001"))), state.mold_id());
+    /// assert_eq!(Some("M001"), state.mold_id());
     /// # Ok(())
     /// # }
     /// ~~~
     ///
     /// [`OpenProtocolError::EmptyField`]: enum.OpenProtocolError.html#variant.EmptyField
     ///
-    pub fn new_with_all<S, T>(
+    pub fn try_new_with_all<J, M>(
         op: OpMode,
         job: JobMode,
         operator_id: Option<ID>,
-        job_card_id: Option<S>,
-        mold_id: Option<T>,
+        job_card_id: Option<J>,
+        mold_id: Option<M>,
     ) -> std::result::Result<Self, String>
     where
-        S: Into<Cow<'a, str>> + Deref,
-        T: Into<Cow<'a, str>> + Deref,
-        S::Target: AsRef<str>,
-        T::Target: AsRef<str>,
+        J: Into<Cow<'a, str>> + AsRef<str>,
+        M: Into<Cow<'a, str>> + AsRef<str>,
     {
-        check_optional_str_empty(&job_card_id, "job_card_id")
-            .map_err(|_| "job_card_id cannot be empty or all whitespace")?;
+        let job_card_id = if let Some(jc) = job_card_id {
+            match TextName::new_from_str(jc).map(Box::new) {
+                None => return Err("job_card_id cannot be empty or all whitespace".into()),
+                x => x,
+            }
+        } else {
+            None
+        };
 
-        check_optional_str_empty(&mold_id, "mold_id")
-            .map_err(|_| "mold_id cannot be empty or all whitespace")?;
+        let mold_id = if let Some(m) = mold_id {
+            match TextName::new_from_str(m).map(Box::new) {
+                None => return Err("mold_id cannot be empty or all whitespace".into()),
+                x => x,
+            }
+        } else {
+            None
+        };
 
-        Ok(Self {
-            operator_id,
-            job_card_id: job_card_id.map(|j| j.into()).map(Box::new),
-            mold_id: mold_id.map(|m| m.into()).map(Box::new),
-            ..Self::new(op, job)
-        })
-    }
-
-    /// Validate the data structure.
-    ///
-    /// # Errors
-    ///
-    /// Returns `Err(`[`OpenProtocolError::EmptyField`]`)` if `job_card_id` or `mold_id`
-    /// is set to an empty string or is all whitespace.
-    ///
-    /// [`OpenProtocolError::EmptyField`]: enum.OpenProtocolError.html#variant.EmptyField
-    ///
-    pub(crate) fn validate(&self) -> ValidationResult {
-        check_optional_str_empty(&self.job_card_id, "job_card_id")?;
-        check_optional_str_empty(&self.mold_id, "mold_id")
+        Ok(Self { operator_id, job_card_id, mold_id, ..Self::new(op, job) })
     }
 }
 

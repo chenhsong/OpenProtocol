@@ -1,98 +1,157 @@
-use super::utils::*;
-use super::{Error, ValidationResult};
+use super::TextName;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 
 /// A data structure containing information on a production job (i.e. a *job card*).
 ///
-#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
+#[derive(Debug, Eq, PartialEq, Hash, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct JobCard<'a> {
     /// Unique job ID, which must not be empty or all white-spaces.
     #[serde(borrow)]
-    pub job_card_id: Cow<'a, str>,
+    pub(crate) job_card_id: TextName<'a>,
     //
     /// ID of the set of mold data to load for this job.
     #[serde(borrow)]
-    pub mold_id: Cow<'a, str>,
+    pub(crate) mold_id: TextName<'a>,
     //
     /// Current production progress, which must not be larger than `total`.
-    pub progress: u32,
+    pub(crate) progress: u32,
     //
     /// Total production count ordered.
-    pub total: u32,
+    pub(crate) total: u32,
 }
 
 impl<'a> JobCard<'a> {
-    /// Create a new `JobCard` with the specified field values.
+    /// Get the job ID.
     ///
     /// # Examples
     ///
     /// ~~~
     /// # use ichen_openprotocol::*;
-    /// let jobs = vec![
-    ///     JobCard::new("J001", "Mold#001", 0, 10000),
-    ///     JobCard::new("J002".to_string(), "Mold#002".to_string(), 1000, 5000),
-    ///     JobCard::new("J003", "Mold#003".to_string(), 42, 1000),
-    ///     JobCard::new("J004".to_string(), "Mold#004", 0, 0),
-    /// ];
-    ///
-    /// assert_eq!(4, jobs.len());
-    /// assert_eq!("J002", jobs[1].job_card_id);
-    /// assert_eq!(1000, jobs[2].total);
+    /// # fn main() -> std::result::Result<(), String> {
+    /// let jc = JobCard::try_new("J001", "Mold#001", 100, 1000)?;
+    /// assert_eq!("J001", jc.job_card_id());
+    /// # Ok(())
+    /// # }
     /// ~~~
-    pub fn new<S: Into<Cow<'a, str>>, T: Into<Cow<'a, str>>>(
-        id: S,
-        mold: T,
-        progress: u32,
-        total: u32,
-    ) -> Self {
-        Self { job_card_id: id.into(), mold_id: mold.into(), progress, total }
+    pub fn job_card_id(&self) -> &str {
+        self.job_card_id.as_ref()
     }
 
-    /// Validate the data structure.
+    /// Get the mold ID.
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// # fn main() -> std::result::Result<(), String> {
+    /// let jc = JobCard::try_new("J001", "Mold#001", 100, 1000)?;
+    /// assert_eq!("Mold#001", jc.mold_id());
+    /// # Ok(())
+    /// # }
+    /// ~~~
+    pub fn mold_id(&self) -> &str {
+        self.mold_id.as_ref()
+    }
+
+    /// Get the production progress.
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// # fn main() -> std::result::Result<(), String> {
+    /// let jc = JobCard::try_new("J001", "Mold#001", 100, 1000)?;
+    /// assert_eq!(100, jc.progress());
+    /// # Ok(())
+    /// # }
+    /// ~~~
+    pub fn progress(&self) -> u32 {
+        self.progress
+    }
+
+    /// Get the maximum production order.
+    ///
+    /// # Examples
+    ///
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// # fn main() -> std::result::Result<(), String> {
+    /// let jc = JobCard::try_new("J001", "Mold#001", 100, 1000)?;
+    /// assert_eq!(1000, jc.total());
+    /// # Ok(())
+    /// # }
+    /// ~~~
+    pub fn total(&self) -> u32 {
+        self.total
+    }
+
+    /// Create a new `JobCard` with the specified field values.
     ///
     /// # Errors
     ///
-    /// Returns `Err(`[`OpenProtocolError::EmptyField`]`)` if `job_card_id` or `mold_id`
-    /// is set to an empty string or is all whitespace.
-    ///
-    /// Returns `Err(`[`OpenProtocolError::ConstraintViolated`]`)` if `progress` is larger
-    /// than `total`.
+    /// Returns `Err(String)` is there is an error in the parameters.
     ///
     /// ## Error Examples
     ///
     /// ~~~
     /// # use ichen_openprotocol::*;
-    /// let job1 = JobCard::new("", "M1", 0, 10000);
-    /// let job2 = JobCard::new("J2", "   ", 0, 10000);
-    /// let job3 = JobCard::new("J3", "M3", 50000, 10000);
-    ///
-    /// assert_eq!(Err(Error::EmptyField("job_card_id")), job1.validate());
-    /// assert_eq!(Err(Error::EmptyField("mold_id")), job2.validate());
     /// assert_eq!(
-    ///     Err(Error::ConstraintViolated("job-card progress (50000) must not be larger than the total production count (10000)".into())),
-    ///     job3.validate()
+    ///     Err("job card ID cannot be empty or all-whitespace".into()),
+    ///     JobCard::try_new("", "Mold#001", 0, 10000)
+    /// );
+    ///
+    /// assert_eq!(
+    ///     Err("mold ID cannot be empty or all-whitespace".into()),
+    ///     JobCard::try_new("J001", "   ", 0, 10000)
+    /// );
+    ///
+    /// assert_eq!(
+    ///     Err("progress cannot be larger than total".into()),
+    ///     JobCard::try_new("J001", "Mold#001", 1000, 100)
     /// );
     /// ~~~
     ///
-    /// [`OpenProtocolError::EmptyField`]: enum.OpenProtocolError.html#variant.EmptyField
-    /// [`OpenProtocolError::ConstraintViolated`]: enum.OpenProtocolError.html#variant.ConstraintViolated
+    /// # Examples
     ///
-    pub fn validate(&self) -> ValidationResult {
-        check_str_empty(&self.job_card_id, "job_card_id")?;
-        check_str_empty(&self.mold_id, "mold_id")?;
-
-        if self.progress > self.total {
-            return Err(Error::ConstraintViolated(
-                format!(
-                    "job-card progress ({}) must not be larger than the total production count ({})",
-                    self.progress, self.total
-                )
-                .into(),
-            ));
+    /// ~~~
+    /// # use ichen_openprotocol::*;
+    /// # fn main() -> std::result::Result<(), String> {
+    /// let jobs = vec![
+    ///     JobCard::try_new("J001", "Mold#001", 0, 10000)?,
+    ///     JobCard::try_new("J002".to_string(), "Mold#002".to_string(), 1000, 5000)?,
+    ///     JobCard::try_new("J003", "Mold#003".to_string(), 42, 1000)?,
+    ///     JobCard::try_new("J004".to_string(), "Mold#004", 0, 0)?,
+    /// ];
+    ///
+    /// assert_eq!(4, jobs.len());
+    /// assert_eq!("J002", jobs[1].job_card_id());
+    /// assert_eq!(1000, jobs[2].total());
+    /// # Ok(())
+    /// # }
+    /// ~~~
+    pub fn try_new<S: Into<Cow<'a, str>>, T: Into<Cow<'a, str>>>(
+        id: S,
+        mold: T,
+        progress: u32,
+        total: u32,
+    ) -> std::result::Result<Self, String> {
+        if progress > total {
+            return Err("progress cannot be larger than total".into());
         }
 
-        Ok(())
+        Ok(Self {
+            job_card_id: match TextName::new_from_str(id) {
+                Some(jc) => jc,
+                None => return Err("job card ID cannot be empty or all-whitespace".into()),
+            },
+            mold_id: match TextName::new_from_str(mold) {
+                Some(m) => m,
+                None => return Err("mold ID cannot be empty or all-whitespace".into()),
+            },
+            progress,
+            total,
+        })
     }
 }
