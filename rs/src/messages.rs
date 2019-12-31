@@ -957,56 +957,47 @@ impl<'a> Message<'a> {
                     {
                         return Err(Error::InconsistentField("display_name"));
                     }
-                    if op_mode.is_some() && op_mode.unwrap() != c.op_mode {
-                        return Err(Error::InconsistentField("op_mode"));
-                    }
-                    if job_mode.is_some() && job_mode.unwrap() != c.job_mode {
-                        return Err(Error::InconsistentField("job_mode"));
-                    }
-                    if operator_id.is_some()
-                        && operator_id.unwrap() != c.operator.as_ref().map(|user| user.id())
-                    {
-                        return Err(Error::InconsistentField("operator_id"));
-                    }
                     if operator_name.is_some()
                         && operator_name.as_ref().unwrap().as_ref().map(|x| x.get())
                             != c.operator.as_ref().map(|u| u.name()).flatten()
                     {
                         return Err(Error::InconsistentField("operator_name"));
                     }
-                    if job_card_id.is_some()
-                        && job_card_id.as_ref().unwrap().as_ref().map(|x| x.get())
-                            != c.job_card_id.as_ref().map(|x| x.as_ref().as_ref())
-                    {
-                        return Err(Error::InconsistentField("job_card_id"));
+
+                    // Check controller fields with the state
+                    if state.op_mode() != c.op_mode {
+                        return Err(Error::InconsistentState("op_mode"));
                     }
-                    if mold_id.is_some()
-                        && mold_id.as_ref().unwrap().as_ref().map(|x| x.get())
-                            != c.mold_id.as_ref().map(|x| x.as_ref().as_ref())
-                    {
+                    if state.job_mode() != c.job_mode {
+                        return Err(Error::InconsistentState("job_mode"));
+                    }
+                    if state.operator_id() != c.operator.as_ref().map(|user| user.id()) {
+                        return Err(Error::InconsistentState("operator_id"));
+                    }
+                    if state.job_card_id() != c.job_card_id.as_ref().map(|x| x.as_ref().as_ref()) {
+                        return Err(Error::InconsistentState("job_card_id"));
+                    }
+                    if state.mold_id() != c.mold_id.as_ref().map(|x| x.as_ref().as_ref()) {
                         return Err(Error::InconsistentField("mold_id"));
                     }
                 }
 
+                // Check controller fields with the state
                 if op_mode.is_some() && op_mode.unwrap() != state.op_mode() {
                     return Err(Error::InconsistentState("op_mode"));
                 }
-
                 if job_mode.is_some() && job_mode.unwrap() != state.job_mode() {
                     return Err(Error::InconsistentState("job_mode"));
                 }
-
                 if operator_id.is_some() && operator_id.unwrap() != state.operator_id() {
                     return Err(Error::InconsistentState("operator_id"));
                 }
-
                 if job_card_id.is_some()
                     && state.job_card_id()
                         != job_card_id.as_ref().unwrap().as_ref().map(|jc| jc.get())
                 {
                     return Err(Error::InconsistentState("job_card_id"));
                 }
-
                 if mold_id.is_some()
                     && state.mold_id() != mold_id.as_ref().unwrap().as_ref().map(|m| m.get())
                 {
@@ -1173,7 +1164,7 @@ mod test {
 
     #[test]
     fn test_message_controller_status_with_controller_from_json() -> Result<(), String> {
-        let json = r#"{"$type":"ControllerStatus","controllerId":123,"state":{"opMode":"Automatic","jobMode":"ID05"},"controller":{"controllerId":123,"displayName":"Testing","controllerType":"Ai02","version":"2.2","model":"JM138Ai","IP":"192.168.1.1:12345","geoLatitude":23.0,"geoLongitude":-121.0,"opMode":"Automatic","jobMode":"ID05","jobCardId":"XYZ","lastCycleData":{"INJ":5,"CLAMP":400},"moldId":"Mold-123"},"sequence":1}"#;
+        let json = r#"{"$type":"ControllerStatus","controllerId":123,"state":{"opMode":"Automatic","jobMode":"ID05","jobCardId":"XYZ","moldId":"Mold-123"},"controller":{"controllerId":123,"displayName":"Testing","controllerType":"Ai02","version":"2.2","model":"JM138Ai","IP":"192.168.1.1:12345","geoLatitude":23.0,"geoLongitude":-121.0,"opMode":"Automatic","jobMode":"ID05","jobCardId":"XYZ","lastCycleData":{"INJ":5,"CLAMP":400},"moldId":"Mold-123"},"sequence":1}"#;
 
         let msg = Message::parse_from_json_str(&json).map_err(|x| x.to_string())?;
 
@@ -1184,7 +1175,7 @@ mod test {
             assert_eq!(None, *display_name);
             assert_eq!(OpMode::Automatic, state.op_mode());
             assert_eq!(JobMode::ID05, state.job_mode());
-            assert_eq!(None, state.job_card_id());
+            assert_eq!(Some("XYZ"), state.job_card_id());
             let c = controller.as_ref().unwrap();
             assert_eq!("JM138Ai", c.model);
             let d = &c.last_cycle_data;
