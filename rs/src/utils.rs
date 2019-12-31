@@ -8,7 +8,6 @@ use std::num::NonZeroU32;
 use std::str::FromStr;
 
 /// A trait to specify different _invalid_ values for a type for serialization purposes
-///
 pub trait HasInvalidValue {
     type Marker;
 

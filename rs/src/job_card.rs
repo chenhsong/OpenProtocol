@@ -9,17 +9,17 @@ use std::convert::TryInto;
 pub struct JobCard<'a> {
     /// Unique job ID, which must not be empty or all white-spaces.
     #[serde(borrow)]
-    pub(crate) job_card_id: TextName<'a>,
+    job_card_id: TextName<'a>,
     //
     /// ID of the set of mold data to load for this job.
     #[serde(borrow)]
-    pub(crate) mold_id: TextName<'a>,
+    mold_id: TextName<'a>,
     //
     /// Current production progress, which must not be larger than `total`.
-    pub(crate) progress: u32,
+    progress: u32,
     //
     /// Total production count ordered.
-    pub(crate) total: u32,
+    total: u32,
 }
 
 impl<'a> JobCard<'a> {

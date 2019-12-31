@@ -11,10 +11,10 @@ use std::convert::{TryFrom, TryInto};
 #[serde(try_from = "GeoWrapper", into = "GeoWrapper")]
 pub struct GeoLocation {
     /// Latitude
-    pub(crate) geo_latitude: R32,
+    geo_latitude: R32,
     //
     /// Longitude
-    pub(crate) geo_longitude: R32,
+    geo_longitude: R32,
 }
 
 impl std::fmt::Debug for GeoLocation {
@@ -61,7 +61,7 @@ impl GeoLocation {
     /// # Errors
     ///
     /// Returns `Err(String)` if either `latitude` or `longitude` is not a valid floating-point
-    /// number, or when they together do not represent a valid Geo-Location position.
+    /// number, or when they together do not represent a valid geo-location position.
     ///
     /// ## Error Examples
     ///

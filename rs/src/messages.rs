@@ -26,17 +26,17 @@ pub struct MessageOptions<'a> {
     /// retrieve the message from persistent storage later.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(borrow)]
-    pub(crate) id: Option<TextID<'a>>,
+    id: Option<TextID<'a>>,
     //
     /// Ever-increasing message sequence number.
     ///
     /// This number is usually auto-incremented with each message created, starting from 1.
-    pub(crate) sequence: u64,
+    sequence: u64,
     //
     /// Priority of the message, smaller number is higher priority.  Default = 0.
     #[serde(skip_serializing_if = "is_zero")]
     #[serde(default)]
-    pub(crate) priority: i32,
+    priority: i32,
 }
 
 impl<'a> MessageOptions<'a> {
@@ -962,13 +962,13 @@ impl<'a> Message<'a> {
                         return Err(Error::InconsistentField("job_mode"));
                     }
                     if operator_id.is_some()
-                        && *operator_id != Some(c.operator.as_ref().map(|user| user.operator_id))
+                        && *operator_id != Some(c.operator.as_ref().map(|user| user.id()))
                     {
                         return Err(Error::InconsistentField("operator_id"));
                     }
                     if operator_name.is_some()
-                        && operator_name.as_ref().unwrap().as_ref().map(|x| x.as_ref())
-                            != c.operator.as_ref().map(|u| u.operator_name.as_ref()).flatten()
+                        && operator_name.as_ref().unwrap().as_ref().map(|x| x.get())
+                            != c.operator.as_ref().map(|u| u.name()).flatten()
                     {
                         return Err(Error::InconsistentField("operator_name"));
                     }
@@ -988,23 +988,29 @@ impl<'a> Message<'a> {
                     }
                 }
 
-                if op_mode.is_some() && Some(state.op_mode) != *op_mode {
+                if op_mode.is_some() && Some(state.op_mode()) != *op_mode {
                     return Err(Error::InconsistentState("op_mode"));
                 }
 
-                if job_mode.is_some() && Some(state.job_mode) != *job_mode {
+                if job_mode.is_some() && Some(state.job_mode()) != *job_mode {
                     return Err(Error::InconsistentState("job_mode"));
                 }
 
-                if operator_id.is_some() && Some(state.operator_id) != *operator_id {
+                if operator_id.is_some() && Some(state.operator_id()) != *operator_id {
                     return Err(Error::InconsistentState("operator_id"));
                 }
 
-                if job_card_id.is_some() && Some(&state.job_card_id) != job_card_id.as_ref() {
+                if job_card_id.is_some()
+                    && Some(state.job_card_id())
+                        != job_card_id.as_ref().map(|x| x.as_ref().map(|jc| jc.get()))
+                {
                     return Err(Error::InconsistentState("job_card_id"));
                 }
 
-                if mold_id.is_some() && Some(&state.mold_id) != mold_id.as_ref() {
+                if mold_id.is_some()
+                    && Some(state.mold_id())
+                        != mold_id.as_ref().map(|x| x.as_ref().map(|m| m.get()))
+                {
                     return Err(Error::InconsistentState("mold_id"));
                 }
             }
@@ -1189,9 +1195,9 @@ mod test {
             assert_eq!(1, msg.sequence());
             assert_eq!(123, *controller_id);
             assert_eq!(None, *display_name);
-            assert_eq!(OpMode::Automatic, state.op_mode);
-            assert_eq!(JobMode::ID05, state.job_mode);
-            assert_eq!(None, state.job_card_id);
+            assert_eq!(OpMode::Automatic, state.op_mode());
+            assert_eq!(JobMode::ID05, state.job_mode());
+            assert_eq!(None, state.job_card_id());
             let c = controller.as_ref().unwrap();
             assert_eq!("JM138Ai", c.model);
             let d = &c.last_cycle_data;

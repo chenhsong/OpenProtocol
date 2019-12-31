@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Eq, PartialEq, Clone, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct KeyValuePair<K, V> {
-    pub(crate) key: K,
-    pub(crate) value: V,
+    key: K,
+    value: V,
 }
 
 impl<K: Copy, V> KeyValuePair<K, V> {

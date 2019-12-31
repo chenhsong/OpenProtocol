@@ -10,26 +10,26 @@ pub struct StateValues<'a> {
     /// Current operating mold of the controller.
     #[serde(skip_serializing_if = "OpMode::is_unknown")]
     #[serde(default)]
-    pub(crate) op_mode: OpMode,
+    op_mode: OpMode,
     //
     /// Current job mode of the controller.
     #[serde(skip_serializing_if = "JobMode::is_unknown")]
     #[serde(default)]
-    pub(crate) job_mode: JobMode,
+    job_mode: JobMode,
     //
     /// Unique ID of the current logged-in user (if any) on the controller.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub(crate) operator_id: Option<ID>,
+    operator_id: Option<ID>,
     //
     /// Current active job ID (if any) on the controller.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(borrow)]
-    pub(crate) job_card_id: Option<Box<TextName<'a>>>,
+    job_card_id: Option<Box<TextName<'a>>>,
     //
     /// Unique ID of the set of mold data currently loaded (if any) on the controller.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(borrow)]
-    pub(crate) mold_id: Option<Box<TextName<'a>>>,
+    mold_id: Option<Box<TextName<'a>>>,
 }
 
 impl<'a> StateValues<'a> {

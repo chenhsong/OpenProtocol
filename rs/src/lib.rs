@@ -50,7 +50,7 @@ pub type Result<'a, T> = std::result::Result<T, Error<'a>>;
 pub type Error<'a> = OpenProtocolError<'a>;
 
 /// 32-bit real floating-point number.
-pub type R32 = noisy_float::types::R32;
+pub use noisy_float::types::R32;
 
 // Re-exports
 pub use address::Address;

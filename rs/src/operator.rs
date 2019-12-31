@@ -8,11 +8,11 @@ use std::convert::TryInto;
 #[serde(rename_all = "camelCase")]
 pub struct Operator<'a> {
     /// Unique user ID, which cannot be zero.
-    pub(crate) operator_id: ID,
+    operator_id: ID,
     //
     /// Name of the user.
     #[serde(borrow)]
-    pub(crate) operator_name: Option<TextName<'a>>,
+    operator_name: Option<TextName<'a>>,
 }
 
 impl<'a> Operator<'a> {

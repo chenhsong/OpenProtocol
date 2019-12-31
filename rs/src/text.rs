@@ -21,6 +21,7 @@ pub type TextID<'a> = ConstrainedText<&'a str, NonEmptyAllASCII>;
 pub type TextName<'a> = ConstrainedText<Cow<'a, str>, NonEmpty>;
 
 /// A trait that constrains the format of a text string.
+///
 pub trait TextConstraint {
     /// Create a new instance of the text constraint.
     fn new() -> Self;
@@ -33,6 +34,7 @@ pub trait TextConstraint {
 }
 
 /// A text constraint that rejects empty strings and strings containing only whitespaces.
+///
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct NonEmpty;
 
@@ -50,6 +52,7 @@ impl TextConstraint for NonEmpty {
 
 /// A text constraint that rejects empty strings and strings containing only whitespaces.
 /// Only ASCII characters can be in the text string.
+///
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct NonEmptyAllASCII;
 
@@ -67,6 +70,7 @@ impl TextConstraint for NonEmptyAllASCII {
 
 /// A data structure that wraps a text string (or anything that dereferences into a text string)
 /// while guaranteeing that the specified text constraint is upheld.
+///
 #[derive(Display, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 #[display(fmt = "_0")]
 pub struct ConstrainedText<T: AsRef<str>, C: TextConstraint>(T, C);
