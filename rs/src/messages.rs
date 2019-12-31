@@ -919,7 +919,9 @@ impl<'a> Message<'a> {
             | CycleData { .. }
             | ReadMoldData { .. }
             | MoldDataValue { .. }
-            | LoginOperator { .. } => (),
+            | LoginOperator { .. }
+            | JobCardsList { .. }
+            | MoldData { .. } => (),
 
             ControllerStatus {
                 display_name,
@@ -951,18 +953,18 @@ impl<'a> Message<'a> {
 
                     // Check controller fields with specified fields
                     if display_name.is_some()
-                        && display_name.as_ref().map(|n| n.as_ref()) != Some(&c.display_name)
+                        && display_name.as_ref().unwrap().get() != c.display_name
                     {
                         return Err(Error::InconsistentField("display_name"));
                     }
-                    if op_mode.is_some() && *op_mode != Some(c.op_mode) {
+                    if op_mode.is_some() && op_mode.unwrap() != c.op_mode {
                         return Err(Error::InconsistentField("op_mode"));
                     }
-                    if job_mode.is_some() && *job_mode != Some(c.job_mode) {
+                    if job_mode.is_some() && job_mode.unwrap() != c.job_mode {
                         return Err(Error::InconsistentField("job_mode"));
                     }
                     if operator_id.is_some()
-                        && *operator_id != Some(c.operator.as_ref().map(|user| user.id()))
+                        && operator_id.unwrap() != c.operator.as_ref().map(|user| user.id())
                     {
                         return Err(Error::InconsistentField("operator_id"));
                     }
@@ -972,52 +974,43 @@ impl<'a> Message<'a> {
                     {
                         return Err(Error::InconsistentField("operator_name"));
                     }
-                    if let Some(ref jc) = job_card_id {
-                        if jc.as_ref().map(|x| x.get())
+                    if job_card_id.is_some()
+                        && job_card_id.as_ref().unwrap().as_ref().map(|x| x.get())
                             != c.job_card_id.as_ref().map(|x| x.as_ref().as_ref())
-                        {
-                            return Err(Error::InconsistentField("job_card_id"));
-                        }
+                    {
+                        return Err(Error::InconsistentField("job_card_id"));
                     }
-                    if let Some(ref m) = mold_id {
-                        if m.as_ref().map(|x| x.get())
+                    if mold_id.is_some()
+                        && mold_id.as_ref().unwrap().as_ref().map(|x| x.get())
                             != c.mold_id.as_ref().map(|x| x.as_ref().as_ref())
-                        {
-                            return Err(Error::InconsistentField("mold_id"));
-                        }
+                    {
+                        return Err(Error::InconsistentField("mold_id"));
                     }
                 }
 
-                if op_mode.is_some() && Some(state.op_mode()) != *op_mode {
+                if op_mode.is_some() && op_mode.unwrap() != state.op_mode() {
                     return Err(Error::InconsistentState("op_mode"));
                 }
 
-                if job_mode.is_some() && Some(state.job_mode()) != *job_mode {
+                if job_mode.is_some() && job_mode.unwrap() != state.job_mode() {
                     return Err(Error::InconsistentState("job_mode"));
                 }
 
-                if operator_id.is_some() && Some(state.operator_id()) != *operator_id {
+                if operator_id.is_some() && operator_id.unwrap() != state.operator_id() {
                     return Err(Error::InconsistentState("operator_id"));
                 }
 
                 if job_card_id.is_some()
-                    && Some(state.job_card_id())
-                        != job_card_id.as_ref().map(|x| x.as_ref().map(|jc| jc.get()))
+                    && state.job_card_id()
+                        != job_card_id.as_ref().unwrap().as_ref().map(|jc| jc.get())
                 {
                     return Err(Error::InconsistentState("job_card_id"));
                 }
 
                 if mold_id.is_some()
-                    && Some(state.mold_id())
-                        != mold_id.as_ref().map(|x| x.as_ref().map(|m| m.get()))
+                    && state.mold_id() != mold_id.as_ref().unwrap().as_ref().map(|m| m.get())
                 {
                     return Err(Error::InconsistentState("mold_id"));
-                }
-            }
-
-            JobCardsList { data, .. } => {
-                if data.is_empty() {
-                    return Err(Error::EmptyField("data"));
                 }
             }
 
@@ -1029,12 +1022,6 @@ impl<'a> Message<'a> {
                         value: "Unknown".into(),
                         description: "language cannot be Unknown".into(),
                     });
-                }
-            }
-
-            MoldData { data, .. } => {
-                if data.is_empty() {
-                    return Err(Error::EmptyField("data"));
                 }
             }
 
