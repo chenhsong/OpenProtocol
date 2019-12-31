@@ -2,7 +2,7 @@ use super::TextID;
 use derive_more::*;
 use lazy_static::*;
 use regex::Regex;
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::convert::{TryFrom, TryInto};
 use std::net::Ipv4Addr;
 use std::num::{NonZeroU16, NonZeroU8};
@@ -16,8 +16,7 @@ lazy_static! {
 
 /// A data structure holding a controller's physical address.
 ///
-#[derive(Debug, Display, PartialEq, Eq, Hash, Clone, Serialize)]
-#[serde(into = "String")]
+#[derive(Debug, Display, PartialEq, Eq, Hash, Clone)]
 pub enum Address<'a> {
     /// Address unknown.
     #[display(fmt = "0.0.0.0:0")]
@@ -262,15 +261,15 @@ impl<'a> TryFrom<&'a str> for Address<'a> {
     }
 }
 
-impl From<Address<'_>> for String {
-    fn from(value: Address) -> Self {
-        value.to_string()
+impl Serialize for Address<'_> {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        Serialize::serialize(&self.to_string(), serializer)
     }
 }
 
 impl<'a, 'de: 'a> Deserialize<'de> for Address<'a> {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        let s: &str = Deserialize::deserialize(deserializer).map_err(serde::de::Error::custom)?;
+        let s: &str = Deserialize::deserialize(deserializer)?;
         Address::try_from(s).map_err(|err| serde::de::Error::custom(format!("{}: [{}]", err, s)))
     }
 }
