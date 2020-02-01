@@ -293,7 +293,6 @@ pub enum Message<'a> {
         controller_id: ID,
         //
         /// Human-friendly name for display (or `None` if not relevant).
-        #[allow(clippy::option_option)]
         #[serde(skip_serializing_if = "Option::is_none")]
         display_name: Option<Box<TextName<'a>>>,
         //
@@ -328,7 +327,6 @@ pub enum Message<'a> {
         //
         /// Unique ID of the current logged-on user, `Some(None)` if a user has logged out
         /// (or `None` if not relevant).
-        #[allow(clippy::option_option)]
         #[serde(serialize_with = "serialize_some_none_to_invalid")]
         #[serde(deserialize_with = "deserialize_invalid_to_some_none")]
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -337,7 +335,6 @@ pub enum Message<'a> {
         //
         /// Name of the current logged-on user, `Some(None)` if the current user has no name
         /// (or `None` if not relevant).
-        #[allow(clippy::option_option)]
         #[serde(deserialize_with = "deserialize_null_to_some_none")]
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(default)]
@@ -345,7 +342,6 @@ pub enum Message<'a> {
         //
         /// Unique ID of the current job card loaded, `Some(None)` if no job card is currently loaded
         /// (or `None` if not relevant).
-        #[allow(clippy::option_option)]
         #[serde(deserialize_with = "deserialize_null_to_some_none")]
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(default)]
@@ -354,7 +350,6 @@ pub enum Message<'a> {
         //
         /// Unique ID of the current mold data set loaded, `Some(None)` if no mold data set is currently loaded
         /// (or `None` if not relevant).
-        #[allow(clippy::option_option)]
         #[serde(deserialize_with = "deserialize_null_to_some_none")]
         #[serde(skip_serializing_if = "Option::is_none")]
         #[serde(default)]
@@ -658,9 +653,9 @@ impl<'a> Message<'a> {
     /// [`OpenProtocolError`]: enum.OpenProtocolError.html
     ///
     pub fn parse_from_json_str(json: &'a str) -> Result<'a, Self> {
-        serde_json::from_str::<Message>(json)
-            .map_err(Error::JsonError)
-            .and_then(|m| m.validate().map(|_| m))
+        let m = serde_json::from_str::<Message>(json).map_err(Error::JsonError)?;
+        m.validate()?;
+        Ok(m)
     }
 
     /// Validate all the fields in the `Message`, then serialize it into a JSON string.
