@@ -86,7 +86,7 @@ pub enum OpMode {
     /// Manual mode.
     Manual,
     /// Semi-Automatic mode.
-    #[display(fmt = "Semi-Automataic")]
+    #[display(fmt = "Semi-Automatic")]
     SemiAutomatic,
     /// Automatic mode.
     Automatic,
