@@ -4,7 +4,7 @@ use std::cmp::{Ordering, PartialEq, PartialOrd};
 use std::convert::TryFrom;
 use std::fmt::{Debug, Formatter};
 use std::num::NonZeroU32;
-use std::ops::{Deref, DerefMut};
+use std::{borrow::Borrow, ops::Deref};
 
 /// Supported UI languages for the controller's HMI.
 ///
@@ -277,6 +277,10 @@ impl Default for JobMode {
 /// This type is usually used for specifying a unique identification number.
 ///
 #[derive(
+    AsRef,
+    AsMut,
+    Deref,
+    DerefMut,
     Display,
     Copy,
     Clone,
@@ -355,7 +359,7 @@ impl ID {
 
 impl Debug for ID {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        Debug::fmt(&self.0, f)
+        write!(f, "{:?}", &self.0)
     }
 }
 
@@ -417,6 +421,9 @@ impl PartialOrd<ID> for u32 {
 /// It `Deref`s into an `i32`.
 ///
 #[derive(
+    AsRef,
+    AsMut,
+    DerefMut,
     Display,
     Constructor,
     Copy,
@@ -442,15 +449,15 @@ impl Deref for ActionID {
     }
 }
 
-impl DerefMut for ActionID {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
+impl Borrow<i32> for ActionID {
+    fn borrow(&self) -> &i32 {
+        &self.0
     }
 }
 
 impl Debug for ActionID {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        Debug::fmt(&self.0, f)
+        write!(f, "{:?}", &self.0)
     }
 }
 

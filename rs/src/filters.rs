@@ -190,9 +190,9 @@ impl Display for Filters {
         }
 
         if text.is_empty() {
-            f.write_str("None")
+            write!(f, "None")
         } else {
-            f.write_str(text.replace(" | ", ", ").as_ref())
+            write!(f, "{}", text.replace(" | ", ", "))
         }
     }
 }

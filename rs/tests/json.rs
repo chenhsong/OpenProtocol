@@ -27,7 +27,7 @@ fn integration_test_deserialize_from_json() -> Result<(), String> {
     )?;
 
     if let Join { version, password, filter, options, .. } = msg {
-        assert_eq!("1.0.0", version);
+        assert_eq!("1.0.0", &version);
         assert_eq!("hello", password);
         assert_eq!(42, options.sequence());
         assert_eq!(10, options.priority());

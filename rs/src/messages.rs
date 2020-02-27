@@ -719,7 +719,7 @@ impl<'a> Message<'a> {
     /// let msg = Message::new_join("MyPassword", Filters::Status + Filters::Cycle);
     /// if let Message::Join { org_id, version, password, language, filter, options } = msg {
     ///     assert_eq!(None, org_id);
-    ///     assert_eq!(Message::PROTOCOL_VERSION, version);
+    ///     assert_eq!(Message::PROTOCOL_VERSION, &version);
     ///     assert_eq!("MyPassword", password);
     ///     assert_eq!(Message::DEFAULT_LANGUAGE, language);
     ///     assert_eq!(Filters::Status + Filters::Cycle, filter);
@@ -948,7 +948,7 @@ impl<'a> Message<'a> {
 
                     // Check controller fields with specified fields
                     if display_name.is_some()
-                        && display_name.as_ref().unwrap().get() != c.display_name
+                        && display_name.as_ref().unwrap().get() != &c.display_name
                     {
                         return Err(Error::InconsistentField("display_name"));
                     }
@@ -1111,7 +1111,7 @@ mod test {
         if let ControllersList { data, .. } = &msg {
             assert_eq!(2, data.len());
             let c = data.get(&ID::from_u32(12345)).unwrap();
-            assert_eq!("Hello", c.display_name);
+            assert_eq!("Hello", &c.display_name);
             Ok(())
         } else {
             Err(format!("Expected ControllersList, got {:#?}", msg))
@@ -1172,7 +1172,7 @@ mod test {
             assert_eq!(JobMode::ID05, state.job_mode());
             assert_eq!(Some("XYZ"), state.job_card_id());
             let c = controller.as_ref().unwrap();
-            assert_eq!("JM138Ai", c.model);
+            assert_eq!("JM138Ai", &c.model);
             let d = &c.last_cycle_data;
             assert!(c.operator.is_none());
             assert_eq!(2, d.len());

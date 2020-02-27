@@ -1,6 +1,6 @@
 use derive_more::*;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::borrow::Cow;
+use std::borrow::{Borrow, Cow};
 use std::cmp::{Ordering, PartialEq, PartialOrd};
 use std::convert::TryFrom;
 use std::fmt::{Debug, Formatter};
@@ -71,13 +71,13 @@ impl TextConstraint for NonEmptyAllASCII {
 /// A data structure that wraps a text string (or anything that dereferences into a text string)
 /// while guaranteeing that the specified text constraint is upheld.
 ///
-#[derive(Display, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+#[derive(Display, Clone, Ord, Eq, Hash)]
 #[display(fmt = "_0")]
 pub struct ConstrainedText<T: AsRef<str>, C: TextConstraint>(T, C);
 
 impl<T: AsRef<str>, C: TextConstraint> Debug for ConstrainedText<T, C> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        Debug::fmt(&self.0.as_ref(), f)
+        write!(f, "{:?}", self.get())
     }
 }
 
@@ -103,7 +103,7 @@ impl<T: AsRef<str>, C: TextConstraint> ConstrainedText<T, C> {
     /// ~~~
     /// # use ichen_openprotocol::*;
     /// let id = TextName::new_from_str("你好吗？").unwrap();
-    /// assert_eq!("你好吗？", id);
+    /// assert_eq!("你好吗？", &id);
     /// ~~~
     pub fn new(text: T) -> Option<Self> {
         if !C::check(text.as_ref()) {
@@ -120,7 +120,7 @@ impl<T: AsRef<str>, C: TextConstraint> ConstrainedText<T, C> {
     /// ~~~
     /// # use ichen_openprotocol::*;
     /// let id = TextID::new("hello").unwrap();
-    /// assert_eq!("hello", id);
+    /// assert_eq!("hello", &id);
     /// ~~~
     pub fn get(&self) -> &str {
         self.0.as_ref()
@@ -143,37 +143,61 @@ impl<T: AsRef<str>, C: TextConstraint> Deref for ConstrainedText<T, C> {
     type Target = str;
 
     fn deref(&self) -> &Self::Target {
-        self.0.as_ref()
+        self.get()
     }
 }
 
-impl<T: AsRef<str>, C: TextConstraint> PartialEq<&str> for ConstrainedText<T, C> {
-    fn eq(&self, other: &&str) -> bool {
-        self.get() == *other
+impl<T: AsRef<str>, C: TextConstraint> AsRef<str> for ConstrainedText<T, C> {
+    fn as_ref(&self) -> &str {
+        self.get()
     }
 }
 
-impl<T: AsRef<str>, C: TextConstraint> PartialEq<ConstrainedText<T, C>> for &str {
+impl<T: AsRef<str>, C: TextConstraint> Borrow<str> for ConstrainedText<T, C> {
+    fn borrow(&self) -> &str {
+        self.get()
+    }
+}
+
+impl<T: AsRef<str>, V: AsRef<str>, C: TextConstraint> PartialEq<V> for ConstrainedText<T, C> {
+    fn eq(&self, other: &V) -> bool {
+        self.get() == other.as_ref()
+    }
+}
+
+impl<T: AsRef<str>, C: TextConstraint> PartialEq<ConstrainedText<T, C>> for str {
     fn eq(&self, other: &ConstrainedText<T, C>) -> bool {
-        *self == other.get()
+        self == other.get()
     }
 }
 
-impl<T: AsRef<str>, C: TextConstraint> PartialOrd<&str> for ConstrainedText<T, C> {
-    fn partial_cmp(&self, other: &&str) -> Option<Ordering> {
-        self.get().partial_cmp(*other)
+impl<T: AsRef<str>, C: TextConstraint> PartialEq<ConstrainedText<T, C>> for String {
+    fn eq(&self, other: &ConstrainedText<T, C>) -> bool {
+        self == other.get()
     }
 }
 
-impl<T: AsRef<str>, C: TextConstraint> PartialOrd<ConstrainedText<T, C>> for &str {
+impl<T: AsRef<str>, V: AsRef<str>, C: TextConstraint> PartialOrd<V> for ConstrainedText<T, C> {
+    fn partial_cmp(&self, other: &V) -> Option<Ordering> {
+        self.get().partial_cmp(other.as_ref())
+    }
+}
+
+impl<T: AsRef<str>, C: TextConstraint> PartialOrd<ConstrainedText<T, C>> for str {
     fn partial_cmp(&self, other: &ConstrainedText<T, C>) -> Option<Ordering> {
-        (*self).partial_cmp(other.get())
+        self.partial_cmp(other.get())
+    }
+}
+
+impl<T: AsRef<str>, C: TextConstraint> PartialOrd<ConstrainedText<T, C>> for String {
+    fn partial_cmp(&self, other: &ConstrainedText<T, C>) -> Option<Ordering> {
+        AsRef::<str>::as_ref(self).partial_cmp(other.get())
     }
 }
 
 impl<T: AsRef<str>, C: TextConstraint> Serialize for ConstrainedText<T, C> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        Serialize::serialize(self.0.as_ref(), serializer)
+        Serialize::serialize(self.get(), serializer)
     }
 }
 

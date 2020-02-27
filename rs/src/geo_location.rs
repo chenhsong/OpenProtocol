@@ -19,7 +19,7 @@ pub struct GeoLocation {
 
 impl std::fmt::Debug for GeoLocation {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        std::fmt::Display::fmt(self, f)
+        write!(f, "{}", self)
     }
 }
 
